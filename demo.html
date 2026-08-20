@@ -13,7 +13,7 @@
 <div class="shell">
   <header class="top">
     <div><h1>Terrain Environmental GIS · Proof Demo</h1><p>One polygon → acreage + terrain + fire/environmental screening → exportable report</p></div>
-    <div class="actions"><button id="backBtn" class="btn">Back to GIS</button><button id="loadBtn" class="btn">Reload demo</button><button id="analyzeBtn" class="btn proof">Analyze live data</button></div>
+    <div class="actions"><button id="backBtn" class="btn">Back to GIS</button><button id="mobilePanelBtn" class="btn mobile-only">Map / Results</button><button id="loadBtn" class="btn">Reload demo</button><button id="analyzeBtn" class="btn proof">Analyze live data</button></div>
   </header>
   <main class="main">
     <aside class="panel">
@@ -37,5 +37,6 @@
 <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.18.0/dist/leaflet-geoman.min.js"></script>
 <script src="https://unpkg.com/@turf/turf@7.2.0/turf.min.js"></script>
 <script src="demo.js"></script>
+<script>document.getElementById('mobilePanelBtn').addEventListener('click',()=>document.querySelector('.panel').classList.toggle('closed'));</script>
 </body>
 </html>
