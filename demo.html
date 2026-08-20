@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#07111f">
+  <title>Proof Demo · Terrain Environmental GIS</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.18.0/dist/leaflet-geoman.css">
+  <link rel="stylesheet" href="demo.css">
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <div><h1>Terrain Environmental GIS · Proof Demo</h1><p>One polygon → acreage + terrain + fire/environmental screening → exportable report</p></div>
+    <div class="actions"><button id="backBtn" class="btn">Back to GIS</button><button id="loadBtn" class="btn">Reload demo</button><button id="analyzeBtn" class="btn proof">Analyze live data</button></div>
+  </header>
+  <main class="main">
+    <aside class="panel">
+      <div class="eyebrow">Live proof</div>
+      <h2>This is the workflow the other tools make you assemble manually.</h2>
+      <p class="lead">The sample AOI is near the CAL FIRE-listed Mosquito Fire incident location east of Foresthill in Placer County. It is deliberately only a demo boundary. The analysis uses live public GIS services and browser-side calculations.</p>
+
+      <div id="quickMetrics" class="metrics"></div>
+
+      <div class="step"><b>1 · Load or draw an area</b><p>The demo includes a polygon, a treatment-style line and a reference point. You can edit the polygon or draw your own with the map toolbar.</p><button id="loadBtnMirror" class="btn" onclick="document.getElementById('loadBtn').click()">Load sample AOI</button></div>
+      <div class="step"><b>2 · Analyze it</b><p>One click queries USGS terrain plus CAL FIRE/OSFM fire history, hazard zones, responsibility areas and USGS watersheds.</p><button class="btn primary" onclick="document.getElementById('analyzeBtn').click()">Analyze live data</button></div>
+      <div class="step"><b>3 · Take the result with you</b><p>The report can be exported without an account, database or paid API key.</p><button id="exportBtn" class="btn" disabled>Download proof report</button></div>
+
+      <div id="results" class="results"><div class="placeholder">Demo loaded. Press <strong>Analyze live data</strong>.</div></div>
+      <div class="sources">Source context: <a href="https://www.fire.ca.gov/incidents/2022/9/6/mosquito-fire" target="_blank" rel="noopener">CAL FIRE Mosquito Fire incident page</a>. The incident page lists the location as Mosquito Road/OxBow Reservoir east of Foresthill. Environmental results come from the live public GIS endpoints named in the results.</div>
+    </aside>
+    <section class="mapwrap"><div id="demoMap"></div><div id="status" class="status">Loading demo…</div></section>
+  </main>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.18.0/dist/leaflet-geoman.min.js"></script>
+<script src="https://unpkg.com/@turf/turf@7.2.0/turf.min.js"></script>
+<script src="demo.js"></script>
+</body>
+</html>
