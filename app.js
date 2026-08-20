@@ -2,176 +2,110 @@
   'use strict';
 
   const $ = id => document.getElementById(id);
-  const STORE = 'terrainEnvironmentalGIS.v2';
-  const state = { base: null, selected: null, agency: {}, terrainAbort: null };
-  const EMPTY = { type: 'FeatureCollection', features: [] };
+  const STORE = 'terrainEnvironmentalGIS.market.v1';
+  const state = { base:null, selected:null, agency:{}, terrainAbort:null, lastAnalysis:null, readOnly:false };
 
   const basemaps = {
-    osm: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png', 19, '&copy; OpenStreetMap contributors'],
-    usgsTopo: ['https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}', 16, 'USGS The National Map'],
-    usgsImagery: ['https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}', 16, 'USGS The National Map'],
-    usgsImageryTopo: ['https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}', 16, 'USGS The National Map'],
-    usgsRelief: ['https://basemap.nationalmap.gov/arcgis/rest/services/USGSShadedReliefOnly/MapServer/tile/{z}/{y}/{x}', 16, 'USGS The National Map']
+    osm:['https://tile.openstreetmap.org/{z}/{x}/{y}.png',19,'&copy; OpenStreetMap contributors'],
+    usgsTopo:['https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}',16,'USGS The National Map'],
+    usgsImagery:['https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}',16,'USGS The National Map'],
+    usgsImageryTopo:['https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}',16,'USGS The National Map'],
+    usgsRelief:['https://basemap.nationalmap.gov/arcgis/rest/services/USGSShadedReliefOnly/MapServer/tile/{z}/{y}/{x}',16,'USGS The National Map']
+  };
+  const presets={placer:[[39.09,-120.79],9,'Placer County, CA'],plymouth:[[38.4819,-120.8488],12,'Plymouth / Amador County, CA']};
+  const services={
+    fire:{provider:'CAL FIRE FRAP',dataset:'California Historical Fire Perimeters',version:'Firep25_1 / 2026 publication',url:'https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/ArcGIS/rest/services/California_Historic_Fire_Perimeters/FeatureServer/0',minZoom:7,style:{color:'#ef4444',weight:1.4,fillColor:'#ef4444',fillOpacity:.11}},
+    fhz:{provider:'CAL FIRE / OSFM',dataset:'Fire Hazard Severity Zones',version:'SRA adopted 2024 + LRA recommendations 2025',url:'https://services8.arcgis.com/Xr1lDrwMv89PhjD9/ArcGIS/rest/services/FHSZALL_v25_1_vcp/FeatureServer/0',minZoom:8,style:{color:'#f59e0b',weight:1.3,fillColor:'#f59e0b',fillOpacity:.14}},
+    sra:{provider:'CAL FIRE FRAP',dataset:'State Responsibility Area',version:'SRA26_1',url:'https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/ArcGIS/rest/services/State_Responsibility_Area/FeatureServer/0',minZoom:7,style:{color:'#a855f7',weight:1.3,fillColor:'#a855f7',fillOpacity:.09}},
+    watershed:{provider:'USGS The National Map',dataset:'Watershed Boundary Dataset — HUC10',version:'Live public service',url:'https://hydro.nationalmap.gov/arcgis/rest/services/wbd/MapServer/5',minZoom:7,style:{color:'#22d3ee',weight:1.4,fillColor:'#22d3ee',fillOpacity:.04}}
   };
 
-  const presets = {
-    placer: [[39.09, -120.79], 9, 'Placer County, CA'],
-    plymouth: [[38.4819, -120.8488], 12, 'Plymouth / Amador County, CA']
-  };
-
-  const services = {
-    fire: {
-      url: 'https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/ArcGIS/rest/services/California_Historic_Fire_Perimeters/FeatureServer/0',
-      label: 'CAL FIRE historical perimeters · Firep25_1 (Apr 2026)', minZoom: 7,
-      style: { color:'#ef4444', weight:1.3, fillColor:'#ef4444', fillOpacity:.12 }
-    },
-    fhz: {
-      url: 'https://services8.arcgis.com/Xr1lDrwMv89PhjD9/ArcGIS/rest/services/FHSZALL_v25_1_vcp/FeatureServer/0',
-      label: 'CAL FIRE / OSFM FHSZ · SRA 2024 + LRA 2025', minZoom: 8,
-      style: { color:'#f59e0b', weight:1.2, fillColor:'#f59e0b', fillOpacity:.18 }
-    },
-    sra: {
-      url: 'https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/ArcGIS/rest/services/State_Responsibility_Area/FeatureServer/0',
-      label: 'CAL FIRE responsibility areas · SRA26_1', minZoom: 7,
-      style: { color:'#a855f7', weight:1.2, fillColor:'#a855f7', fillOpacity:.10 }
-    },
-    watershed: {
-      url: 'https://hydro.nationalmap.gov/arcgis/rest/services/wbd/MapServer/5',
-      label: 'USGS 10-digit watersheds · HUC10', minZoom: 7,
-      style: { color:'#22d3ee', weight:1.4, fillColor:'#22d3ee', fillOpacity:.04 }
-    }
-  };
-
-  const map = L.map('map', { zoomControl:true, preferCanvas:true }).setView([38.75,-121],8);
-  const project = L.featureGroup().addTo(map);
+  const map=L.map('map',{zoomControl:true,preferCanvas:true}).setView([38.75,-121],8);
+  const project=L.featureGroup().addTo(map);
   setBasemap('usgsImageryTopo');
+  map.pm.addControls({position:'topleft',drawMarker:true,drawCircleMarker:false,drawPolyline:true,drawRectangle:true,drawPolygon:true,drawCircle:false,editMode:true,dragMode:false,cutPolygon:false,removalMode:true,rotateMode:false});
 
-  map.pm.addControls({ position:'topleft', drawMarker:true, drawCircleMarker:false, drawPolyline:true, drawRectangle:true, drawPolygon:true, drawCircle:false, editMode:true, dragMode:false, cutPolygon:false, removalMode:true, rotateMode:false });
-
-  function status(msg, ms=3500) {
-    $('statusBadge').textContent = msg;
-    if (ms) setTimeout(() => { if ($('statusBadge').textContent === msg) $('statusBadge').textContent='Ready'; }, ms);
-  }
-
-  function setBasemap(key) {
-    if (state.base) map.removeLayer(state.base);
-    const b = basemaps[key] || basemaps.osm;
-    state.base = L.tileLayer(b[0], { maxZoom:b[1], attribution:b[2] }).addTo(map);
-    state.base.bringToBack();
-  }
-
-  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const xml = v => String(v ?? '').replace(/[<>&'"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;'}[c]));
-
-  function normalized(f) {
-    f.properties ||= {};
-    f.properties.name ||= f.properties.Name || f.properties.NAME || f.properties.title || 'Untitled feature';
-    f.properties.description ||= f.properties.Description || f.properties.DESCRIPTION || f.properties.desc || '';
-    return f;
-  }
-
-  function drawStyle(f) {
-    const t=f?.geometry?.type || '';
-    if (t.includes('Polygon')) return {color:'#f97316',weight:2,fillColor:'#fb923c',fillOpacity:.18};
-    if (t.includes('Line')) return {color:'#38bdf8',weight:4,opacity:.9};
-    return {color:'#22c55e',weight:2};
-  }
-
-  const pointStyle = (_f,ll) => L.circleMarker(ll,{radius:7,color:'#052e16',weight:2,fillColor:'#22c55e',fillOpacity:.95});
-
-  function syncLayer(layer) {
-    const gj=layer.toGeoJSON();
-    gj.properties=Object.assign({},layer.feature?.properties||{},gj.properties||{});
-    layer.feature=gj;
-  }
-
-  function bindProjectLayer(layer) {
-    layer.on('click', e => { if (map.pm.globalDrawModeEnabled?.()) return; L.DomEvent.stopPropagation(e); selectFeature(layer); });
-    layer.on('pm:edit', () => { syncLayer(layer); updateSummary(); save(); });
-  }
-
-  function addGeoJSON(gj, source='Imported') {
-    const fc=gj?.type==='FeatureCollection'?gj:gj?.type==='Feature'?{type:'FeatureCollection',features:[gj]}:null;
-    if (!fc) throw new Error('No supported GeoJSON features found.');
-    fc.features.forEach(normalized);
-    L.geoJSON(fc,{style:drawStyle,pointToLayer:pointStyle,onEachFeature:(f,l)=>{l.feature=f;l._sourceName=source;bindProjectLayer(l);}}).eachLayer(l=>project.addLayer(l));
-    if(project.getLayers().length) map.fitBounds(project.getBounds(),{padding:[24,24],maxZoom:16});
-    updateSummary(); save(); status(`Added ${fc.features.length} feature${fc.features.length===1?'':'s'} from ${source}`);
-  }
-
-  function collect() {
-    const features=[];
-    project.eachLayer(l=>{if(!l.toGeoJSON)return;syncLayer(l);const f=l.feature||l.toGeoJSON();f.type==='FeatureCollection'?features.push(...f.features):features.push(f);});
-    return {type:'FeatureCollection',features};
-  }
-
-  function metrics(f) {
-    const t=f?.geometry?.type||'';
-    try {
-      if(t.includes('Polygon')){const m2=turf.area(f);return `${(m2/4046.8564224).toFixed(2)} acres · ${(m2/1e6).toFixed(3)} km²`;}
-      if(t.includes('Line')){const km=turf.length(f,{units:'kilometers'});return `${(km*.621371).toFixed(2)} miles · ${km.toFixed(2)} km`;}
-      if(t==='Point'){const [x,y]=f.geometry.coordinates;return `${y.toFixed(6)}, ${x.toFixed(6)}`;}
-    } catch(_){}
-    return t;
-  }
-
-  function selectFeature(l) {
-    state.selected=l;syncLayer(l);$('featureEmpty').classList.add('hidden');$('featureEditor').classList.remove('hidden');
-    $('featureName').value=l.feature.properties?.name||'';$('featureDescription').value=l.feature.properties?.description||'';$('featureMetrics').textContent=metrics(l.feature);
-  }
-  function clearSelected(){state.selected=null;$('featureEmpty').classList.remove('hidden');$('featureEditor').classList.add('hidden');}
-
-  function updateSummary(){const fc=collect();let acres=0,miles=0,points=0;fc.features.forEach(f=>{const t=f.geometry?.type||'';try{if(t.includes('Polygon'))acres+=turf.area(f)/4046.8564224;else if(t.includes('Line'))miles+=turf.length(f,{units:'miles'});else if(t.includes('Point'))points++;}catch(_){}});$('summary').innerHTML=[['Features',fc.features.length],['Mapped acres',acres.toFixed(1)],['Line miles',miles.toFixed(2)],['Points',points]].map(([a,b])=>`<div class="summary-item"><b>${b}</b><span>${a}</span></div>`).join('');}
-
-  function save(){try{localStorage.setItem(STORE,JSON.stringify({name:$('projectName').value,geojson:collect(),center:map.getCenter(),zoom:map.getZoom(),basemap:$('basemapSelect').value}));}catch(e){console.warn(e);}}
-  function restore(){try{const raw=localStorage.getItem(STORE);if(!raw)return;const s=JSON.parse(raw);$('projectName').value=s.name||'Untitled Project';if(s.basemap&&basemaps[s.basemap]){$('basemapSelect').value=s.basemap;setBasemap(s.basemap);}if(s.geojson?.features?.length)addGeoJSON(s.geojson,'Autosaved project');if(s.center&&s.zoom)map.setView([s.center.lat,s.center.lng],s.zoom);status('Restored autosaved project');}catch(e){console.warn(e);}}
-
-  async function parseFile(file){
-    const ext=file.name.split('.').pop().toLowerCase();
-    if(['geojson','json'].includes(ext))return JSON.parse(await file.text());
-    if(ext==='kml')return toGeoJSON.kml(new DOMParser().parseFromString(await file.text(),'text/xml'));
-    if(ext==='gpx')return toGeoJSON.gpx(new DOMParser().parseFromString(await file.text(),'text/xml'));
-    if(ext==='kmz'){const z=await JSZip.loadAsync(await file.arrayBuffer());const n=Object.keys(z.files).find(x=>x.toLowerCase().endsWith('.kml'));if(!n)throw new Error('KMZ contains no KML.');return toGeoJSON.kml(new DOMParser().parseFromString(await z.file(n).async('text'),'text/xml'));}
-    if(ext==='zip'){const p=await shp(await file.arrayBuffer());return Array.isArray(p)?{type:'FeatureCollection',features:p.flatMap(x=>x.features||[])}:p;}
-    if(ext==='csv'){const r=Papa.parse(await file.text(),{header:true,dynamicTyping:true,skipEmptyLines:true});const fs=[];for(const row of r.data){const ks=Object.keys(row),la=ks.find(k=>/^(lat|latitude|y)$/i.test(k)),lo=ks.find(k=>/^(lon|lng|long|longitude|x)$/i.test(k));if(la&&lo&&Number.isFinite(Number(row[la]))&&Number.isFinite(Number(row[lo])))fs.push({type:'Feature',geometry:{type:'Point',coordinates:[Number(row[lo]),Number(row[la])]},properties:row});}if(!fs.length)throw new Error('CSV needs latitude/longitude columns.');return {type:'FeatureCollection',features:fs};}
-    throw new Error(`Unsupported file type: .${ext}`);
-  }
-
+  function status(msg,ms=4000){$('statusBadge').textContent=msg;if(ms)setTimeout(()=>{if($('statusBadge').textContent===msg)$('statusBadge').textContent='Ready';},ms)}
+  function toast(msg){const el=$('toast');el.textContent=msg;el.classList.remove('hidden');setTimeout(()=>el.classList.add('hidden'),3000)}
+  function setBasemap(key){if(state.base)map.removeLayer(state.base);const b=basemaps[key]||basemaps.usgsImageryTopo;state.base=L.tileLayer(b[0],{maxZoom:b[1],attribution:b[2]}).addTo(map);state.base.bringToBack()}
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const xml=v=>String(v??'').replace(/[<>&'\"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;'}[c]));
   const safeName=()=>($('projectName').value||'terrain-project').trim().replace(/[^a-z0-9-_]+/gi,'-').replace(/^-|-$/g,'')||'terrain-project';
-  function download(name,text,type='application/octet-stream'){const u=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);}
-  function toGPX(fc){const w=[],t=[];fc.features.forEach((f,i)=>{const g=f.geometry,n=xml(f.properties?.name||`Feature ${i+1}`),d=xml(f.properties?.description||'');if(!g)return;if(g.type==='Point')w.push(`<wpt lat="${g.coordinates[1]}" lon="${g.coordinates[0]}"><name>${n}</name><desc>${d}</desc></wpt>`);if(g.type==='LineString')t.push(`<trk><name>${n}</name><trkseg>${g.coordinates.map(c=>`<trkpt lat="${c[1]}" lon="${c[0]}"></trkpt>`).join('')}</trkseg></trk>`);});return `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="Terrain Environmental GIS" xmlns="http://www.topografix.com/GPX/1/1">${w.join('')}${t.join('')}</gpx>`;}
 
-  async function searchLocation(){const q=$('searchInput').value.trim();if(!q)return;status('Searching…',0);try{const r=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(q)}`,{headers:{Accept:'application/json'}});if(!r.ok)throw Error('Search unavailable');const d=await r.json();if(!d.length)throw Error('No matching place found');map.setView([+d[0].lat,+d[0].lon],13);status(d[0].display_name,5000);}catch(e){status(e.message||'Search failed',5000);}}
+  function normalized(f){f.properties ||= {};f.properties.name ||= f.properties.Name||f.properties.NAME||f.properties.title||'Untitled feature';f.properties.description ||= f.properties.Description||f.properties.DESCRIPTION||f.properties.desc||'';return f}
+  function drawStyle(f){const t=f?.geometry?.type||'';if(t.includes('Polygon'))return{color:'#fb923c',weight:2.5,fillColor:'#fb923c',fillOpacity:.17};if(t.includes('Line'))return{color:'#38bdf8',weight:4,opacity:.9};return{color:'#22c55e',weight:2}}
+  const pointStyle=(_f,ll)=>L.circleMarker(ll,{radius:7,color:'#052e16',weight:2,fillColor:'#22c55e',fillOpacity:.96});
+  function syncLayer(l){const gj=l.toGeoJSON();gj.properties=Object.assign({},l.feature?.properties||{},gj.properties||{});l.feature=gj}
+  function bindLayer(l){l.on('click',e=>{if(map.pm.globalDrawModeEnabled?.())return;L.DomEvent.stopPropagation(e);selectFeature(l)});l.on('pm:edit',()=>{syncLayer(l);invalidateAnalysis();updateSummary();save()})}
+  function addGeoJSON(gj,source='Imported'){const fc=gj?.type==='FeatureCollection'?gj:gj?.type==='Feature'?{type:'FeatureCollection',features:[gj]}:null;if(!fc)throw Error('No supported GeoJSON features found.');fc.features.forEach(normalized);L.geoJSON(fc,{style:drawStyle,pointToLayer:pointStyle,onEachFeature:(f,l)=>{l.feature=f;l._sourceName=source;bindLayer(l)}}).eachLayer(l=>project.addLayer(l));if(project.getLayers().length)map.fitBounds(project.getBounds(),{padding:[24,24],maxZoom:16});invalidateAnalysis();updateSummary();save();status(`Added ${fc.features.length} feature${fc.features.length===1?'':'s'} from ${source}`)}
+  function collect(){const features=[];project.eachLayer(l=>{if(!l.toGeoJSON)return;syncLayer(l);const f=l.feature||l.toGeoJSON();f.type==='FeatureCollection'?features.push(...f.features):features.push(f)});return{type:'FeatureCollection',features}}
+  function analysisPolygon(){const polys=collect().features.filter(f=>/Polygon/.test(f.geometry?.type||''));if(!polys.length)return null;return polys.sort((a,b)=>turf.area(b)-turf.area(a))[0]}
+  function metrics(f){const t=f?.geometry?.type||'';try{if(t.includes('Polygon')){const m2=turf.area(f);return`${(m2/4046.8564224).toFixed(2)} acres · ${(m2/1e6).toFixed(3)} km²`}if(t.includes('Line')){const km=turf.length(f,{units:'kilometers'});return`${(km*.621371).toFixed(2)} miles · ${km.toFixed(2)} km`}if(t==='Point'){const[x,y]=f.geometry.coordinates;return`${y.toFixed(6)}, ${x.toFixed(6)}`}}catch(_){}return t}
+  function selectFeature(l){state.selected=l;syncLayer(l);switchTab('feature');$('featureEmpty').classList.add('hidden');$('featureEditor').classList.remove('hidden');$('featureName').value=l.feature.properties?.name||'';$('featureDescription').value=l.feature.properties?.description||'';$('featureMetrics').textContent=metrics(l.feature);if(innerWidth<=720)$('rightPanel').classList.add('open')}
+  function clearSelected(){state.selected=null;$('featureEmpty').classList.remove('hidden');$('featureEditor').classList.add('hidden')}
 
-  async function elevation(lat,lng,signal){const u=`https://epqs.nationalmap.gov/v1/json?x=${encodeURIComponent(lng)}&y=${encodeURIComponent(lat)}&units=Meters&wkid=4326&includeDate=false`;const r=await fetch(u,{signal});if(!r.ok)throw Error('USGS elevation unavailable');const d=await r.json();const v=Number(d.value??d.USGS_Elevation_Point_Query_Service?.Elevation_Query?.Elevation);if(!Number.isFinite(v))throw Error('No elevation value');return v;}
+  function updateSummary(){const fc=collect();let acres=0,miles=0,points=0;fc.features.forEach(f=>{const t=f.geometry?.type||'';try{if(t.includes('Polygon'))acres+=turf.area(f)/4046.8564224;else if(t.includes('Line'))miles+=turf.length(f,{units:'miles'});else if(t.includes('Point'))points++}catch(_){}});$('summary').innerHTML=[['Features',fc.features.length],['Mapped acres',acres.toFixed(1)],['Line miles',miles.toFixed(2)],['Points',points]].map(([a,b])=>`<div class="summary-item"><b>${b}</b><span>${a}</span></div>`).join('');const aoi=analysisPolygon();$('aoiCard').classList.toggle('ready',!!aoi);$('aoiCard').innerHTML=aoi?`<b>Analysis area ready</b><span>${(turf.area(aoi)/4046.8564224).toFixed(1)} acres · largest mapped polygon</span>`:'<b>No analysis area yet</b><span>Import or draw at least one polygon.</span>';}
+  function invalidateAnalysis(){state.lastAnalysis=null;$('analysisState').className='status-pill neutral';$('analysisState').textContent='Needs analysis';$('reportBtn').disabled=true;$('analysisResults').innerHTML='<div class="empty-state">Project geometry changed. Run <strong>Analyze project area</strong> to refresh the screening.</div>'}
+  function save(){if(state.readOnly)return;try{localStorage.setItem(STORE,JSON.stringify({name:$('projectName').value,geojson:collect(),center:map.getCenter(),zoom:map.getZoom(),basemap:$('basemapSelect').value,analysis:state.lastAnalysis}))}catch(e){console.warn(e)}}
+  function restore(){try{const raw=localStorage.getItem(STORE);if(!raw)return;const s=JSON.parse(raw);$('projectName').value=s.name||'Untitled Project';if(s.basemap&&basemaps[s.basemap]){$('basemapSelect').value=s.basemap;setBasemap(s.basemap)}if(s.geojson?.features?.length)addGeoJSON(s.geojson,'Autosaved project');if(s.center&&s.zoom)map.setView([s.center.lat,s.center.lng],s.zoom);if(s.analysis){state.lastAnalysis=s.analysis;renderAnalysis(s.analysis)}status('Restored local project')}catch(e){console.warn(e)}}
+
+  async function parseFile(file){const ext=file.name.split('.').pop().toLowerCase();if(['geojson','json'].includes(ext))return JSON.parse(await file.text());if(ext==='kml')return toGeoJSON.kml(new DOMParser().parseFromString(await file.text(),'text/xml'));if(ext==='gpx')return toGeoJSON.gpx(new DOMParser().parseFromString(await file.text(),'text/xml'));if(ext==='kmz'){const z=await JSZip.loadAsync(await file.arrayBuffer());const n=Object.keys(z.files).find(x=>x.toLowerCase().endsWith('.kml'));if(!n)throw Error('KMZ contains no KML.');return toGeoJSON.kml(new DOMParser().parseFromString(await z.file(n).async('text'),'text/xml'))}if(ext==='zip'){const p=await shp(await file.arrayBuffer());return Array.isArray(p)?{type:'FeatureCollection',features:p.flatMap(x=>x.features||[])}:p}if(ext==='csv'){const r=Papa.parse(await file.text(),{header:true,dynamicTyping:true,skipEmptyLines:true});const fs=[];for(const row of r.data){const ks=Object.keys(row),la=ks.find(k=>/^(lat|latitude|y)$/i.test(k)),lo=ks.find(k=>/^(lon|lng|long|longitude|x)$/i.test(k));if(la&&lo&&Number.isFinite(Number(row[la]))&&Number.isFinite(Number(row[lo])))fs.push({type:'Feature',geometry:{type:'Point',coordinates:[Number(row[lo]),Number(row[la])]},properties:row})}if(!fs.length)throw Error('CSV needs latitude/longitude columns.');return{type:'FeatureCollection',features:fs}}throw Error(`Unsupported file type: .${ext}`)}
+
+  function download(name,text,type='application/octet-stream'){const u=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
+  function toGPX(fc){const w=[],t=[];fc.features.forEach((f,i)=>{const g=f.geometry,n=xml(f.properties?.name||`Feature ${i+1}`),d=xml(f.properties?.description||'');if(!g)return;if(g.type==='Point')w.push(`<wpt lat="${g.coordinates[1]}" lon="${g.coordinates[0]}"><name>${n}</name><desc>${d}</desc></wpt>`);if(g.type==='LineString')t.push(`<trk><name>${n}</name><trkseg>${g.coordinates.map(c=>`<trkpt lat="${c[1]}" lon="${c[0]}"></trkpt>`).join('')}</trkseg></trk>`) });return`<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="Terrain Environmental GIS" xmlns="http://www.topografix.com/GPX/1/1">${w.join('')}${t.join('')}</gpx>`}
+
+  async function searchLocation(){const q=$('searchInput').value.trim();if(!q)return;status('Searching…',0);try{const r=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(q)}`,{headers:{Accept:'application/json'}});if(!r.ok)throw Error('Search unavailable');const d=await r.json();if(!d.length)throw Error('No matching place found');map.setView([+d[0].lat,+d[0].lon],13);status(d[0].display_name,5000)}catch(e){status(e.message||'Search failed',5000)}}
+  async function elevation(lat,lng,signal){const u=`https://epqs.nationalmap.gov/v1/json?x=${encodeURIComponent(lng)}&y=${encodeURIComponent(lat)}&units=Meters&wkid=4326&includeDate=false`;const r=await fetch(u,{signal});if(!r.ok)throw Error('USGS elevation unavailable');const d=await r.json();const v=Number(d.value??d.USGS_Elevation_Point_Query_Service?.Elevation_Query?.Elevation);if(!Number.isFinite(v))throw Error('No elevation value');return v}
   const aspectName=a=>['N','NE','E','SE','S','SW','W','NW'][Math.round(a/45)%8];
-  async function terrainAt(ll){if(state.terrainAbort)state.terrainAbort.abort();state.terrainAbort=new AbortController();const card=$('elevationCard');card.classList.remove('hidden');card.textContent='USGS terrain: loading…';try{const m=30,dLat=m/111320,dLng=m/(111320*Math.max(.2,Math.cos(ll.lat*Math.PI/180))),s=state.terrainAbort.signal;const [c,n,so,e,w]=await Promise.all([elevation(ll.lat,ll.lng,s),elevation(ll.lat+dLat,ll.lng,s),elevation(ll.lat-dLat,ll.lng,s),elevation(ll.lat,ll.lng+dLng,s),elevation(ll.lat,ll.lng-dLng,s)]);const dx=(e-w)/(2*m),dy=(n-so)/(2*m),slope=Math.atan(Math.hypot(dx,dy))*180/Math.PI,aspect=(Math.atan2(-dx,-dy)*180/Math.PI+360)%360;card.innerHTML=`<strong>Terrain screening</strong><br>Elevation: ${(c*3.28084).toFixed(0)} ft · ${c.toFixed(0)} m<br>Slope: ${slope.toFixed(1)}° · ${(Math.tan(slope*Math.PI/180)*100).toFixed(0)}%<br>Aspect: ${aspectName(aspect)} · ${aspect.toFixed(0)}°<br><span style="color:#9ca3af">USGS sample · ~30 m neighborhood</span>`;}catch(e){if(e.name!=='AbortError')card.textContent='USGS terrain analysis unavailable at this point.';}}
+  async function terrainSample(lat,lng,signal){const m=30,dLat=m/111320,dLng=m/(111320*Math.max(.2,Math.cos(lat*Math.PI/180)));const[c,n,s,e,w]=await Promise.all([elevation(lat,lng,signal),elevation(lat+dLat,lng,signal),elevation(lat-dLat,lng,signal),elevation(lat,lng+dLng,signal),elevation(lat,lng-dLng,signal)]);const dx=(e-w)/(2*m),dy=(n-s)/(2*m),slope=Math.atan(Math.hypot(dx,dy))*180/Math.PI,aspect=(Math.atan2(-dx,-dy)*180/Math.PI+360)%360;return{lat,lng,elevationM:c,elevationFt:c*3.28084,slopeDeg:slope,slopePct:Math.tan(slope*Math.PI/180)*100,aspectDeg:aspect,aspect:aspectName(aspect)}}
+  async function terrainAt(ll){if(state.terrainAbort)state.terrainAbort.abort();state.terrainAbort=new AbortController();const card=$('elevationCard');card.classList.remove('hidden');card.textContent='USGS terrain: loading…';try{const t=await terrainSample(ll.lat,ll.lng,state.terrainAbort.signal);card.innerHTML=`<strong>Terrain screening</strong><br>${t.elevationFt.toFixed(0)} ft elevation<br>${t.slopeDeg.toFixed(1)}° · ${t.slopePct.toFixed(0)}% slope<br>${t.aspect} · ${t.aspectDeg.toFixed(0)}° aspect<br><span style="color:#94a3b8">USGS point sample · ~30 m neighborhood</span>`}catch(e){if(e.name!=='AbortError')card.textContent='USGS terrain analysis unavailable at this point.'}}
 
-  function agencyGroup(cfg){const g=L.layerGroup().addTo(map);g._cfg=cfg;return g;}
-  async function refreshAgency(g){const c=g._cfg;g.clearLayers();if(map.getZoom()<c.minZoom){status(`${c.label}: zoom in to load`,3500);return;}const b=map.getBounds(),geom=`${b.getWest()},${b.getSouth()},${b.getEast()},${b.getNorth()}`,u=`${c.url}/query?where=1%3D1&geometry=${encodeURIComponent(geom)}&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=*&returnGeometry=true&outSR=4326&f=geojson&resultRecordCount=2000`;try{const r=await fetch(u);if(!r.ok)throw Error();const gj=await r.json();if(gj.error)throw Error(gj.error.message);L.geoJSON(gj,{style:c.style,pointToLayer:pointStyle,onEachFeature:(f,l)=>{const p=f.properties||{},keys=['FIRE_NAME','YEAR_','GIS_ACRES','FHSZ_Description','FHSZ_Descr','FHSZ','SRA','NAME','name','HUC10','huc10','areaacres'];const rows=keys.filter(k=>p[k]!==undefined&&p[k]!==null&&p[k]!=='').slice(0,6).map(k=>`<div><strong>${esc(k.replaceAll('_',' '))}:</strong> ${esc(p[k])}</div>`).join('');if(rows)l.bindPopup(`<div class="agency-popup"><strong>${esc(c.label)}</strong>${rows}</div>`);}}).addTo(g);status(`${c.label}: ${gj.features?.length||0} visible features`);}catch(_){status(`${c.label} could not load from its public GIS service`,5500);}}
-  async function toggleAgency(key,on){if(!on){if(state.agency[key])map.removeLayer(state.agency[key]);delete state.agency[key];return;}const g=agencyGroup(services[key]);state.agency[key]=g;await refreshAgency(g);}
+  function samplePoints(poly){const b=turf.bbox(poly),c=turf.centroid(poly).geometry.coordinates;const candidates=[c,[(b[0]+c[0])/2,c[1]],[(b[2]+c[0])/2,c[1]],[c[0],(b[1]+c[1])/2],[c[0],(b[3]+c[1])/2]];return candidates.filter(pt=>{try{return turf.booleanPointInPolygon(turf.point(pt),poly)}catch(_){return false}})}
+  function envelope(poly){const b=turf.bbox(poly);return`${b[0]},${b[1]},${b[2]},${b[3]}`}
+  async function queryService(key,poly){const cfg=services[key];const u=`${cfg.url}/query?where=1%3D1&geometry=${encodeURIComponent(envelope(poly))}&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=*&returnGeometry=true&outSR=4326&f=geojson&resultRecordCount=2000`;const r=await fetch(u);if(!r.ok)throw Error(`${cfg.provider} service unavailable`);const gj=await r.json();if(gj.error)throw Error(gj.error.message||'Service error');const features=(gj.features||[]).filter(f=>{try{return turf.booleanIntersects(poly,f)}catch(_){return true}});return{key,features,retrievedAt:new Date().toISOString()}}
+  const firstProp=(p,keys)=>{for(const k of keys)if(p?.[k]!==undefined&&p?.[k]!==null&&String(p[k]).trim()!=='')return p[k];return null};
+  const uniq=v=>[...new Set(v.filter(x=>x!==null&&x!==undefined&&String(x).trim()!=='').map(String))];
+  function summarizeService(key,res){if(res.error)return`Unavailable: ${res.error}`;const f=res.features||[];if(key==='fire'){const names=uniq(f.map(x=>{const p=x.properties||{},n=firstProp(p,['FIRE_NAME','FIRENAME','INCIDENT','NAME','name'])||'Unnamed perimeter',y=firstProp(p,['YEAR_','FIRE_YEAR','YEAR','year']);return y?`${n} (${y})`:n}));return f.length?`${f.length} historical perimeter${f.length===1?'':'s'} intersect the AOI${names.length?`: ${names.slice(0,4).join(', ')}`:''}`:'No historical fire perimeter intersection returned'}if(key==='fhz'){const vals=uniq(f.map(x=>firstProp(x.properties||{},['FHSZ_Description','FHSZ_Descr','FHSZ','HAZ_CLASS','HAZARD','CLASS','ZONE'])));return f.length?`${f.length} hazard-zone feature${f.length===1?'':'s'} intersect the AOI${vals.length?`: ${vals.slice(0,5).join(', ')}`:''}`:'No fire-hazard zone intersection returned'}if(key==='sra')return f.length?`Yes — ${f.length} State Responsibility Area feature${f.length===1?'':'s'} intersect the AOI`:'No State Responsibility Area intersection returned';if(key==='watershed'){const vals=uniq(f.map(x=>{const p=x.properties||{},n=firstProp(p,['NAME','Name','name','GNIS_NAME']),h=firstProp(p,['HUC10','huc10','HUC_10']);return[n,h].filter(Boolean).join(' · ')}));return f.length?`${f.length} HUC10 watershed${f.length===1?'':'s'} intersect the AOI${vals.length?`: ${vals.slice(0,4).join(', ')}`:''}`:'No HUC10 watershed intersection returned'}return`${f.length} intersecting features`}
+  function terrainSummary(samples){if(!samples.length)return{error:'Terrain samples unavailable'};const elevations=samples.map(x=>x.elevationFt),slopes=samples.map(x=>x.slopeDeg),steep=samples.filter(x=>x.slopePct>=30).length,aspects=uniq(samples.map(x=>x.aspect));return{sampleCount:samples.length,elevationMinFt:Math.min(...elevations),elevationMaxFt:Math.max(...elevations),elevationAvgFt:elevations.reduce((a,b)=>a+b,0)/elevations.length,slopeAvgDeg:slopes.reduce((a,b)=>a+b,0)/slopes.length,slopeMaxDeg:Math.max(...slopes),samplesOver30Pct:steep,aspects}}
+  function priorityStatement(a){const flags=[];if((a.terrain?.samplesOver30Pct||0)>0)flags.push('steep terrain appears in the representative samples');if((a.services?.fhz?.features?.length||0)>0)flags.push('fire-hazard zones intersect the AOI');if((a.services?.fire?.features?.length||0)>0)flags.push('historical fire perimeters intersect the AOI');if((a.services?.sra?.features?.length||0)>0)flags.push('the project intersects State Responsibility Area');return flags.length?`Initial screening flags ${flags.join('; ')}. Review these layers together before prioritizing treatment, access, grant scope or field verification.`:'No major wildfire-screening flag was returned by the currently connected public layers. Field verification and local agency review may still be appropriate.'}
 
-  map.on('pm:create',e=>{const l=e.layer;project.addLayer(l);l.feature=l.toGeoJSON();l.feature.properties={name:'New feature',description:'',source:'Drawn in Terrain Environmental GIS'};bindProjectLayer(l);selectFeature(l);updateSummary();save();});
-  map.on('pm:remove',()=>{clearSelected();updateSummary();save();});
-  map.on('moveend',()=>{Object.values(state.agency).forEach(refreshAgency);save();});
-  map.on('click',e=>{if(!map.pm.globalDrawModeEnabled?.()){clearSelected();terrainAt(e.latlng);}});
+  async function analyzeProject(){const poly=analysisPolygon();if(!poly){status('Draw or import a polygon before analysis.',5000);toast('A project polygon is required');return}const btn=$('analyzeProjectBtn');btn.disabled=true;$('analysisProgress').classList.remove('hidden');$('analysisProgress').textContent='Calculating geometry and sampling terrain…';$('analysisState').className='status-pill neutral';$('analysisState').textContent='Running';switchTab('findings');if(innerWidth<=720)$('rightPanel').classList.add('open');const acres=turf.area(poly)/4046.8564224,perimeterMiles=turf.length(turf.polygonToLine(poly),{units:'miles'});let terrain={error:'Terrain not available'},samples=[];try{const pts=samplePoints(poly);const controller=new AbortController();samples=await Promise.all(pts.map(p=>terrainSample(p[1],p[0],controller.signal)));terrain=terrainSummary(samples)}catch(e){terrain={error:e.message||'USGS terrain unavailable'}}$('analysisProgress').textContent='Checking fire history, hazard zones, responsibility area and watersheds…';const svcEntries=await Promise.all(Object.keys(services).map(async key=>{try{return[key,await queryService(key,poly)]}catch(e){return[key,{key,features:[],error:e.message,retrievedAt:new Date().toISOString()}]}}));const svc=Object.fromEntries(svcEntries);const analysis={generatedAt:new Date().toISOString(),projectName:$('projectName').value,areaAcres:acres,perimeterMiles,terrain,terrainSamples:samples,services:svc,priority:null};analysis.priority=priorityStatement(analysis);state.lastAnalysis=analysis;renderAnalysis(analysis);save();$('analysisProgress').classList.add('hidden');btn.disabled=false;status('Project screening complete',5000)}
+  function renderAnalysis(a){if(!a)return;const t=a.terrain||{},serviceLines=Object.fromEntries(Object.keys(services).map(k=>[k,summarizeService(k,a.services?.[k]||{features:[],error:'Not queried'})]));$('analysisState').className='status-pill good';$('analysisState').textContent='Screened';$('reportBtn').disabled=false;const terrainText=t.error?`Unavailable: ${t.error}`:`${t.elevationMinFt.toFixed(0)}–${t.elevationMaxFt.toFixed(0)} ft sampled elevation · avg slope ${t.slopeAvgDeg.toFixed(1)}° · max ${t.slopeMaxDeg.toFixed(1)}° · ${t.samplesOver30Pct}/${t.sampleCount} samples ≥30% grade`;const items=[['Project area',`${a.areaAcres.toFixed(1)} acres · ${a.perimeterMiles.toFixed(2)} mi perimeter`,'Calculated in-browser from the analysis polygon.'],['Terrain screening',terrainText,'Representative USGS point samples; not a DEM/LiDAR acreage classification.'],['Historical fire',serviceLines.fire,services.fire.provider],['Fire hazard',serviceLines.fhz,services.fhz.provider],['Responsibility area',serviceLines.sra,services.sra.provider],['Watersheds',serviceLines.watershed,services.watershed.provider]];$('analysisResults').innerHTML=`<div class="finding priority"><span class="label">Planning interpretation</span><strong>${esc(a.priority)}</strong><small>Screening guidance only; validate against current agency requirements and site conditions.</small></div>`+items.map(([l,v,s])=>`<div class="finding"><span class="label">${esc(l)}</span><strong>${esc(v)}</strong><small>${esc(s)}</small></div>`).join('');renderSources(a);document.querySelectorAll('.workflow-step').forEach((el,i)=>el.classList.toggle('active',i===2))}
+  function renderSources(a=state.lastAnalysis){const cards=[{provider:'USGS The National Map',dataset:'Elevation Point Query Service',version:'Live query',url:'https://epqs.nationalmap.gov/'},...Object.values(services)];$('sourceCards').innerHTML=cards.map(s=>`<div class="source-card"><b>${esc(s.provider)}</b><span>${esc(s.dataset)} · ${esc(s.version)}</span><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url)}</a>${a?`<span>Screening generated: ${esc(new Date(a.generatedAt).toLocaleString())}</span>`:''}</div>`).join('')}
+
+  function switchTab(name){document.querySelectorAll('.result-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));['findings','feature','sources'].forEach(n=>$(`${n}Tab`).classList.toggle('hidden',n!==name))}
+  function encodePayload(obj){const bytes=new TextEncoder().encode(JSON.stringify(obj));let s='';bytes.forEach(b=>s+=String.fromCharCode(b));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+  async function shareProject(){const fc=collect();if(!fc.features.length){toast('Add project features before sharing');return}const payload={v:1,name:$('projectName').value,geojson:fc,analysis:state.lastAnalysis,basemap:$('basemapSelect').value};const url=new URL('viewer.html',location.href);url.hash=`p=${encodePayload(payload)}`;const data={title:`${$('projectName').value} — Terrain Environmental GIS`,text:'Read-only environmental project screening',url:url.toString()};try{if(navigator.share)await navigator.share(data);else{await navigator.clipboard.writeText(url.toString());toast('Read-only project link copied')}}catch(e){if(e.name!=='AbortError'){prompt('Copy this read-only project link:',url.toString())}}}
+  function reportHtml(a){const svc=Object.fromEntries(Object.keys(services).map(k=>[k,summarizeService(k,a.services?.[k]||{features:[],error:'Not queried'})]));const t=a.terrain||{};const terrain=t.error?`Unavailable: ${t.error}`:`Elevation ${t.elevationMinFt.toFixed(0)}–${t.elevationMaxFt.toFixed(0)} ft; average slope ${t.slopeAvgDeg.toFixed(1)}°; maximum sampled slope ${t.slopeMaxDeg.toFixed(1)}°; ${t.samplesOver30Pct}/${t.sampleCount} representative samples at or above 30% grade.`;return`<!doctype html><html><head><meta charset="utf-8"><title>${esc(a.projectName)} — Screening Report</title><style>body{font-family:Arial,sans-serif;color:#172033;margin:0}.cover{padding:55px 60px;background:#07111f;color:#fff}.cover h1{font-size:32px;margin:0 0 8px}.cover p{color:#cbd5e1}.body{padding:36px 60px;max-width:900px;margin:auto}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.card{border:1px solid #d7dee8;border-radius:10px;padding:15px}.card h3{font-size:12px;text-transform:uppercase;color:#0369a1;margin:0 0 7px}.card p{font-size:14px;line-height:1.5;margin:0}.priority{border-left:5px solid #16a34a;background:#f0fdf4;padding:14px;margin:20px 0}.sources{font-size:11px;color:#475569}.sources li{margin:6px 0}.disclaimer{font-size:10px;color:#64748b;border-top:1px solid #ddd;margin-top:28px;padding-top:12px}.print{position:fixed;right:20px;top:20px}@media print{.print{display:none}.cover{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body><button class="print" onclick="window.print()">Print / Save PDF</button><div class="cover"><h1>${esc(a.projectName)}</h1><p>Environmental Project Screening Report</p><p>Generated ${esc(new Date(a.generatedAt).toLocaleString())}</p></div><div class="body"><div class="grid"><div class="card"><h3>Project area</h3><p>${a.areaAcres.toFixed(2)} acres<br>${a.perimeterMiles.toFixed(2)} mile perimeter</p></div><div class="card"><h3>Terrain screening</h3><p>${esc(terrain)}</p></div><div class="card"><h3>Historical fire</h3><p>${esc(svc.fire)}</p></div><div class="card"><h3>Fire hazard</h3><p>${esc(svc.fhz)}</p></div><div class="card"><h3>Responsibility area</h3><p>${esc(svc.sra)}</p></div><div class="card"><h3>Watersheds</h3><p>${esc(svc.watershed)}</p></div></div><div class="priority"><strong>Planning interpretation</strong><p>${esc(a.priority)}</p></div><h2>Data provenance</h2><ul class="sources"><li>USGS The National Map — Elevation Point Query Service</li>${Object.values(services).map(s=>`<li>${esc(s.provider)} — ${esc(s.dataset)} — ${esc(s.version)}</li>`).join('')}</ul><p class="disclaimer">Screening results are planning aids only. They do not replace survey-grade measurements, official agency determinations, environmental review, engineering analysis, legal parcel research, or licensed professional judgment. Public services can change or be temporarily unavailable. Verify material decisions against the current authoritative source.</p></div></body></html>`}
+  function generateReport(){if(!state.lastAnalysis){toast('Analyze the project first');return}const w=window.open('','_blank');if(!w){toast('Allow pop-ups to generate the report');return}w.document.open();w.document.write(reportHtml(state.lastAnalysis));w.document.close()}
+
+  function agencyGroup(cfg){const g=L.layerGroup().addTo(map);g._cfg=cfg;return g}
+  async function refreshAgency(g){const c=g._cfg;g.clearLayers();if(map.getZoom()<c.minZoom)return;const b=map.getBounds(),geom=`${b.getWest()},${b.getSouth()},${b.getEast()},${b.getNorth()}`,u=`${c.url}/query?where=1%3D1&geometry=${encodeURIComponent(geom)}&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=*&returnGeometry=true&outSR=4326&f=geojson&resultRecordCount=2000`;try{const r=await fetch(u);if(!r.ok)throw Error();const gj=await r.json();if(gj.error)throw Error();L.geoJSON(gj,{style:c.style,pointToLayer:pointStyle}).addTo(g)}catch(_){status(`${c.provider} overlay temporarily unavailable`,4500)}}
+  async function toggleAgency(key,on){if(!on){if(state.agency[key])map.removeLayer(state.agency[key]);delete state.agency[key];return}const g=agencyGroup(services[key]);state.agency[key]=g;await refreshAgency(g)}
+
+  map.on('pm:create',e=>{const l=e.layer;project.addLayer(l);l.feature=l.toGeoJSON();l.feature.properties={name:'New feature',description:'',source:'Drawn in Terrain Environmental GIS'};bindLayer(l);selectFeature(l);invalidateAnalysis();updateSummary();save()});
+  map.on('pm:remove',()=>{clearSelected();invalidateAnalysis();updateSummary();save()});
+  map.on('moveend',()=>{Object.values(state.agency).forEach(refreshAgency);save()});
+  map.on('click',e=>{if(!map.pm.globalDrawModeEnabled?.()){clearSelected();terrainAt(e.latlng)}});
 
   $('importBtn').addEventListener('click',()=>$('fileInput').click());
-  $('fileInput').addEventListener('change',async e=>{for(const f of e.target.files){status(`Importing ${f.name}…`,0);try{addGeoJSON(await parseFile(f),f.name);}catch(x){status(`${f.name}: ${x.message}`,6500);}}e.target.value='';});
-  $('basemapSelect').addEventListener('change',e=>{setBasemap(e.target.value);save();});
-  document.querySelectorAll('.preset').forEach(b=>b.addEventListener('click',()=>{const p=presets[b.dataset.preset];map.setView(p[0],p[1]);status(p[2]);if(innerWidth<=720)$('leftPanel').classList.remove('open');}));
-  $('searchBtn').addEventListener('click',searchLocation);$('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')searchLocation();});
-  $('locateBtn').addEventListener('click',()=>{map.locate({setView:true,maxZoom:16,enableHighAccuracy:true});status('Locating…',0);});
-  map.on('locationfound',e=>{L.circleMarker(e.latlng,{radius:8,color:'#fff',weight:2,fillColor:'#0ea5e9',fillOpacity:1}).addTo(map).bindPopup('Current location').openPopup();status(`Located within ~${Math.round(e.accuracy)} m`);});map.on('locationerror',()=>status('Location permission denied or unavailable',5000));
-  $('projectName').addEventListener('input',save);
-  $('saveFeatureBtn').addEventListener('click',()=>{if(!state.selected)return;syncLayer(state.selected);state.selected.feature.properties.name=$('featureName').value.trim()||'Untitled feature';state.selected.feature.properties.description=$('featureDescription').value.trim();save();status('Feature saved');});
-  $('deleteFeatureBtn').addEventListener('click',()=>{if(!state.selected)return;project.removeLayer(state.selected);clearSelected();updateSummary();save();status('Feature deleted');});
+  $('fileInput').addEventListener('change',async e=>{for(const f of e.target.files){status(`Importing ${f.name}…`,0);try{addGeoJSON(await parseFile(f),f.name)}catch(x){status(`${f.name}: ${x.message}`,6500)}}e.target.value=''});
+  $('projectName').addEventListener('input',()=>{if(state.lastAnalysis)state.lastAnalysis.projectName=$('projectName').value;save()});
+  $('basemapSelect').addEventListener('change',e=>{setBasemap(e.target.value);save()});
+  document.querySelectorAll('.preset').forEach(b=>b.addEventListener('click',()=>{const p=presets[b.dataset.preset];map.setView(p[0],p[1]);status(p[2]);if(innerWidth<=720)$('leftPanel').classList.remove('open')}));
+  $('searchBtn').addEventListener('click',searchLocation);$('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')searchLocation()});
+  $('analyzeProjectBtn').addEventListener('click',analyzeProject);$('reportBtn').addEventListener('click',generateReport);$('shareBtn').addEventListener('click',shareProject);
+  $('saveFeatureBtn').addEventListener('click',()=>{if(!state.selected)return;syncLayer(state.selected);state.selected.feature.properties.name=$('featureName').value.trim()||'Untitled feature';state.selected.feature.properties.description=$('featureDescription').value.trim();invalidateAnalysis();save();status('Feature saved')});
+  $('deleteFeatureBtn').addEventListener('click',()=>{if(!state.selected)return;project.removeLayer(state.selected);clearSelected();invalidateAnalysis();updateSummary();save();status('Feature deleted')});
   [['firePerimetersToggle','fire'],['fhzToggle','fhz'],['sraToggle','sra'],['watershedToggle','watershed']].forEach(([id,k])=>$(id).addEventListener('change',e=>toggleAgency(k,e.target.checked)));
-  document.querySelectorAll('[data-export]').forEach(b=>b.addEventListener('click',()=>{const fc=collect();if(!fc.features.length)return status('Nothing to export',4000);const n=safeName(),t=b.dataset.export;if(t==='geojson')download(`${n}.geojson`,JSON.stringify(fc,null,2),'application/geo+json');if(t==='kml')download(`${n}.kml`,tokml(fc),'application/vnd.google-earth.kml+xml');if(t==='gpx')download(`${n}.gpx`,toGPX(fc),'application/gpx+xml');}));
-  $('summaryBtn').addEventListener('click',()=>{const fc=collect();let a=0,m=0,p=0,poly=0,line=0;fc.features.forEach(f=>{const t=f.geometry?.type||'';try{if(t.includes('Polygon')){poly++;a+=turf.area(f)/4046.8564224}else if(t.includes('Line')){line++;m+=turf.length(f,{units:'miles'})}else if(t.includes('Point'))p++;}catch(_){}});download(`${safeName()}-summary.txt`,`Terrain Environmental GIS Project Summary\nProject: ${$('projectName').value}\nGenerated: ${new Date().toLocaleString()}\n\nFeatures: ${fc.features.length}\nPoints: ${p}\nLines: ${line}\nPolygons: ${poly}\nTotal mapped acres: ${a.toFixed(2)}\nTotal line miles: ${m.toFixed(2)}\nBasemap: ${$('basemapSelect').selectedOptions[0].text}\nActive environmental layers: ${Object.values(state.agency).map(g=>g._cfg.label).join('; ')||'None'}\n\nProject data is processed locally in the browser. Public terrain and environmental services remain subject to their source metadata and availability.`,'text/plain');});
-  $('clearBtn').addEventListener('click',()=>{if(!confirm('Clear all mapped project features and the local autosave on this device?'))return;project.clearLayers();clearSelected();localStorage.removeItem(STORE);$('projectName').value='Untitled Project';updateSummary();status('Project cleared');});
-  $('helpBtn').addEventListener('click',()=>$('helpDialog').showModal());$('closeHelpBtn').addEventListener('click',()=>$('helpDialog').close());$('panelToggle').addEventListener('click',()=>$('leftPanel').classList.toggle('open'));
+  document.querySelectorAll('[data-export]').forEach(b=>b.addEventListener('click',()=>{const fc=collect();if(!fc.features.length)return toast('Nothing to export');const n=safeName(),t=b.dataset.export;if(t==='geojson')download(`${n}.geojson`,JSON.stringify(fc,null,2),'application/geo+json');if(t==='kml')download(`${n}.kml`,tokml(fc),'application/vnd.google-earth.kml+xml');if(t==='gpx')download(`${n}.gpx`,toGPX(fc),'application/gpx+xml')}));
+  $('clearBtn').addEventListener('click',()=>{if(!confirm('Clear all mapped project features and the local autosave on this device?'))return;project.clearLayers();clearSelected();localStorage.removeItem(STORE);$('projectName').value='Untitled Project';invalidateAnalysis();updateSummary();status('Project cleared')});
+  document.querySelectorAll('.result-tab').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+  document.querySelectorAll('.workflow-step').forEach(b=>b.addEventListener('click',()=>{const j=b.dataset.jump;if(j==='define'){if(innerWidth<=720)$('leftPanel').classList.add('open')}if(j==='analyze')$('analyzeProjectBtn').scrollIntoView({behavior:'smooth',block:'center'});if(j==='review'){switchTab('findings');if(innerWidth<=720)$('rightPanel').classList.add('open')}if(j==='report')generateReport()}));
+  $('helpBtn').addEventListener('click',()=>$('helpDialog').showModal());$('closeHelpBtn').addEventListener('click',()=>$('helpDialog').close());
+  $('panelToggle').addEventListener('click',()=>{$('leftPanel').classList.toggle('open');$('rightPanel').classList.remove('open')});$('resultsToggle').addEventListener('click',()=>{$('rightPanel').classList.toggle('open');$('leftPanel').classList.remove('open')});
   window.addEventListener('pagehide',save);
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 
-  updateSummary();restore();
+  renderSources();updateSummary();restore();
 })();
