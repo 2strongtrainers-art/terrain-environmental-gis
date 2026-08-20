@@ -3,87 +3,152 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#111827">
-  <title>Terrain Environmental GIS</title>
-  <link rel="preconnect" href="https://unpkg.com">
+  <meta name="theme-color" content="#07111f">
+  <meta name="description" content="Environmental project intelligence: define a project area, analyze authoritative public GIS data, and generate a professional screening report.">
+  <meta property="og:title" content="Terrain Environmental GIS — Project Intelligence">
+  <meta property="og:description" content="From field data to environmental screening and a professional report in one workflow.">
+  <meta property="og:type" content="website">
+  <title>Terrain Environmental GIS — Project Intelligence</title>
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.18.0/dist/leaflet-geoman.css">
   <link rel="stylesheet" href="styles.css">
-  <style>
-    .layer-version{margin-left:auto;font-size:9px;color:#94a3b8;white-space:nowrap}.toggle{align-items:center}.terrain-note{font-size:11px;color:#bae6fd;line-height:1.4;margin-top:8px}.agency-popup div{margin-top:4px}.source-note{font-size:10px;color:#94a3b8;line-height:1.4}.export-grid .danger{grid-column:1/-1}
-  </style>
 </head>
 <body>
 <div id="app">
   <header class="topbar">
-    <div class="brand"><div class="brand-mark">TG</div><div><h1>Terrain Environmental GIS</h1><p>Free field-to-map environmental workspace</p></div></div>
-    <div class="top-actions"><a href="demo.html" class="btn primary" style="text-decoration:none">Proof Demo</a><button id="locateBtn" class="btn">Locate</button><button id="helpBtn" class="btn">Help</button></div>
+    <div class="brand">
+      <div class="brand-mark">TE</div>
+      <div><h1>Terrain Environmental GIS</h1><p>Environmental project intelligence</p></div>
+    </div>
+    <div class="top-actions">
+      <span class="beta-pill">Market Preview</span>
+      <a href="demo.html" class="btn ghost-link">Proof Demo</a>
+      <button id="shareBtn" class="btn">Share project</button>
+      <button id="helpBtn" class="btn">Help</button>
+    </div>
   </header>
+
+  <nav class="workflow" aria-label="Project workflow">
+    <button class="workflow-step active" data-jump="define"><span>1</span><b>Define</b><small>Import or draw</small></button>
+    <button class="workflow-step" data-jump="analyze"><span>2</span><b>Analyze</b><small>One-click screening</small></button>
+    <button class="workflow-step" data-jump="review"><span>3</span><b>Review</b><small>Map + findings</small></button>
+    <button class="workflow-step" data-jump="report"><span>4</span><b>Report</b><small>Print / PDF</small></button>
+  </nav>
 
   <section class="workspace">
     <aside id="leftPanel" class="panel left-panel">
-      <div class="panel-section"><label class="field-label" for="projectName">Project</label><input id="projectName" class="input" value="Untitled Project"></div>
+      <section class="panel-section" id="defineSection">
+        <div class="section-kicker">Project</div>
+        <input id="projectName" class="input project-name" value="Untitled Project" aria-label="Project name">
+        <div class="preset-grid">
+          <button class="btn preset" data-preset="placer">Placer County</button>
+          <button class="btn preset" data-preset="plymouth">Plymouth / Amador</button>
+        </div>
+        <div class="search-row"><input id="searchInput" class="input" placeholder="Address, city, county…"><button id="searchBtn" class="btn primary">Go</button></div>
+      </section>
 
-      <div class="panel-section">
-        <div class="section-title">Jump to area</div>
-        <div class="preset-grid"><button class="btn preset" data-preset="placer">Placer County</button><button class="btn preset" data-preset="plymouth">Plymouth / Amador</button></div>
-        <div class="search-row"><input id="searchInput" class="input" placeholder="City, address, county…"><button id="searchBtn" class="btn primary">Go</button></div>
-      </div>
-
-      <div class="panel-section">
-        <div class="section-title">Field data</div>
+      <section class="panel-section">
+        <div class="section-title">1 · Define project area</div>
         <input id="fileInput" type="file" multiple accept=".geojson,.json,.kml,.kmz,.gpx,.csv,.zip" hidden>
-        <button id="importBtn" class="btn primary full">Import GIS files</button>
-        <p class="hint">GeoJSON, KML, KMZ, GPX, CSV, zipped Shapefile</p>
-      </div>
+        <button id="importBtn" class="btn primary full">Import field / GIS files</button>
+        <p class="hint">GeoJSON, KML, KMZ, GPX, CSV, zipped Shapefile. Or draw a polygon directly on the map.</p>
+        <div class="aoi-card" id="aoiCard"><b>No analysis area yet</b><span>Import or draw at least one polygon.</span></div>
+      </section>
 
-      <div class="panel-section">
-        <div class="section-title">Basemap & terrain</div>
+      <section class="panel-section analyze-section" id="analyzeSection">
+        <div class="section-title">2 · Automated screening</div>
+        <button id="analyzeProjectBtn" class="btn analyze full">Analyze project area</button>
+        <p class="hint">Uses browser calculations plus live public USGS, CAL FIRE and OSFM GIS services. Failed sources are reported as unavailable rather than substituted.</p>
+        <div id="analysisProgress" class="analysis-progress hidden"></div>
+      </section>
+
+      <section class="panel-section">
+        <div class="section-title">Map context</div>
         <select id="basemapSelect" class="input">
-          <option value="osm">OpenStreetMap</option><option value="usgsTopo">USGS Topo</option><option value="usgsImagery">USGS Imagery</option><option value="usgsImageryTopo" selected>USGS Imagery + Topo</option><option value="usgsRelief">USGS Shaded Relief</option>
+          <option value="usgsImageryTopo">USGS Imagery + Topo</option>
+          <option value="usgsTopo">USGS Topo</option>
+          <option value="usgsImagery">USGS Imagery</option>
+          <option value="usgsRelief">USGS Shaded Relief</option>
+          <option value="osm">OpenStreetMap</option>
         </select>
-        <p class="terrain-note">Tap the map to estimate elevation, slope and aspect from USGS elevation data.</p>
-      </div>
+        <label class="toggle"><input type="checkbox" id="firePerimetersToggle"> Historical fire perimeters</label>
+        <label class="toggle"><input type="checkbox" id="fhzToggle"> Fire Hazard Severity Zones</label>
+        <label class="toggle"><input type="checkbox" id="sraToggle"> State Responsibility Area</label>
+        <label class="toggle"><input type="checkbox" id="watershedToggle"> HUC10 watersheds</label>
+      </section>
 
-      <div class="panel-section">
-        <div class="section-title">Environmental layers</div>
-        <label class="toggle"><input type="checkbox" id="firePerimetersToggle"> CAL FIRE historical fire perimeters <span class="layer-version">Firep25_1 · 2026</span></label>
-        <label class="toggle"><input type="checkbox" id="fhzToggle"> CAL FIRE / OSFM fire hazard zones <span class="layer-version">SRA 2024 + LRA 2025</span></label>
-        <label class="toggle"><input type="checkbox" id="sraToggle"> CAL FIRE responsibility areas <span class="layer-version">SRA26_1</span></label>
-        <label class="toggle"><input type="checkbox" id="watershedToggle"> USGS 10-digit watersheds <span class="layer-version">HUC10</span></label>
-        <p class="source-note">Live public GIS services. Zoom in before enabling large statewide layers.</p>
-      </div>
+      <section class="panel-section">
+        <div class="section-title">Project totals</div>
+        <div id="summary" class="summary-grid"></div>
+      </section>
 
-      <div class="panel-section"><div class="section-title">Project summary</div><div id="summary" class="summary-grid"></div></div>
-
-      <div class="panel-section">
-        <div class="section-title">Export</div>
-        <div class="export-grid"><button class="btn" data-export="geojson">GeoJSON</button><button class="btn" data-export="kml">KML</button><button class="btn" data-export="gpx">GPX</button><button id="summaryBtn" class="btn">Summary</button><button id="clearBtn" class="btn danger">Clear project</button></div>
-      </div>
+      <section class="panel-section">
+        <div class="section-title">Interoperability</div>
+        <div class="export-grid">
+          <button class="btn" data-export="geojson">GeoJSON</button>
+          <button class="btn" data-export="kml">KML</button>
+          <button class="btn" data-export="gpx">GPX</button>
+          <button id="clearBtn" class="btn danger">Clear</button>
+        </div>
+      </section>
     </aside>
 
-    <main class="map-wrap"><div id="map"></div><div class="map-badge" id="statusBadge">Ready</div><div id="elevationCard" class="elevation-card hidden"></div><button id="panelToggle" class="mobile-panel-toggle">Layers & Project</button></main>
+    <main class="map-wrap">
+      <div id="map"></div>
+      <div class="map-badge" id="statusBadge">Define a project area to begin</div>
+      <div id="elevationCard" class="elevation-card hidden"></div>
+      <button id="panelToggle" class="mobile-panel-toggle">Project & Layers</button>
+      <button id="resultsToggle" class="mobile-results-toggle">Findings</button>
+    </main>
 
     <aside id="rightPanel" class="panel right-panel">
-      <div class="panel-section">
-        <div class="section-title">Selected feature</div><div id="featureEmpty" class="empty-state">Tap a mapped project feature to inspect it.</div>
-        <div id="featureEditor" class="hidden"><label class="field-label">Name</label><input id="featureName" class="input"><label class="field-label">Description / notes</label><textarea id="featureDescription" class="input textarea"></textarea><div id="featureMetrics" class="feature-metrics"></div><button id="saveFeatureBtn" class="btn primary full">Save feature</button><button id="deleteFeatureBtn" class="btn danger full">Delete feature</button></div>
+      <div class="result-tabs">
+        <button class="result-tab active" data-tab="findings">Findings</button>
+        <button class="result-tab" data-tab="feature">Feature</button>
+        <button class="result-tab" data-tab="sources">Sources</button>
       </div>
-      <div class="panel-section"><div class="section-title">Field workflow</div><p class="hint">Draw points, lines and polygons with the map toolbar. Polygon acreage and line mileage calculate automatically.</p><p class="hint"><strong>Terrain:</strong> tap an empty area of the map for USGS elevation plus an approximate local slope/aspect calculation.</p></div>
+
+      <section id="findingsTab" class="tab-content">
+        <div class="results-head"><div><div class="section-kicker">3 · Review</div><h2>Project screening</h2></div><span id="analysisState" class="status-pill neutral">Not analyzed</span></div>
+        <div id="analysisResults" class="analysis-results"><div class="empty-state">Run <strong>Analyze project area</strong> to turn the mapped area into a screening summary.</div></div>
+        <div class="report-actions" id="reportSection"><button id="reportBtn" class="btn primary full" disabled>Generate professional report</button></div>
+      </section>
+
+      <section id="featureTab" class="tab-content hidden">
+        <div class="section-kicker">Selected feature</div>
+        <div id="featureEmpty" class="empty-state">Tap a mapped project feature to inspect or edit it.</div>
+        <div id="featureEditor" class="hidden">
+          <label class="field-label">Name</label><input id="featureName" class="input">
+          <label class="field-label">Description / field notes</label><textarea id="featureDescription" class="input textarea"></textarea>
+          <div id="featureMetrics" class="feature-metrics"></div>
+          <button id="saveFeatureBtn" class="btn primary full">Save feature</button>
+          <button id="deleteFeatureBtn" class="btn danger full">Delete feature</button>
+        </div>
+      </section>
+
+      <section id="sourcesTab" class="tab-content hidden">
+        <div class="section-kicker">Data provenance</div>
+        <h2>Authoritative sources</h2>
+        <div id="sourceCards" class="source-cards"></div>
+        <p class="legal-note">Screening results support planning and prioritization. They do not replace survey-grade measurements, official determinations, licensed professional review, or agency consultation where required.</p>
+      </section>
     </aside>
   </section>
 
   <dialog id="helpDialog" class="dialog">
-    <div class="dialog-head"><h2>Field-to-GIS workflow</h2><button id="closeHelpBtn" class="btn">Close</button></div>
+    <div class="dialog-head"><h2>How this product is different</h2><button id="closeHelpBtn" class="btn">Close</button></div>
     <div class="dialog-body">
-      <h3>Avenza → this app</h3><p>Export map features from Avenza as KML/KMZ, GPX, CSV, or a Shapefile ZIP. On iPhone save the export to Files, then use <strong>Import GIS files</strong> here. This removes the need to route the file through Google Earth first.</p>
-      <h3>Google Earth Pro → this app</h3><p>Save Places as KML or KMZ, then import directly. Names, descriptions, points, lines and polygons are retained where the source format provides them.</p>
-      <h3>ArcGIS / QGIS interoperability</h3><p>Export GeoJSON or KML for ArcGIS Pro, ArcGIS Online, QGIS and Google Earth. GPX is available for compatible point/track workflows.</p>
-      <h3>Terrain</h3><p>USGS basemaps provide topo, imagery and shaded relief. A map tap queries USGS elevation and estimates local slope/aspect from nearby elevation samples. The slope/aspect estimate is a screening tool, not a survey-grade replacement for DEM/LiDAR analysis.</p>
-      <h3>Current public layers</h3><p>Historical fire perimeters use CAL FIRE FRAP Firep25_1 (released April 2026). State Responsibility Areas use SRA26_1. Fire Hazard Severity Zones combine the adopted 2024 SRA zones with the 2025 LRA recommendations. Watershed boundaries use USGS HUC10 data.</p>
-      <h3>Privacy & cost</h3><p>Project geometry is processed and autosaved in the browser. No account, paid API key, database or subscription is required for the MVP.</p>
+      <p><strong>Goal:</strong> remove the manual Avenza → Google Earth → desktop GIS handoff for common screening work.</p>
+      <h3>1. Define</h3><p>Import field/GIS files or draw an area of interest. Names, descriptions and compatible attributes are retained.</p>
+      <h3>2. Analyze</h3><p>The app calculates project geometry and terrain screening, then checks live public fire-hazard, responsibility-area, fire-history and watershed services.</p>
+      <h3>3. Review</h3><p>Findings are translated into plain-language project intelligence with visible provenance and limitations.</p>
+      <h3>4. Report / share</h3><p>Generate a printable professional screening report, export GIS files, or create a read-only link containing the project geometry and latest analysis snapshot.</p>
+      <h3>Privacy</h3><p>The current market preview stores working projects locally in your browser. Share links encode project data into the URL you choose to send. No cloud account or database is used yet.</p>
     </div>
   </dialog>
+
+  <div id="toast" class="toast hidden"></div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.18.0/dist/leaflet-geoman.min.js"></script>
