@@ -1,0 +1,90 @@
+name: God's Eye Auburn Proof
+
+on:
+  push:
+    branches: [gods-eye-auburn-proof]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout proof host
+        uses: actions/checkout@v4
+
+      - name: Set up Node 26
+        uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+
+      - name: Clone actual God's Eye View upstream
+        run: |
+          git clone --depth 1 https://github.com/bilawalsidhu/gods-eye-view.git gods-eye-view
+          cd gods-eye-view
+          echo "UPSTREAM_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Install upstream dependencies
+        working-directory: gods-eye-view
+        run: npm ci
+
+      - name: Start upstream app
+        working-directory: gods-eye-view
+        env:
+          GOOGLE_MAPS_API_KEY: ''
+          OPENSKY_AUTH_MODE: anon
+          HOST: 127.0.0.1
+          PORT: '4173'
+        run: |
+          npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/gev.log 2>&1 &
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/gev.log
+          exit 1
+
+      - name: Capture Auburn California in the real app
+        working-directory: gods-eye-view
+        env:
+          UPSTREAM_COMMIT: ${{ env.UPSTREAM_COMMIT }}
+        run: |
+          cat > /tmp/auburn-proof.mjs <<'NODE'
+          import puppeteer from './node_modules/puppeteer/lib/esm/puppeteer/puppeteer.js';
+          const browser = await puppeteer.launch({headless:true,args:['--no-sandbox','--disable-setuid-sandbox','--use-gl=swiftshader','--enable-webgl']});
+          const page = await browser.newPage();
+          await page.setViewport({width:1600,height:1000,deviceScaleFactor:1});
+          const url = 'http://127.0.0.1:4173/#lat=38.8966&lon=-121.0769&alt=18000&heading=20&pitch=-50&roll=0&style=flir&hud=tactical&hv=1&map=osm';
+          await page.goto(url,{waitUntil:'networkidle2',timeout:120000});
+          await new Promise(r=>setTimeout(r,12000));
+          await page.evaluate((commit)=>{
+            const badge=document.createElement('div');
+            badge.id='auburn-proof-badge';
+            badge.textContent=`AUBURN, CA  •  GOD'S EYE VIEW UPSTREAM  •  ${commit.slice(0,12)}`;
+            Object.assign(badge.style,{position:'fixed',left:'50%',top:'18px',transform:'translateX(-50%)',zIndex:'2147483647',padding:'10px 16px',background:'rgba(0,10,14,.86)',border:'1px solid #43e6ff',color:'#bff7ff',font:'600 14px monospace',letterSpacing:'1px',boxShadow:'0 0 20px rgba(67,230,255,.25)'});
+            document.body.appendChild(badge);
+          }, process.env.UPSTREAM_COMMIT || 'unknown');
+          await page.screenshot({path:'auburn-gods-eye-proof.png',fullPage:true});
+          console.log('URL='+url);
+          console.log('TITLE='+await page.title());
+          console.log('UPSTREAM_COMMIT='+(process.env.UPSTREAM_COMMIT||''));
+          await browser.close();
+          NODE
+          node /tmp/auburn-proof.mjs
+
+      - name: Save proof metadata
+        working-directory: gods-eye-view
+        run: |
+          printf 'Source: https://github.com/bilawalsidhu/gods-eye-view\nUpstream commit: %s\nTarget: Auburn, California (38.8966, -121.0769)\nMap stack: OSM/keyless-safe\nStyle: FLIR\n' "$UPSTREAM_COMMIT" > auburn-proof.txt
+
+      - name: Upload Auburn proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: auburn-gods-eye-proof
+          path: |
+            gods-eye-view/auburn-gods-eye-proof.png
+            gods-eye-view/auburn-proof.txt
+          if-no-files-found: error
