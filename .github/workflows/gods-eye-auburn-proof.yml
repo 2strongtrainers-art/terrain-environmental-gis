@@ -34,7 +34,7 @@ jobs:
       - name: Start upstream app
         working-directory: gods-eye-view
         env:
-          GOOGLE_MAPS_API_KEY: ''
+          GOOGLE_MAPS_API_KEY: 'proof-not-a-real-key'
           OPENSKY_AUTH_MODE: anon
           HOST: 127.0.0.1
           PORT: '4173'
@@ -59,7 +59,7 @@ jobs:
           await page.setViewport({width:1600,height:1000,deviceScaleFactor:1});
           const url = 'http://127.0.0.1:4173/#lat=38.8966&lon=-121.0769&alt=18000&heading=20&pitch=-50&roll=0&style=flir&hud=tactical&hv=1&map=osm';
           await page.goto(url,{waitUntil:'networkidle2',timeout:120000});
-          await new Promise(r=>setTimeout(r,12000));
+          await new Promise(r=>setTimeout(r,15000));
           await page.evaluate((commit)=>{
             const badge=document.createElement('div');
             badge.id='auburn-proof-badge';
@@ -78,7 +78,7 @@ jobs:
       - name: Save proof metadata
         working-directory: gods-eye-view
         run: |
-          printf 'Source: https://github.com/bilawalsidhu/gods-eye-view\nUpstream commit: %s\nTarget: Auburn, California (38.8966, -121.0769)\nMap stack: OSM/keyless-safe\nStyle: FLIR\n' "$UPSTREAM_COMMIT" > auburn-proof.txt
+          printf 'Source: https://github.com/bilawalsidhu/gods-eye-view\nUpstream commit: %s\nTarget: Auburn, California (38.8966, -121.0769)\nMap stack requested: OSM/keyless-safe\nStyle: FLIR\n' "$UPSTREAM_COMMIT" > auburn-proof.txt
 
       - name: Upload Auburn proof
         uses: actions/upload-artifact@v4
