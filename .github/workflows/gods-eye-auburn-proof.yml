@@ -52,9 +52,9 @@ jobs:
         env:
           UPSTREAM_COMMIT: ${{ env.UPSTREAM_COMMIT }}
         run: |
-          cat > /tmp/auburn-proof.mjs <<'NODE'
-          import puppeteer from './node_modules/puppeteer/lib/esm/puppeteer/puppeteer.js';
-          const browser = await puppeteer.launch({headless:true,args:['--no-sandbox','--disable-setuid-sandbox','--use-gl=swiftshader','--enable-webgl']});
+          cat > auburn-proof.mjs <<'NODE'
+          import puppeteer from 'puppeteer';
+          const browser = await puppeteer.launch({headless:true,executablePath:'/usr/bin/google-chrome',args:['--no-sandbox','--disable-setuid-sandbox','--use-gl=swiftshader','--enable-webgl','--ignore-gpu-blocklist']});
           const page = await browser.newPage();
           await page.setViewport({width:1600,height:1000,deviceScaleFactor:1});
           const url = 'http://127.0.0.1:4173/#lat=38.8966&lon=-121.0769&alt=18000&heading=20&pitch=-50&roll=0&style=flir&hud=tactical&hv=1&map=osm';
@@ -73,7 +73,7 @@ jobs:
           console.log('UPSTREAM_COMMIT='+(process.env.UPSTREAM_COMMIT||''));
           await browser.close();
           NODE
-          node /tmp/auburn-proof.mjs
+          node auburn-proof.mjs
 
       - name: Save proof metadata
         working-directory: gods-eye-view
