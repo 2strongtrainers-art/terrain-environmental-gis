@@ -54,7 +54,15 @@ jobs:
         run: |
           cat > auburn-proof.mjs <<'NODE'
           import puppeteer from 'puppeteer';
-          const browser = await puppeteer.launch({headless:true,executablePath:'/usr/bin/google-chrome',args:['--no-sandbox','--disable-setuid-sandbox','--use-gl=swiftshader','--enable-webgl','--ignore-gpu-blocklist']});
+          const browser = await puppeteer.launch({
+            headless:true,
+            executablePath:'/usr/bin/google-chrome',
+            args:[
+              '--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage',
+              '--enable-webgl','--ignore-gpu-blocklist','--enable-unsafe-swiftshader',
+              '--use-angle=swiftshader','--disable-gpu-sandbox'
+            ]
+          });
           const page = await browser.newPage();
           await page.setViewport({width:1600,height:1000,deviceScaleFactor:1});
           const url = 'http://127.0.0.1:4173/#lat=38.8966&lon=-121.0769&alt=18000&heading=20&pitch=-50&roll=0&style=flir&hud=tactical&hv=1&map=osm';
