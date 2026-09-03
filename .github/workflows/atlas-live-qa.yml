@@ -1,0 +1,45 @@
+name: Atlas Live Chromium QA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "qa/atlas-live-qa.js"
+      - ".github/workflows/atlas-live-qa.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Playwright Chromium
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Run live Atlas click-through QA
+        env:
+          ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+        run: node qa/atlas-live-qa.js
+
+      - name: Upload QA report and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-live-chromium-qa
+          path: qa-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
