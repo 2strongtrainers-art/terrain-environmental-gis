@@ -1,0 +1,55 @@
+name: Atlas Full Link Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "atlas-src/data-*.txt"
+      - "qa/atlas-link-audit.js"
+      - ".github/workflows/atlas-link-audit.yml"
+  schedule:
+    - cron: "17 11 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Chromium
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Audit every Atlas destination
+        run: node qa/atlas-link-audit.js
+
+      - name: Print verification summary
+        if: always()
+        run: |
+          if [ -f atlas-link-audit/summary.json ]; then
+            cat atlas-link-audit/summary.json
+          else
+            echo "No audit summary was produced"
+          fi
+
+      - name: Upload full verification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-full-link-audit
+          path: atlas-link-audit/
+          if-no-files-found: warn
+          retention-days: 30
