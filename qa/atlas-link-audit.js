@@ -1,73 +1,69 @@
 const fs = require('fs');
 const path = require('path');
-const zlib = require('zlib');
 const { chromium } = require('playwright');
 
-const DATA_DIR = path.join(process.cwd(), 'atlas-src');
+const ATLAS_URL = process.env.ATLAS_URL || 'https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/';
 const OUT_DIR = path.join(process.cwd(), 'atlas-link-audit');
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
-function loadAtlasData() {
-  const files = fs.readdirSync(DATA_DIR)
-    .filter(n => /^data-\d{3}\.txt$/.test(n))
-    .sort();
-  if (!files.length) throw new Error('No Atlas data chunks found');
-  const b64 = files.map(n => fs.readFileSync(path.join(DATA_DIR, n), 'utf8').trim()).join('');
-  const json = zlib.gunzipSync(Buffer.from(b64, 'base64')).toString('utf8');
-  return JSON.parse(json);
+function cleanUrl(raw) {
+  try {
+    const u = new URL(raw);
+    if (!/^https?:$/.test(u.protocol)) return null;
+    u.hash = '';
+    return u.toString();
+  } catch { return null; }
 }
 
-function urlFromRecord(r) {
-  if (!r || typeof r !== 'object') return null;
-  for (const key of ['url', 'URL', 'href', 'link', 'website', 'Website URL', 'websiteUrl']) {
-    if (typeof r[key] === 'string' && /^https?:\/\//i.test(r[key].trim())) return r[key].trim();
-  }
-  return null;
-}
+async function collectAtlasRecords(browser) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  const page = await context.newPage();
+  const response = await page.goto(ATLAS_URL, { waitUntil: 'networkidle', timeout: 60000 });
+  if (!response || response.status() !== 200) throw new Error(`Atlas page HTTP ${response ? response.status() : 'no response'}`);
+  await page.waitForFunction(() => document.querySelector('#statIndexed')?.textContent?.includes('1,834'), null, { timeout: 30000 });
+  await page.locator('.navlinks button[data-view="library"]').click();
+  await page.locator('#clearFilters').click();
+  await page.waitForTimeout(120);
 
-function nameFromRecord(r, url) {
-  for (const key of ['name', 'Name', 'Website Name', 'title', 'Title', 'tool']) {
-    if (typeof r?.[key] === 'string' && r[key].trim()) return r[key].trim();
-  }
-  try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; }
-}
+  const records = new Map();
+  let lastPage = 0;
+  while (true) {
+    await page.waitForSelector('#toolGrid .tool');
+    const pageItems = await page.locator('#toolGrid .tool').evaluateAll(cards => cards.map(card => {
+      const link = [...card.querySelectorAll('a[href]')].find(a => /visit/i.test(a.textContent || ''));
+      return {
+        name: (card.querySelector('h3')?.textContent || '').trim(),
+        url: link?.href || ''
+      };
+    }));
 
-function findRecordArray(root) {
-  const seen = new Set();
-  const candidates = [];
-  function walk(v, depth = 0) {
-    if (!v || typeof v !== 'object' || seen.has(v) || depth > 8) return;
-    seen.add(v);
-    if (Array.isArray(v)) {
-      const sample = v.slice(0, 25);
-      const withUrls = sample.filter(x => urlFromRecord(x)).length;
-      if (v.length >= 100 && withUrls > 0) candidates.push({ v, score: v.length * 100 + withUrls });
-      for (const x of sample) walk(x, depth + 1);
-    } else {
-      for (const x of Object.values(v)) walk(x, depth + 1);
+    for (const item of pageItems) {
+      const url = cleanUrl(item.url);
+      if (url && !records.has(url)) records.set(url, { name: item.name || new URL(url).hostname, url });
     }
-  }
-  walk(root);
-  candidates.sort((a, b) => b.score - a.score);
-  if (!candidates.length) throw new Error('Could not locate Atlas record array');
-  return candidates[0].v;
-}
 
-function normalizeRecords(root) {
-  const arr = findRecordArray(root);
-  const map = new Map();
-  for (const r of arr) {
-    const url = urlFromRecord(r);
-    if (!url) continue;
-    let key;
-    try {
-      const u = new URL(url);
-      u.hash = '';
-      key = u.toString();
-    } catch { continue; }
-    if (!map.has(key)) map.set(key, { name: nameFromRecord(r, url), url: key });
+    const paginationText = await page.locator('#pagination').innerText();
+    const match = paginationText.match(/Page\s+(\d+)\s+of\s+(\d+)/i);
+    const current = match ? Number(match[1]) : lastPage + 1;
+    const totalPages = match ? Number(match[2]) : null;
+    console.log(`Collected Atlas page ${current}${totalPages ? `/${totalPages}` : ''}; unique URLs=${records.size}`);
+    if (current <= lastPage) throw new Error(`Pagination did not advance (still page ${current})`);
+    lastPage = current;
+
+    const next = page.locator('#pagination button:has-text("Next")');
+    if (!(await next.count()) || !(await next.isEnabled())) break;
+    await next.click();
+    await page.waitForFunction(prev => {
+      const text = document.querySelector('#pagination')?.textContent || '';
+      const m = text.match(/Page\s+(\d+)\s+of\s+(\d+)/i);
+      return m && Number(m[1]) > prev;
+    }, current, { timeout: 5000 });
   }
-  return [...map.values()];
+
+  await context.close();
+  const out = [...records.values()];
+  if (out.length !== 1834) throw new Error(`Expected exactly 1,834 Atlas URLs, collected ${out.length}`);
+  return out;
 }
 
 const PARKED_PATTERNS = [
@@ -149,53 +145,56 @@ async function auditOne(context, item) {
 }
 
 async function main() {
-  const root = loadAtlasData();
-  const records = normalizeRecords(root);
-  console.log(`Atlas records located: ${records.length}`);
-  if (records.length < 1700) throw new Error(`Expected ~1,834 URLs, found only ${records.length}`);
-
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36 AtlasLinkAudit/1.0',
-    ignoreHTTPSErrors: true,
-    viewport: { width: 1280, height: 800 }
-  });
-  await context.route('**/*', route => {
-    const t = route.request().resourceType();
-    if (['image', 'media', 'font'].includes(t)) return route.abort();
-    return route.continue();
-  });
+  try {
+    const records = await collectAtlasRecords(browser);
+    console.log(`Atlas records collected from live UI: ${records.length}`);
 
-  const results = new Array(records.length);
-  let cursor = 0;
-  const concurrency = 10;
-  async function worker(id) {
-    while (true) {
-      const i = cursor++;
-      if (i >= records.length) return;
-      results[i] = await auditOne(context, records[i]);
-      if ((i + 1) % 50 === 0 || i + 1 === records.length) console.log(`Checked ${i + 1}/${records.length}`);
+    const context = await browser.newContext({
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36 AtlasLinkAudit/1.1',
+      ignoreHTTPSErrors: true,
+      viewport: { width: 1280, height: 800 }
+    });
+    await context.route('**/*', route => {
+      const t = route.request().resourceType();
+      if (['image', 'media', 'font'].includes(t)) return route.abort();
+      return route.continue();
+    });
+
+    const results = new Array(records.length);
+    let cursor = 0;
+    let completed = 0;
+    const concurrency = 16;
+    async function worker() {
+      while (true) {
+        const i = cursor++;
+        if (i >= records.length) return;
+        results[i] = await auditOne(context, records[i]);
+        completed++;
+        if (completed % 50 === 0 || completed === records.length) console.log(`Checked ${completed}/${records.length}`);
+      }
     }
+    await Promise.all(Array.from({ length: concurrency }, () => worker()));
+    await context.close();
+
+    const counts = {};
+    for (const r of results) counts[r.verdict] = (counts[r.verdict] || 0) + 1;
+    const live = counts.live || 0;
+    const report = {
+      generatedAt: new Date().toISOString(),
+      auditMethod: 'Live Atlas UI inventory + Chromium render audit; images/media/fonts blocked; 12s navigation timeout; redirects followed; 16 concurrent pages',
+      total: results.length,
+      liveVerified: live,
+      counts,
+      results
+    };
+    fs.writeFileSync(path.join(OUT_DIR, 'atlas-link-audit.json'), JSON.stringify(report, null, 2));
+    fs.writeFileSync(path.join(OUT_DIR, 'summary.json'), JSON.stringify({ generatedAt: report.generatedAt, total: report.total, liveVerified: live, counts }, null, 2));
+    fs.writeFileSync(path.join(OUT_DIR, 'needs-review.json'), JSON.stringify(results.filter(r => r.verdict !== 'live'), null, 2));
+    console.log('AUDIT_SUMMARY ' + JSON.stringify({ total: report.total, liveVerified: live, counts }));
+  } finally {
+    await browser.close().catch(() => {});
   }
-  await Promise.all(Array.from({ length: concurrency }, (_, i) => worker(i)));
-  await browser.close();
-
-  const counts = {};
-  for (const r of results) counts[r.verdict] = (counts[r.verdict] || 0) + 1;
-  const live = counts.live || 0;
-  const report = {
-    generatedAt: new Date().toISOString(),
-    auditMethod: 'Chromium render audit; images/media/fonts blocked for speed; 12s navigation timeout; redirects followed',
-    total: results.length,
-    liveVerified: live,
-    counts,
-    results
-  };
-  fs.writeFileSync(path.join(OUT_DIR, 'atlas-link-audit.json'), JSON.stringify(report, null, 2));
-  fs.writeFileSync(path.join(OUT_DIR, 'summary.json'), JSON.stringify({ generatedAt: report.generatedAt, total: report.total, liveVerified: live, counts }, null, 2));
-  fs.writeFileSync(path.join(OUT_DIR, 'needs-review.json'), JSON.stringify(results.filter(r => r.verdict !== 'live'), null, 2));
-
-  console.log('AUDIT_SUMMARY ' + JSON.stringify({ total: report.total, liveVerified: live, counts }));
 }
 
 main().catch(err => { console.error(err); process.exit(1); });
