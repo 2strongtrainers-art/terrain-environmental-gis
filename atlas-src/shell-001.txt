@@ -1,4 +1,7 @@
-?</h2><p>Think of it as a well-organized digital toolbox.</p></div></div>
+</div>
+ </div>
+ <div class="section">
+  <div class="sectionhead"><div><h2>What is the Digital Atlas??</h2><p>Think of it as a well-organized digital toolbox.</p></div></div>
   <div class="callout"><b>The simple rule:</b> describe the outcome first. Choose the tool second. Instead of searching for hours or memorizing hundreds of names, begin with the result you want.</div>
  </div>
  <div class="section">
@@ -41,7 +44,7 @@
    <input class="control query" id="searchInput" placeholder="Search tools, descriptions, categories…" aria-label="Search library">
    <select class="control" id="sourceFilter" aria-label="Source category"><option value="">All sources</option></select>
    <select class="control" id="pricingFilter" aria-label="Pricing"><option value="">All pricing</option></select>
-   <select class="control" id="verificationFilter" aria-label="Verification"><option value="">All verification</option><option value="Live verified">Live verified</option><option value="not-live">Not live-verified</option></select>
+   <select class="control" id="verificationFilter" aria-label="Verification"><option value="">All verification</option><option value="Live verified">Live verified</option><option value="not-live">Not live-verified</option><option value="Automation blocked">Automation blocked</option><option value="Dead / unavailable">Dead / unavailable</option><option value="Parked / for sale">Parked / for sale</option><option value="Needs review">Needs review</option><option value="Timed out">Timed out</option><option value="Verification error">Verification error</option><option value="Server error">Server error</option></select>
    <select class="control" id="priorityFilter" aria-label="Priority"><option value="">All priorities</option><option>High</option><option>Medium</option><option>Low</option></select>
    <select class="control" id="sortFilter" aria-label="Sort"><option value="relevance">Sort: relevance</option><option value="az">Name A–Z</option><option value="verified">Verified first</option><option value="priority">Priority first</option></select>
   </div>
@@ -66,7 +69,7 @@
  <div class="pagehead libraryHero"><div class="eyebrow" style="color:#5925dc">Power User Mode</div><h1>Web Surfers source archive</h1><p>The raw source layer behind the cleaned Atlas. Use this when you want deeper coverage or to audit where an entry came from.</p></div>
  <div class="archivegrid" id="archiveGrid"></div>
  <div class="section"><div class="callout purple"><b>Curated flow:</b> category → useful result → launch tool. Use the source archive when you need deeper coverage. The four source sheets remain distinct so provenance is preserved.</div></div>
- <div class="section"><button class="btn blue" id="browseRaw">Browse all source-indexed records</button></div>
+ <div class="section"><button class="btn blue" id="browseRaw">Review 305 non-live-verified records</button></div>
 </section>
 
 <section class="view" id="view-quality">
@@ -74,13 +77,13 @@
  <div class="quality">
    <div class="panel">
     <h2 style="margin-top:0">What each status means</h2>
-    <p><b>Live verified</b> means the current curated audit recorded a successful live-page verification. <b>Source verified / Source listed</b> means the website is present in an indexed source, not that every current feature or pricing claim has been re-tested.</p>
+    <p><b>Live verified</b> means Chromium successfully rendered the destination during the September 3, 2026 full-library audit. <b>Automation blocked</b> means the site was reached but prevented automated verification; it does not mean the site is dead. Other statuses identify dead, parked, timed-out, server-error, or review-needed destinations.</p>
     <p><b>Access type</b> is only shown when the curated Notion database explicitly classified it. A free price does not automatically mean no account is required.</p>
     <p><b>Historical Parts 1–749</b> include unresolved placeholders. Those rows are not converted into fake websites here; launchable URLs are indexed, while unresolved placeholders remain a QA issue in the underlying working directory.</p>
    </div>
    <div class="panel">
     <h2 style="margin-top:0">Current build snapshot</h2>
-    <table><tr><td>Unique launchable URLs</td><td id="qIndexed"></td></tr><tr><td>Source-sheet entries</td><td id="qSource"></td></tr><tr><td>Live-verified</td><td id="qVerified"></td></tr><tr><td>Explicit access audits</td><td id="qAccess"></td></tr><tr><td>Audit date</td><td id="qDate"></td></tr></table>
+    <table><tr><td>Unique launchable URLs</td><td id="qIndexed"></td></tr><tr><td>Source-sheet entries</td><td id="qSource"></td></tr><tr><td>Live-verified</td><td id="qVerified"></td></tr><tr><td>Automation-blocked</td><td id="qBlocked"></td></tr><tr><td>Dead / unavailable</td><td id="qDead"></td></tr><tr><td>Parked / for sale</td><td id="qParked"></td></tr><tr><td>Needs review / retry</td><td id="qReview"></td></tr><tr><td>Explicit access audits</td><td id="qAccess"></td></tr><tr><td>Audit date</td><td id="qDate"></td></tr></table>
    </div>
  </div>
  <div class="section">
@@ -107,7 +110,7 @@ async function decodeAtlasData(){
 (async()=>{
  const RAW=JSON.parse(await decodeAtlasData());
  const TOOLS=RAW.map(x=>({id:x[0],name:x[1],url:x[2],description:x[3],pricing:x[4],sourceCategory:x[5],sourceCategories:[x[5]],section:x[6],subsection:x[7],curatedCategory:x[8],priority:x[9],verification:x[10],accessType:x[11],functionQA:x[12]}));
-const META={"sourceEntries":1802,"indexedTools":1834,"liveVerified":70,"explicitAccessAudits":4,"sourceStats":{"AI":270,"Design & Creative":366,"Gaming":388,"Education & Learning":778},"lastAudit":"2026-08-27","built":"2026-09-03"};
+const META={"sourceEntries":1802,"indexedTools":1834,"liveVerified":1529,"explicitAccessAudits":4,"auditBreakdown":{"blocked":207,"dead":32,"parked":1,"error":28,"timeout":22,"uncertain":10,"serverError":5},"sourceStats":{"AI":270,"Design & Creative":366,"Gaming":388,"Education & Learning":778},"lastAudit":"2026-09-03","built":"2026-09-03"};
 const SOURCE_LINKS={"AI":"https://docs.google.com/spreadsheets/d/1ryROQ0UO904kM7jY16wP0mjMTmrFsiZj4P07rLxwoss/edit","Design & Creative":"https://docs.google.com/spreadsheets/d/17zjPsKp8ZOXumyn-JH5Mzi_SA3BXYDPJAK51jzcktNg/edit","Gaming":"https://docs.google.com/spreadsheets/d/1nnlkuhRFf5g2xl3IXOc3Ftj3rh361qf-mgQ0Shl8JQ0/edit","Education & Learning":"https://docs.google.com/spreadsheets/d/1Mn2IozwzNX0S6spUZ0_6onjHZ06L4ZHOt6k3A6QNCVM/edit"};
 const PAGE_SIZE=60;
 let state={view:"home",query:"",source:"",pricing:"",verification:"",priority:"",sort:"relevance",page:1,favoritesOnly:false};
@@ -136,13 +139,4 @@ $("#friendMode").onclick=()=>{showView("home");setTimeout(()=>{$("#newHere").scr
 
 $("#statIndexed").textContent=fmt(META.indexedTools);
 $("#statSource").textContent=fmt(META.sourceEntries);
-$("#statVerified").textContent=fmt(META.liveVerified);
-$("#qIndexed").textContent=fmt(META.indexedTools);$("#qSource").textContent=fmt(META.sourceEntries);$("#qVerified").textContent=fmt(META.liveVerified);$("#qAccess").textContent=fmt(META.explicitAccessAudits);$("#qDate").textContent=META.lastAudit;$("#footerDate").textContent=META.built;
-
-const goals=[
- ["🎬","Make an AI video","Ideas, scripts, editing, voice and video tools.","video"],
- ["🔬","Research something deeply","Learn, investigate and understand complicated subjects.","research"],
- ["🎨","Create graphics or improve a photo","Design, branding, images, video and creative work.","design"],
- ["💼","Find a business or money tool","Marketing, productivity, finance and business resources.","business"],
- ["🌐","Build a website or automate a task","Coding, assistants, agents and digital workflows.","automation"],
- ["🗺️","Explore maps, 3D or interactive worlds","Mapping, geographic, gaming and visualizat
+$("#statVerified").textContent=fmt(ME

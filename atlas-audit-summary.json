@@ -1,0 +1,18 @@
+{
+  "generatedAt": "2026-09-03T15:40:32.426Z",
+  "total": 1834,
+  "liveVerified": 1529,
+  "notLiveVerified": 305,
+  "counts": {
+    "blocked": 207,
+    "live": 1529,
+    "error": 28,
+    "dead": 32,
+    "parked": 1,
+    "uncertain": 10,
+    "timeout": 22,
+    "server_error": 5
+  },
+  "method": "Live Atlas UI inventory + Chromium render audit; images/media/fonts blocked; 12s navigation timeout; redirects followed; 16 concurrent pages",
+  "note": "Automation blocked means the site was reached but prevented automated verification; it is not classified as dead."
+}

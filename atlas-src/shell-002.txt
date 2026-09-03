@@ -1,4 +1,13 @@
-ion resources.","maps"],
+TA.liveVerified);
+$("#qIndexed").textContent=fmt(META.indexedTools);$("#qSource").textContent=fmt(META.sourceEntries);$("#qVerified").textContent=fmt(META.liveVerified);$("#qBlocked").textContent=fmt(META.auditBreakdown.blocked);$("#qDead").textContent=fmt(META.auditBreakdown.dead);$("#qParked").textContent=fmt(META.auditBreakdown.parked);$("#qReview").textContent=fmt(META.auditBreakdown.error+META.auditBreakdown.timeout+META.auditBreakdown.uncertain+META.auditBreakdown.serverError);$("#qAccess").textContent=fmt(META.explicitAccessAudits);$("#qDate").textContent=META.lastAudit;$("#footerDate").textContent=META.built;
+
+const goals=[
+ ["🎬","Make an AI video","Ideas, scripts, editing, voice and video tools.","video"],
+ ["🔬","Research something deeply","Learn, investigate and understand complicated subjects.","research"],
+ ["🎨","Create graphics or improve a photo","Design, branding, images, video and creative work.","design"],
+ ["💼","Find a business or money tool","Marketing, productivity, finance and business resources.","business"],
+ ["🌐","Build a website or automate a task","Coding, assistants, agents and digital workflows.","automation"],
+ ["🗺️","Explore maps, 3D or interactive worlds","Mapping, geographic, gaming and visualization resources.","maps"],
  ["🆓","Use something free without an account","Only explicitly audited no-login tools.","no-login"],
  ["⭐","Just show me something useful","High-priority or live-verified places to begin.","recommended"]
 ];
@@ -59,6 +68,7 @@ function getFiltered(){
   if(state.pricing&&t.pricing!==state.pricing)return false;
   if(state.verification==="Live verified"&&t.verification!=="Live verified")return false;
   if(state.verification==="not-live"&&t.verification==="Live verified")return false;
+  if(state.verification&&state.verification!=="Live verified"&&state.verification!=="not-live"&&t.verification!==state.verification)return false;
   if(state.priority&&t.priority!==state.priority)return false;
   if(state.favoritesOnly&&!favorites.has(t.id))return false;
   if(terms.length){
@@ -76,10 +86,11 @@ function getFiltered(){
 function scoreTool(t,terms){const n=t.name.toLowerCase(),d=t.description.toLowerCase();return terms.reduce((s,q)=>s+(n.includes(q)?8:0)+(d.includes(q)?3:0)+(t.section.toLowerCase().includes(q)?2:0),0)+(t.verification==="Live verified"?1:0)+(t.priority==="High"?1:0)}
 function toolCard(t){
  const live=t.verification==="Live verified";
+ const statusClass=live?"live":(/^(Dead|Parked|Server error)/.test(t.verification||"")?"bad":(t.verification==="Automation blocked"?"blocked":"pending"));
  return `<article class="tool">
   <div class="tooltop"><div class="favicon">${esc(t.name.charAt(0).toUpperCase())}</div><div><h3>${esc(t.name)}</h3><div class="domain">${esc(domain(t.url))}</div></div></div>
   <p>${esc(t.description||"No description available in the current source record.")}</p>
-  <div class="badges"><span class="badge ${live?"live":"pending"}">${live?"✓ Live verified":esc(t.verification||"Source listed")}</span><span class="badge ${String(t.pricing).startsWith("Free")?"free":""}">${esc(t.pricing||"Unknown")}</span>${t.sourceCategory?`<span class="badge">${esc(t.sourceCategory)}</span>`:""}${t.accessType?`<span class="badge live">${esc(t.accessType)}</span>`:""}</div>
+  <div class="badges"><span class="badge ${statusClass}">${live?"✓ Live verified":esc(t.verification||"Source listed")}</span><span class="badge ${String(t.pricing).startsWith("Free")?"free":""}">${esc(t.pricing||"Unknown")}</span>${t.sourceCategory?`<span class="badge">${esc(t.sourceCategory)}</span>`:""}${t.accessType?`<span class="badge live">${esc(t.accessType)}</span>`:""}</div>
   <div class="toolactions"><button class="btn outline" onclick="openDetail(${t.id})">Details</button><a class="btn blue" href="${esc(t.url)}" target="_blank" rel="noopener noreferrer">Visit ↗</a><button class="btn outline fav" aria-label="Favorite ${esc(t.name)}" onclick="toggleFav(${t.id},this)">${favorites.has(t.id)?"★":"☆"}</button></div>
  </article>`;
 }
