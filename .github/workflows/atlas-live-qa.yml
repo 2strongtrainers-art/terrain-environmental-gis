@@ -37,6 +37,25 @@ jobs:
           ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
         run: node qa/atlas-live-qa.js
 
+      - name: Verify final live heading polish
+        env:
+          ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+        run: |
+          node - <<'JS'
+          const { chromium } = require('playwright');
+          (async()=>{
+            const browser = await chromium.launch({headless:true});
+            const page = await browser.newPage();
+            const r = await page.goto(process.env.ATLAS_URL,{waitUntil:'networkidle',timeout:60000});
+            if (!r || r.status() !== 200) throw new Error(`Live Atlas HTTP ${r ? r.status() : 'no response'}`);
+            await page.waitForFunction(()=>document.querySelector('#statIndexed')?.textContent?.includes('1,834'));
+            const heading = await page.locator('#view-home .sectionhead h2').first().innerText();
+            if (heading !== 'What is the Digital Atlas?') throw new Error(`Unexpected heading: ${heading}`);
+            console.log(`PASS | Final live heading polish | ${heading}`);
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+
       - name: Upload QA report and screenshots
         if: always()
         uses: actions/upload-artifact@v4
