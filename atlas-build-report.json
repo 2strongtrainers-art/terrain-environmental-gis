@@ -1,6 +1,8 @@
 {
   "tool_count": 1834,
-  "bundle_bytes": 162689,
+  "bundle_bytes": 170387,
   "data_b64_bytes": 120544,
-  "sha256": "b3ccb1673f4953a9328127100d35a9c6b859c0f7e6893251827b76c85e75826f"
+  "sha256": "912086d1b26c9d3b3d6ddc128bae705ad67e308c92330f630ced70e2a50d8c5e",
+  "visual_theme": "Atlas Brand V2 \u2014 custom exploration identity + premium minimal UI",
+  "live_verified": 1529
 }

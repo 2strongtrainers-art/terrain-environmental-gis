@@ -1,4 +1,33 @@
-TA.liveVerified);
+icitAccessAudits":4,"auditBreakdown":{"blocked":207,"dead":32,"parked":1,"error":28,"timeout":22,"uncertain":10,"serverError":5},"sourceStats":{"AI":270,"Design & Creative":366,"Gaming":388,"Education & Learning":778},"lastAudit":"2026-09-03","built":"2026-09-03"};
+const SOURCE_LINKS={"AI":"https://docs.google.com/spreadsheets/d/1ryROQ0UO904kM7jY16wP0mjMTmrFsiZj4P07rLxwoss/edit","Design & Creative":"https://docs.google.com/spreadsheets/d/17zjPsKp8ZOXumyn-JH5Mzi_SA3BXYDPJAK51jzcktNg/edit","Gaming":"https://docs.google.com/spreadsheets/d/1nnlkuhRFf5g2xl3IXOc3Ftj3rh361qf-mgQ0Shl8JQ0/edit","Education & Learning":"https://docs.google.com/spreadsheets/d/1Mn2IozwzNX0S6spUZ0_6onjHZ06L4ZHOt6k3A6QNCVM/edit"};
+const PAGE_SIZE=60;
+let state={view:"home",query:"",source:"",pricing:"",verification:"",priority:"",sort:"relevance",page:1,favoritesOnly:false};
+let favorites=new Set(JSON.parse(localStorage.getItem("atlasFavorites")||"[]"));
+const $=(q)=>document.querySelector(q), $$=(q)=>[...document.querySelectorAll(q)];
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+const domain=u=>{try{return new URL(u).hostname.replace(/^www\./,"")}catch{return u}};
+const fmt=n=>new Intl.NumberFormat().format(n);
+function saveFav(){localStorage.setItem("atlasFavorites",JSON.stringify([...favorites]))}
+function showView(view){
+ state.view=view;
+ $$(".view").forEach(x=>x.classList.toggle("active",x.id==="view-"+view));
+ $$(".navbtn[data-view]").forEach(x=>x.classList.toggle("active",x.dataset.view===view));
+ $("#mobileNav").classList.remove("open");$("#menuBtn").setAttribute("aria-expanded","false");
+ history.replaceState(null,"","#"+view);
+ window.scrollTo({top:0,behavior:"instant"});
+ if(view==="library") renderLibrary();
+ if(view==="categories") renderCategories();
+ if(view==="free") renderFree();
+ if(view==="archive") renderArchive();
+}
+$$("[data-view]").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));
+$("#menuBtn").onclick=()=>{let o=$("#mobileNav").classList.toggle("open");$("#menuBtn").setAttribute("aria-expanded",String(o))};
+$("#jumpCommand").onclick=()=>{$("#newHere").scrollIntoView({behavior:"smooth",block:"center"});setTimeout(()=>$("#commandInput").focus(),350)};
+$("#friendMode").onclick=()=>{showView("home");setTimeout(()=>{$("#newHere").scrollIntoView({behavior:"smooth"});$("#commandInput").focus()},80)};
+
+$("#statIndexed").textContent=fmt(META.indexedTools);
+$("#statSource").textContent=fmt(META.sourceEntries);
+$("#statVerified").textContent=fmt(META.liveVerified);
 $("#qIndexed").textContent=fmt(META.indexedTools);$("#qSource").textContent=fmt(META.sourceEntries);$("#qVerified").textContent=fmt(META.liveVerified);$("#qBlocked").textContent=fmt(META.auditBreakdown.blocked);$("#qDead").textContent=fmt(META.auditBreakdown.dead);$("#qParked").textContent=fmt(META.auditBreakdown.parked);$("#qReview").textContent=fmt(META.auditBreakdown.error+META.auditBreakdown.timeout+META.auditBreakdown.uncertain+META.auditBreakdown.serverError);$("#qAccess").textContent=fmt(META.explicitAccessAudits);$("#qDate").textContent=META.lastAudit;$("#footerDate").textContent=META.built;
 
 const goals=[

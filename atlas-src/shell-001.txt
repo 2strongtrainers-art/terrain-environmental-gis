@@ -1,4 +1,63 @@
-</div>
+0 14px 42px rgba(7,73,76,.055)}
+.commandbox input{border-color:rgba(9,75,78,.18);border-radius:13px;background:#fff}.suggestion{border-color:rgba(9,75,78,.12)}
+.libraryHero{padding:34px 0 13px}.libraryHero h1,.pagehead h1{color:#102b2d;font-weight:760}
+.searchbar{top:72px;background:rgba(244,248,247,.91);border-bottom-color:rgba(7,73,76,.07)}
+.control{border-color:rgba(7,73,76,.15);border-radius:12px;color:#2e4d4f;box-shadow:0 2px 6px rgba(8,61,64,.02)}
+.chip{border-color:rgba(7,73,76,.13);color:#4d6769}.chip.active{background:#0a3437;color:#fff;border-color:#0a3437}
+.tools{gap:14px}.tool{border-color:rgba(7,73,76,.105);border-radius:19px;padding:18px;box-shadow:0 7px 24px rgba(8,61,64,.025);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.tool:hover{transform:translateY(-2px);border-color:rgba(15,157,154,.27);box-shadow:0 17px 38px rgba(8,73,76,.075)}
+.favicon{background:#eaf8f6;color:#0b7778;border:1px solid #d8efed}.tool h3{color:#153638}.domain{color:#849395}.tool p{color:#637577}
+.badge.live{background:#e8f8ef;color:#08734f}.badge.free{background:#eaf7f8;color:#0a7276}.badge.ai{background:#edf7f7;color:#276a6d}.badge.pending{background:#fff7e7;color:#98600e}.badge.blocked{background:#f0f4f4;color:#4b6163}
+.pagination button{border-color:rgba(7,73,76,.13);border-radius:11px}
+.category,.sourcecard,.quality .panel,.faq details,.modalbox{border-color:rgba(7,73,76,.105);box-shadow:0 9px 30px rgba(8,61,64,.035)}
+.category:hover{border-color:rgba(15,157,154,.3)}.sourcecard a{color:#087f80}.quality table td{border-bottom-color:rgba(7,73,76,.1)}
+.modal{background:rgba(4,26,28,.62);backdrop-filter:blur(4px)}.footer{border-top-color:rgba(7,73,76,.1);color:#6d7e80}.footer b{color:#254547}.mobilepanel{top:72px;background:#071b1d;border-top-color:rgba(101,232,223,.1)}
+@media(max-width:680px){.hero{min-height:410px;padding:44px 25px 50px;margin-top:16px;border-radius:24px}.hero h1{font-size:46px;max-width:95%}.hero p{font-size:15.5px;line-height:1.65}.hero:before{right:-26%;width:92%;height:60%;opacity:.7}.hero:after{width:100%;opacity:.22}.searchbar{top:72px}.stat{padding:15px}.stat b{font-size:23px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+ <nav class="nav" aria-label="Primary">
+  <button class="brand navbtn" data-view="home" aria-label="Digital Atlas home"><span class="brandmark">🧭</span><span>Nick’s Digital Atlas</span></button>
+  <div class="navlinks">
+   <button class="navbtn active" data-view="home">Home</button>
+   <button class="navbtn" data-view="library">Master Library</button>
+   <button class="navbtn" data-view="categories">Categories</button>
+   <button class="navbtn" data-view="free">Free / No Login</button>
+   <button class="navbtn" data-view="archive">Power User</button>
+   <button class="navbtn" data-view="quality">Data Quality</button>
+  </div>
+  <button class="menu" id="menuBtn" aria-expanded="false" aria-controls="mobileNav">Menu</button>
+ </nav>
+ <div class="mobilepanel" id="mobileNav">
+   <button class="navbtn" data-view="home">Home</button><button class="navbtn" data-view="library">Master Library</button><button class="navbtn" data-view="categories">Categories</button><button class="navbtn" data-view="free">Free / No Login</button><button class="navbtn" data-view="archive">Power User</button><button class="navbtn" data-view="quality">Data Quality</button>
+ </div>
+</header>
+<main class="wrap" id="main">
+<section class="view active" id="view-home">
+ <div class="hero">
+  <div class="eyebrow">Verified discovery • 1,834 useful resources</div>
+  <h1>Your map to the best AI tools & resources.</h1>
+  <p>A curated, searchable atlas built to get you from an idea to the right tool faster. Explore by goal, category, verification status, or simply tell the Atlas what you want to accomplish.</p>
+  <div class="actions"><button class="btn primary" data-view="library">Search the library</button><button class="btn ghost" id="jumpCommand">New here? Start here</button></div>
+ </div>
+ <div class="stats">
+   <div class="stat"><b id="statIndexed"></b><span>unique launchable tools/sites</span></div>
+   <div class="stat"><b id="statSource"></b><span>entries in connected source sheets</span></div>
+   <div class="stat"><b id="statVerified"></b><span>live-verified in current audit</span></div>
+   <div class="stat"><b>4</b><span>connected Web Surfers source libraries</span></div>
+ </div>
+ <div class="callout green" id="newHere">
+  <strong>🧭 New here? This is the best place to start.</strong>
+  <p>Tell the guide what you want in ordinary language—“Help me make a video,” “Research this topic,” or “Find me a free tool.”</p>
+  <div class="command">
+   <label for="commandInput"><b>Family AI Command Center</b></label>
+   <div class="commandbox"><input id="commandInput" placeholder="What do you want to accomplish?" autocomplete="off"><button class="btn blue" id="routeBtn">Find my route</button></div>
+   <div class="suggestions" id="routeSuggestions" aria-live="polite"></div>
+  </div>
  </div>
  <div class="section">
   <div class="sectionhead"><div><h2>What is the Digital Atlas??</h2><p>Think of it as a well-organized digital toolbox.</p></div></div>
@@ -110,33 +169,4 @@ async function decodeAtlasData(){
 (async()=>{
  const RAW=JSON.parse(await decodeAtlasData());
  const TOOLS=RAW.map(x=>({id:x[0],name:x[1],url:x[2],description:x[3],pricing:x[4],sourceCategory:x[5],sourceCategories:[x[5]],section:x[6],subsection:x[7],curatedCategory:x[8],priority:x[9],verification:x[10],accessType:x[11],functionQA:x[12]}));
-const META={"sourceEntries":1802,"indexedTools":1834,"liveVerified":1529,"explicitAccessAudits":4,"auditBreakdown":{"blocked":207,"dead":32,"parked":1,"error":28,"timeout":22,"uncertain":10,"serverError":5},"sourceStats":{"AI":270,"Design & Creative":366,"Gaming":388,"Education & Learning":778},"lastAudit":"2026-09-03","built":"2026-09-03"};
-const SOURCE_LINKS={"AI":"https://docs.google.com/spreadsheets/d/1ryROQ0UO904kM7jY16wP0mjMTmrFsiZj4P07rLxwoss/edit","Design & Creative":"https://docs.google.com/spreadsheets/d/17zjPsKp8ZOXumyn-JH5Mzi_SA3BXYDPJAK51jzcktNg/edit","Gaming":"https://docs.google.com/spreadsheets/d/1nnlkuhRFf5g2xl3IXOc3Ftj3rh361qf-mgQ0Shl8JQ0/edit","Education & Learning":"https://docs.google.com/spreadsheets/d/1Mn2IozwzNX0S6spUZ0_6onjHZ06L4ZHOt6k3A6QNCVM/edit"};
-const PAGE_SIZE=60;
-let state={view:"home",query:"",source:"",pricing:"",verification:"",priority:"",sort:"relevance",page:1,favoritesOnly:false};
-let favorites=new Set(JSON.parse(localStorage.getItem("atlasFavorites")||"[]"));
-const $=(q)=>document.querySelector(q), $$=(q)=>[...document.querySelectorAll(q)];
-const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
-const domain=u=>{try{return new URL(u).hostname.replace(/^www\./,"")}catch{return u}};
-const fmt=n=>new Intl.NumberFormat().format(n);
-function saveFav(){localStorage.setItem("atlasFavorites",JSON.stringify([...favorites]))}
-function showView(view){
- state.view=view;
- $$(".view").forEach(x=>x.classList.toggle("active",x.id==="view-"+view));
- $$(".navbtn[data-view]").forEach(x=>x.classList.toggle("active",x.dataset.view===view));
- $("#mobileNav").classList.remove("open");$("#menuBtn").setAttribute("aria-expanded","false");
- history.replaceState(null,"","#"+view);
- window.scrollTo({top:0,behavior:"instant"});
- if(view==="library") renderLibrary();
- if(view==="categories") renderCategories();
- if(view==="free") renderFree();
- if(view==="archive") renderArchive();
-}
-$$("[data-view]").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));
-$("#menuBtn").onclick=()=>{let o=$("#mobileNav").classList.toggle("open");$("#menuBtn").setAttribute("aria-expanded",String(o))};
-$("#jumpCommand").onclick=()=>{$("#newHere").scrollIntoView({behavior:"smooth",block:"center"});setTimeout(()=>$("#commandInput").focus(),350)};
-$("#friendMode").onclick=()=>{showView("home");setTimeout(()=>{$("#newHere").scrollIntoView({behavior:"smooth"});$("#commandInput").focus()},80)};
-
-$("#statIndexed").textContent=fmt(META.indexedTools);
-$("#statSource").textContent=fmt(META.sourceEntries);
-$("#statVerified").textContent=fmt(ME
+const META={"sourceEntries":1802,"indexedTools":1834,"liveVerified":1529,"expl
