@@ -1,0 +1,51 @@
+name: Publish Nick's Digital Atlas
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "atlas-bundle.html"
+      - "atlas-build-report.json"
+      - ".github/workflows/atlas-publish.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: source
+
+      - name: Checkout published site
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: public
+
+      - name: Install verified Atlas into gh-pages
+        shell: bash
+        run: |
+          mkdir -p public/atlas
+          cp source/atlas-bundle.html public/atlas/index.html
+          cp source/atlas-build-report.json public/atlas/build-report.json
+          touch public/.nojekyll
+
+      - name: Commit published Atlas
+        shell: bash
+        run: |
+          cd public
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add atlas/index.html atlas/build-report.json .nojekyll
+          if git diff --cached --quiet; then
+            echo "Atlas already published"
+          else
+            git commit -m "Publish verified Nick's Digital Atlas"
+            git push origin HEAD:gh-pages
+          fi
