@@ -1,0 +1,148 @@
+?</h2><p>Think of it as a well-organized digital toolbox.</p></div></div>
+  <div class="callout"><b>The simple rule:</b> describe the outcome first. Choose the tool second. Instead of searching for hours or memorizing hundreds of names, begin with the result you want.</div>
+ </div>
+ <div class="section">
+  <div class="sectionhead"><div><h2>How it works</h2></div></div>
+  <div class="steps"><div class="step"><div class="num">1</div><h3>Describe your goal</h3><p>Say what you want to make, learn, research, fix, compare or organize.</p></div><div class="step"><div class="num">2</div><h3>Choose a route</h3><p>Use the beginner guide, pick a category, or search the full library.</p></div><div class="step"><div class="num">3</div><h3>Open the tool</h3><p>Launch the specialist website directly. External links open in a separate tab.</p></div></div>
+ </div>
+ <div class="section">
+  <div class="sectionhead"><div><h2>Try something right now</h2><p>Goal-first routes mirror the Notion Atlas.</p></div></div>
+  <div class="grid" id="goalGrid"></div>
+ </div>
+ <div class="section">
+  <div class="sectionhead"><div><h2>Pick the experience that fits you</h2></div></div>
+  <div class="grid">
+   <div class="card click" id="friendMode"><div class="icon">🌱</div><h3>Friend Mode</h3><p>Best if you do not know where to start. Describe your goal in normal language.</p></div>
+   <div class="card click" data-view="categories"><div class="icon">🧩</div><h3>Browse by goal</h3><p>Best if you know the kind of task you want to complete.</p></div>
+   <div class="card click" data-view="archive"><div class="icon">⚡</div><h3>Power User Mode</h3><p>Best when you want the broadest coverage and the raw source layers.</p></div>
+   <div class="card click" data-view="library"><div class="icon">🔎</div><h3>Master Library</h3><p>Search every indexed launchable URL in one fast interface.</p></div>
+  </div>
+ </div>
+ <div class="section">
+   <div class="sectionhead"><div><h2>Prompts that make the guide more useful</h2></div></div>
+   <div class="chiprow"><span class="chip">“Find me a free option.”</span><span class="chip">“It must work on my phone.”</span><span class="chip">“I do not want to create an account.”</span><span class="chip">“Give me the easiest choice.”</span><span class="chip">“I care more about quality than speed.”</span><span class="chip">“Explain it simply.”</span></div>
+   <div class="callout" style="margin-top:14px"><b>Example:</b> “I want to turn five vacation photos into a short video on my phone. Find the easiest free option and explain exactly what to do.”</div>
+ </div>
+ <div class="section faq">
+   <div class="sectionhead"><div><h2>Common questions</h2></div></div>
+   <details><summary>Do I need to understand AI?</summary><p>No. Describe what you want in normal language. The goal comes first; the tool comes second.</p></details>
+   <details><summary>Does every tool cost money?</summary><p>No. The source collection includes free, free/paid, paid and not-yet-audited records. Pricing shown here comes from the source material or curated audit.</p></details>
+   <details><summary>Does “no login” mean every free tool needs no account?</summary><p>No. Only tools explicitly audited as no-login or optional-login are shown in the dedicated no-login collection. Unknown access is left unknown.</p></details>
+   <details><summary>Can ChatGPT operate every website for me?</summary><p>No. Some tasks can be completed directly in ChatGPT or through connected capabilities; other tasks require opening the specialist site.</p></details>
+   <details><summary>Can I browse everything myself?</summary><p>Yes. Use the Master Library for the cleaned index or Power User Mode for the four original source libraries.</p></details>
+ </div>
+ <div class="callout gray"><strong>🔒 A quick privacy note</strong><p>Do not paste passwords, payment details, private client records, or highly sensitive information into an unfamiliar website. Review privacy terms before uploading sensitive files. For important medical, legal or financial decisions, verify information with a qualified professional.</p></div>
+</section>
+
+<section class="view" id="view-library">
+ <div class="libraryHero"><div class="eyebrow" style="color:#175cd3">Master Library</div><h1>Search every indexed tool.</h1><p>Search names, descriptions, categories and subcategories. Filters operate locally and instantly.</p></div>
+ <div class="searchbar">
+  <div class="searchrow">
+   <input class="control query" id="searchInput" placeholder="Search tools, descriptions, categories…" aria-label="Search library">
+   <select class="control" id="sourceFilter" aria-label="Source category"><option value="">All sources</option></select>
+   <select class="control" id="pricingFilter" aria-label="Pricing"><option value="">All pricing</option></select>
+   <select class="control" id="verificationFilter" aria-label="Verification"><option value="">All verification</option><option value="Live verified">Live verified</option><option value="not-live">Not live-verified</option></select>
+   <select class="control" id="priorityFilter" aria-label="Priority"><option value="">All priorities</option><option>High</option><option>Medium</option><option>Low</option></select>
+   <select class="control" id="sortFilter" aria-label="Sort"><option value="relevance">Sort: relevance</option><option value="az">Name A–Z</option><option value="verified">Verified first</option><option value="priority">Priority first</option></select>
+  </div>
+ </div>
+ <div class="filtermeta"><div><b id="resultCount"></b> <span id="filterSummary"></span></div><div class="chiprow"><button class="chip" id="favOnly">★ Favorites only</button><button class="chip" id="clearFilters">Clear filters</button></div></div>
+ <div class="tools" id="toolGrid"></div>
+ <div class="pagination" id="pagination"></div>
+</section>
+
+<section class="view" id="view-categories">
+ <div class="pagehead libraryHero"><div class="eyebrow" style="color:#175cd3">Browse by goal</div><h1>Categories</h1><p>Start broad, then narrow with search and filters.</p></div>
+ <div class="categorygrid" id="categoryGrid"></div>
+</section>
+
+<section class="view" id="view-free">
+ <div class="pagehead libraryHero"><div class="eyebrow" style="color:#067647">Audited access</div><h1>Free • No Login</h1><p>This collection is deliberately strict: it only includes records whose Notion audit explicitly classifies them as usable without creating an account or with optional login.</p></div>
+ <div class="callout green"><b>Why the list is short:</b> access type has only been explicitly audited for a small set of records. The site does not infer “no login” from a “Free” pricing label.</div>
+ <div class="tools" id="freeGrid" style="margin-top:18px"></div>
+</section>
+
+<section class="view" id="view-archive">
+ <div class="pagehead libraryHero"><div class="eyebrow" style="color:#5925dc">Power User Mode</div><h1>Web Surfers source archive</h1><p>The raw source layer behind the cleaned Atlas. Use this when you want deeper coverage or to audit where an entry came from.</p></div>
+ <div class="archivegrid" id="archiveGrid"></div>
+ <div class="section"><div class="callout purple"><b>Curated flow:</b> category → useful result → launch tool. Use the source archive when you need deeper coverage. The four source sheets remain distinct so provenance is preserved.</div></div>
+ <div class="section"><button class="btn blue" id="browseRaw">Browse all source-indexed records</button></div>
+</section>
+
+<section class="view" id="view-quality">
+ <div class="pagehead libraryHero"><div class="eyebrow" style="color:#b54708">Trust & transparency</div><h1>Data quality</h1><p>The Atlas separates “present in a source” from “live-verified.” Missing metadata stays unknown rather than being invented.</p></div>
+ <div class="quality">
+   <div class="panel">
+    <h2 style="margin-top:0">What each status means</h2>
+    <p><b>Live verified</b> means the current curated audit recorded a successful live-page verification. <b>Source verified / Source listed</b> means the website is present in an indexed source, not that every current feature or pricing claim has been re-tested.</p>
+    <p><b>Access type</b> is only shown when the curated Notion database explicitly classified it. A free price does not automatically mean no account is required.</p>
+    <p><b>Historical Parts 1–749</b> include unresolved placeholders. Those rows are not converted into fake websites here; launchable URLs are indexed, while unresolved placeholders remain a QA issue in the underlying working directory.</p>
+   </div>
+   <div class="panel">
+    <h2 style="margin-top:0">Current build snapshot</h2>
+    <table><tr><td>Unique launchable URLs</td><td id="qIndexed"></td></tr><tr><td>Source-sheet entries</td><td id="qSource"></td></tr><tr><td>Live-verified</td><td id="qVerified"></td></tr><tr><td>Explicit access audits</td><td id="qAccess"></td></tr><tr><td>Audit date</td><td id="qDate"></td></tr></table>
+   </div>
+ </div>
+ <div class="section">
+  <div class="callout gray"><b>Build provenance:</b> source libraries were read from the connected AI, Design & Creative, Gaming, and Education & Learning Google Sheets; verification metadata was merged from the saved link-checked master workbook and the curated Notion website database.</div>
+ </div>
+</section>
+
+<footer class="footer"><b>Nick’s Digital Atlas</b> · Built from connected source libraries and curated verification data. External websites are third-party services. Data snapshot: <span id="footerDate"></span>.</footer>
+</main>
+
+<div class="modal" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+ <div class="modalbox"><button class="modalclose" id="modalClose" aria-label="Close">×</button><div id="modalContent"></div></div>
+</div>
+
+<script>
+const DATA_B64="__DATA_B64__";
+async function decodeAtlasData(){
+ const bin=atob(DATA_B64), bytes=new Uint8Array(bin.length);
+ for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+ if(!("DecompressionStream" in window))throw new Error("This browser needs gzip DecompressionStream support.");
+ const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+ return await new Response(stream).text();
+}
+(async()=>{
+ const RAW=JSON.parse(await decodeAtlasData());
+ const TOOLS=RAW.map(x=>({id:x[0],name:x[1],url:x[2],description:x[3],pricing:x[4],sourceCategory:x[5],sourceCategories:[x[5]],section:x[6],subsection:x[7],curatedCategory:x[8],priority:x[9],verification:x[10],accessType:x[11],functionQA:x[12]}));
+const META={"sourceEntries":1802,"indexedTools":1834,"liveVerified":70,"explicitAccessAudits":4,"sourceStats":{"AI":270,"Design & Creative":366,"Gaming":388,"Education & Learning":778},"lastAudit":"2026-08-27","built":"2026-09-03"};
+const SOURCE_LINKS={"AI":"https://docs.google.com/spreadsheets/d/1ryROQ0UO904kM7jY16wP0mjMTmrFsiZj4P07rLxwoss/edit","Design & Creative":"https://docs.google.com/spreadsheets/d/17zjPsKp8ZOXumyn-JH5Mzi_SA3BXYDPJAK51jzcktNg/edit","Gaming":"https://docs.google.com/spreadsheets/d/1nnlkuhRFf5g2xl3IXOc3Ftj3rh361qf-mgQ0Shl8JQ0/edit","Education & Learning":"https://docs.google.com/spreadsheets/d/1Mn2IozwzNX0S6spUZ0_6onjHZ06L4ZHOt6k3A6QNCVM/edit"};
+const PAGE_SIZE=60;
+let state={view:"home",query:"",source:"",pricing:"",verification:"",priority:"",sort:"relevance",page:1,favoritesOnly:false};
+let favorites=new Set(JSON.parse(localStorage.getItem("atlasFavorites")||"[]"));
+const $=(q)=>document.querySelector(q), $$=(q)=>[...document.querySelectorAll(q)];
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+const domain=u=>{try{return new URL(u).hostname.replace(/^www\./,"")}catch{return u}};
+const fmt=n=>new Intl.NumberFormat().format(n);
+function saveFav(){localStorage.setItem("atlasFavorites",JSON.stringify([...favorites]))}
+function showView(view){
+ state.view=view;
+ $$(".view").forEach(x=>x.classList.toggle("active",x.id==="view-"+view));
+ $$(".navbtn[data-view]").forEach(x=>x.classList.toggle("active",x.dataset.view===view));
+ $("#mobileNav").classList.remove("open");$("#menuBtn").setAttribute("aria-expanded","false");
+ history.replaceState(null,"","#"+view);
+ window.scrollTo({top:0,behavior:"instant"});
+ if(view==="library") renderLibrary();
+ if(view==="categories") renderCategories();
+ if(view==="free") renderFree();
+ if(view==="archive") renderArchive();
+}
+$$("[data-view]").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));
+$("#menuBtn").onclick=()=>{let o=$("#mobileNav").classList.toggle("open");$("#menuBtn").setAttribute("aria-expanded",String(o))};
+$("#jumpCommand").onclick=()=>{$("#newHere").scrollIntoView({behavior:"smooth",block:"center"});setTimeout(()=>$("#commandInput").focus(),350)};
+$("#friendMode").onclick=()=>{showView("home");setTimeout(()=>{$("#newHere").scrollIntoView({behavior:"smooth"});$("#commandInput").focus()},80)};
+
+$("#statIndexed").textContent=fmt(META.indexedTools);
+$("#statSource").textContent=fmt(META.sourceEntries);
+$("#statVerified").textContent=fmt(META.liveVerified);
+$("#qIndexed").textContent=fmt(META.indexedTools);$("#qSource").textContent=fmt(META.sourceEntries);$("#qVerified").textContent=fmt(META.liveVerified);$("#qAccess").textContent=fmt(META.explicitAccessAudits);$("#qDate").textContent=META.lastAudit;$("#footerDate").textContent=META.built;
+
+const goals=[
+ ["🎬","Make an AI video","Ideas, scripts, editing, voice and video tools.","video"],
+ ["🔬","Research something deeply","Learn, investigate and understand complicated subjects.","research"],
+ ["🎨","Create graphics or improve a photo","Design, branding, images, video and creative work.","design"],
+ ["💼","Find a business or money tool","Marketing, productivity, finance and business resources.","business"],
+ ["🌐","Build a website or automate a task","Coding, assistants, agents and digital workflows.","automation"],
+ ["🗺️","Explore maps, 3D or interactive worlds","Mapping, geographic, gaming and visualizat
