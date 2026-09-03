@@ -1,3 +1,4 @@
+# Production publisher for Nick's Digital Atlas
 name: Publish Nick's Digital Atlas
 
 on:
