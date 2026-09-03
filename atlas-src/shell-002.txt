@@ -1,0 +1,128 @@
+ion resources.","maps"],
+ ["🆓","Use something free without an account","Only explicitly audited no-login tools.","no-login"],
+ ["⭐","Just show me something useful","High-priority or live-verified places to begin.","recommended"]
+];
+$("#goalGrid").innerHTML=goals.map(g=>`<div class="card click" data-goal="${g[3]}"><div class="icon">${g[0]}</div><h3>${g[1]}</h3><p>${g[2]}</p></div>`).join("");
+$$("[data-goal]").forEach(x=>x.onclick=()=>applyGoal(x.dataset.goal));
+
+const ROUTES={
+ video:{label:"AI video & media",terms:["video","voice","audio","animation","avatar","script"],source:"AI"},
+ research:{label:"Learning & research",terms:["research","study","science","learn","paper","education"],source:"Education & Learning"},
+ design:{label:"Design & creative",terms:["design","photo","image","graphic","logo","ui","ux"],source:"Design & Creative"},
+ business:{label:"Business & productivity",terms:["business","marketing","money","finance","productivity","sales","resume","job"],source:""},
+ automation:{label:"AI & automation",terms:["automation","agent","workflow","code","coding","website","app","developer"],source:"AI"},
+ maps:{label:"Games, maps & 3D",terms:["map","3d","world","terrain","game","minecraft"],source:"Gaming"},
+ "no-login":{label:"Free • No Login",terms:[],source:""},
+ recommended:{label:"Recommended starting points",terms:[],source:""}
+};
+function applyGoal(g){
+ if(g==="no-login"){showView("free");return}
+ state.query=ROUTES[g]?.terms.slice(0,1).join(" ")||"";
+ state.source=ROUTES[g]?.source||"";
+ state.verification=g==="recommended"?"Live verified":"";
+ state.priority=g==="recommended"?"High":"";
+ state.page=1;showView("library");
+ $("#searchInput").value=g==="recommended"?"":(ROUTES[g]?.terms.slice(0,1).join(" ")||"");
+ $("#sourceFilter").value=state.source;$("#verificationFilter").value=state.verification;$("#priorityFilter").value=state.priority;
+ if(g!=="recommended"){state.query=$("#searchInput").value}
+ renderLibrary();
+}
+function routeCommand(){
+ const q=$("#commandInput").value.trim().toLowerCase();
+ if(!q){$("#routeSuggestions").innerHTML='<div class="suggestion"><b>Tell me the outcome.</b><span>For example: make a video, research a topic, build a website, find a free tool.</span></div>';return}
+ const scored=Object.entries(ROUTES).filter(([k])=>k!=="recommended").map(([k,v])=>[k,v,v.terms.reduce((n,t)=>n+(q.includes(t)?3:0),0)+(k==="no-login"&&/(free|no login|no account)/.test(q)?6:0)]).sort((a,b)=>b[2]-a[2]);
+ const top=scored.filter(x=>x[2]>0).slice(0,3);
+ const picks=top.length?top:[["research",ROUTES.research,1],["design",ROUTES.design,1],["automation",ROUTES.automation,1]];
+ $("#routeSuggestions").innerHTML=picks.map(([k,v])=>`<button class="suggestion" data-route="${k}" style="text-align:left;cursor:pointer"><b>${esc(v.label)}</b><span>Open matching tools →</span></button>`).join("");
+ $$("[data-route]").forEach(x=>x.onclick=()=>applyGoal(x.dataset.route));
+}
+$("#routeBtn").onclick=routeCommand;$("#commandInput").addEventListener("keydown",e=>{if(e.key==="Enter")routeCommand()});
+
+const sourceValues=[...new Set(TOOLS.map(x=>x.sourceCategory))].sort();
+const pricingValues=[...new Set(TOOLS.map(x=>x.pricing).filter(Boolean))].sort();
+$("#sourceFilter").innerHTML+='<option value="Curated Library">Curated Library</option>'+sourceValues.filter(x=>x!=="Curated Library").map(x=>`<option>${esc(x)}</option>`).join("");
+$("#pricingFilter").innerHTML+=pricingValues.map(x=>`<option>${esc(x)}</option>`).join("");
+
+function syncStateFromControls(){
+ state.query=$("#searchInput").value.trim();state.source=$("#sourceFilter").value;state.pricing=$("#pricingFilter").value;state.verification=$("#verificationFilter").value;state.priority=$("#priorityFilter").value;state.sort=$("#sortFilter").value;state.page=1;
+ renderLibrary();
+}
+["searchInput","sourceFilter","pricingFilter","verificationFilter","priorityFilter","sortFilter"].forEach(id=>$("#"+id).addEventListener(id==="searchInput"?"input":"change",syncStateFromControls));
+$("#favOnly").onclick=()=>{state.favoritesOnly=!state.favoritesOnly;$("#favOnly").classList.toggle("active",state.favoritesOnly);state.page=1;renderLibrary()};
+$("#clearFilters").onclick=()=>{state={...state,query:"",source:"",pricing:"",verification:"",priority:"",sort:"relevance",page:1,favoritesOnly:false};$("#searchInput").value="";$("#sourceFilter").value="";$("#pricingFilter").value="";$("#verificationFilter").value="";$("#priorityFilter").value="";$("#sortFilter").value="relevance";$("#favOnly").classList.remove("active");renderLibrary()};
+
+function tokenize(q){return q.toLowerCase().split(/\s+/).filter(Boolean)}
+function getFiltered(){
+ const terms=tokenize(state.query);
+ let arr=TOOLS.filter(t=>{
+  if(state.source&&t.sourceCategory!==state.source&&!t.sourceCategories?.includes(state.source))return false;
+  if(state.pricing&&t.pricing!==state.pricing)return false;
+  if(state.verification==="Live verified"&&t.verification!=="Live verified")return false;
+  if(state.verification==="not-live"&&t.verification==="Live verified")return false;
+  if(state.priority&&t.priority!==state.priority)return false;
+  if(state.favoritesOnly&&!favorites.has(t.id))return false;
+  if(terms.length){
+    const hay=[t.name,t.description,t.sourceCategory,t.section,t.subsection,t.curatedCategory,t.pricing].join(" ").toLowerCase();
+    if(!terms.every(term=>hay.includes(term)))return false;
+  }
+  return true;
+ });
+ if(state.sort==="az")arr.sort((a,b)=>a.name.localeCompare(b.name));
+ else if(state.sort==="verified")arr.sort((a,b)=>(b.verification==="Live verified")-(a.verification==="Live verified")||a.name.localeCompare(b.name));
+ else if(state.sort==="priority"){const p={High:3,Medium:2,Low:1};arr.sort((a,b)=>(p[b.priority]||0)-(p[a.priority]||0)||a.name.localeCompare(b.name))}
+ else if(terms.length){arr.sort((a,b)=>scoreTool(b,terms)-scoreTool(a,terms)||a.name.localeCompare(b.name))}
+ return arr;
+}
+function scoreTool(t,terms){const n=t.name.toLowerCase(),d=t.description.toLowerCase();return terms.reduce((s,q)=>s+(n.includes(q)?8:0)+(d.includes(q)?3:0)+(t.section.toLowerCase().includes(q)?2:0),0)+(t.verification==="Live verified"?1:0)+(t.priority==="High"?1:0)}
+function toolCard(t){
+ const live=t.verification==="Live verified";
+ return `<article class="tool">
+  <div class="tooltop"><div class="favicon">${esc(t.name.charAt(0).toUpperCase())}</div><div><h3>${esc(t.name)}</h3><div class="domain">${esc(domain(t.url))}</div></div></div>
+  <p>${esc(t.description||"No description available in the current source record.")}</p>
+  <div class="badges"><span class="badge ${live?"live":"pending"}">${live?"✓ Live verified":esc(t.verification||"Source listed")}</span><span class="badge ${String(t.pricing).startsWith("Free")?"free":""}">${esc(t.pricing||"Unknown")}</span>${t.sourceCategory?`<span class="badge">${esc(t.sourceCategory)}</span>`:""}${t.accessType?`<span class="badge live">${esc(t.accessType)}</span>`:""}</div>
+  <div class="toolactions"><button class="btn outline" onclick="openDetail(${t.id})">Details</button><a class="btn blue" href="${esc(t.url)}" target="_blank" rel="noopener noreferrer">Visit ↗</a><button class="btn outline fav" aria-label="Favorite ${esc(t.name)}" onclick="toggleFav(${t.id},this)">${favorites.has(t.id)?"★":"☆"}</button></div>
+ </article>`;
+}
+function renderLibrary(){
+ const arr=getFiltered(), total=arr.length, pages=Math.max(1,Math.ceil(total/PAGE_SIZE));state.page=Math.min(state.page,pages);
+ const slice=arr.slice((state.page-1)*PAGE_SIZE,state.page*PAGE_SIZE);
+ $("#resultCount").textContent=fmt(total)+" results";
+ $("#filterSummary").textContent=state.query?`for “${state.query}”`:"";
+ $("#toolGrid").innerHTML=slice.length?slice.map(toolCard).join(""):`<div class="empty" style="grid-column:1/-1"><h3>No matching tools</h3><p>Try clearing a filter or using a broader search.</p></div>`;
+ $("#pagination").innerHTML=pages>1?`<button ${state.page===1?"disabled":""} onclick="goPage(${state.page-1})">← Previous</button><span>Page ${state.page} of ${pages}</span><button ${state.page===pages?"disabled":""} onclick="goPage(${state.page+1})">Next →</button>`:"";
+}
+window.goPage=p=>{state.page=p;renderLibrary();$("#view-library").scrollIntoView({behavior:"smooth"})};
+window.toggleFav=(id,btn)=>{favorites.has(id)?favorites.delete(id):favorites.add(id);saveFav();btn.textContent=favorites.has(id)?"★":"☆";if(state.favoritesOnly)renderLibrary()};
+
+function openDetail(id){
+ const t=TOOLS.find(x=>x.id===id);if(!t)return;
+ $("#modalContent").innerHTML=`<div class="eyebrow" style="color:#175cd3">Tool details</div><h2 id="detailTitle" style="font-size:28px;margin:6px 0">${esc(t.name)}</h2><p style="color:#667085">${esc(t.description||"No description available.")}</p>
+ <dl class="detailgrid"><dt>Website</dt><dd><a href="${esc(t.url)}" target="_blank" rel="noopener noreferrer" style="color:#175cd3">${esc(t.url)}</a></dd><dt>Source category</dt><dd>${esc(t.sourceCategory)}</dd><dt>Section</dt><dd>${esc(t.section||"—")}</dd><dt>Subcategory</dt><dd>${esc(t.subsection||"—")}</dd><dt>Pricing</dt><dd>${esc(t.pricing||"Unknown")}</dd><dt>Priority</dt><dd>${esc(t.priority||"Not assigned")}</dd><dt>Verification</dt><dd>${esc(t.verification||"Source listed")}</dd><dt>Access type</dt><dd>${esc(t.accessType||"Not audited")}</dd><dt>Function QA</dt><dd>${esc(t.functionQA||"Not audited")}</dd></dl>
+ <div class="actions"><a class="btn blue" href="${esc(t.url)}" target="_blank" rel="noopener noreferrer">Open website ↗</a><button class="btn outline" onclick="toggleModalFav(${t.id},this)">${favorites.has(t.id)?"★ Favorited":"☆ Add favorite"}</button></div>`;
+ $("#detailModal").classList.add("open");$("#modalClose").focus();
+}
+window.openDetail=openDetail;
+window.toggleModalFav=(id,b)=>{favorites.has(id)?favorites.delete(id):favorites.add(id);saveFav();b.textContent=favorites.has(id)?"★ Favorited":"☆ Add favorite"};
+function closeModal(){$("#detailModal").classList.remove("open")}
+$("#modalClose").onclick=closeModal;$("#detailModal").onclick=e=>{if(e.target===e.currentTarget)closeModal()};document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
+
+function renderCategories(){
+ const groups={};
+ TOOLS.forEach(t=>{const k=t.sourceCategory||"Other";groups[k]=(groups[k]||0)+1});
+ $("#categoryGrid").innerHTML=Object.entries(groups).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div class="category" data-cat="${esc(k)}"><span class="count">${fmt(n)}</span><strong>${esc(k)}</strong><p style="color:#667085;margin:5px 0 0">Browse ${fmt(n)} indexed entries →</p></div>`).join("");
+ $$("[data-cat]").forEach(x=>x.onclick=()=>{state.source=x.dataset.cat;state.query="";state.page=1;showView("library");$("#sourceFilter").value=state.source;$("#searchInput").value="";renderLibrary()})
+}
+function renderFree(){
+ const arr=TOOLS.filter(x=>/Free - (no login|optional login)/i.test(x.accessType||""));
+ $("#freeGrid").innerHTML=arr.length?arr.map(toolCard).join(""):`<div class="empty"><h3>No explicitly audited no-login records found.</h3></div>`;
+}
+function renderArchive(){
+ $("#archiveGrid").innerHTML=Object.entries(META.sourceStats).map(([k,n])=>`<div class="sourcecard"><div class="eyebrow" style="color:#5925dc">${esc(k)}</div><div class="big">${fmt(n)}</div><p>URL-bearing entries in the original ${esc(k)} source sheet.</p><div class="actions"><button class="btn soft" onclick="browseSource('${esc(k)}')">Browse in Atlas</button><a class="btn outline" href="${SOURCE_LINKS[k]}" target="_blank" rel="noopener noreferrer">Open source ↗</a></div></div>`).join("");
+}
+window.browseSource=k=>{state.source=k;state.query="";state.page=1;showView("library");$("#sourceFilter").value=k;$("#searchInput").value="";renderLibrary()};
+$("#browseRaw").onclick=()=>{state.source="";state.query="";state.verification="not-live";state.page=1;showView("library");$("#sourceFilter").value="";$("#searchInput").value="";$("#verificationFilter").value="not-live";renderLibrary()};
+
+const initial=location.hash.replace("#","");if(["home","library","categories","free","archive","quality"].includes(initial))showView(initial);else renderLibrary();
+})().catch(err=>{console.error(err);document.body.insertAdjacentHTML("beforeend",`<div style="position:fixed;left:12px;right:12px;bottom:12px;background:#fff1f3;color:#9f1239;border:1px solid #fecdd3;border-radius:12px;padding:12px;z-index:9999"><b>Atlas data could not load.</b> ${String(err.message||err)}</div>`)});
+</script>
+</body></html>
