@@ -1,0 +1,309 @@
+name: Apply Atlas Full Audit Results
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/atlas-apply-audit-results.yml"
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Download completed full-library audit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/atlas-audit
+          mkdir -p /tmp/atlas-audit
+          gh run download 33772816200 -n atlas-full-link-audit -D /tmp/atlas-audit
+          find /tmp/atlas-audit -maxdepth 3 -type f -print
+
+      - name: Merge audit into Atlas and rebuild
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from urllib.parse import urlsplit, urlunsplit, unquote
+          import base64, gzip, hashlib, json, re
+
+          root=Path('.')
+          audit_files=list(Path('/tmp/atlas-audit').rglob('atlas-link-audit.json'))
+          if not audit_files:
+              raise SystemExit('atlas-link-audit.json not found in downloaded artifact')
+          audit=json.loads(audit_files[0].read_text())
+          if audit.get('total') != 1834 or audit.get('liveVerified') != 1529:
+              raise SystemExit(f'Unexpected audit summary: total={audit.get("total")} live={audit.get("liveVerified")}')
+
+          shell=''.join((root/f'atlas-src/shell-{i:03d}.txt').read_text() for i in range(3))
+          data_b64=''.join((root/f'atlas-src/data-{i:03d}.txt').read_text().strip() for i in range(9))
+          raw=json.loads(gzip.decompress(base64.b64decode(data_b64)))
+          if len(raw) != 1834:
+              raise SystemExit(f'Expected 1834 data records, got {len(raw)}')
+
+          def norm(u):
+              p=urlsplit(u.strip())
+              path=unquote(p.path or '/')
+              return urlunsplit((p.scheme.lower(),p.netloc.lower(),path,p.query,''))
+
+          amap={norm(r['url']):r for r in audit['results']}
+          if len(amap) != 1834:
+              raise SystemExit(f'Expected 1834 unique audit URLs, got {len(amap)}')
+
+          labels={
+              'live':'Live verified',
+              'blocked':'Automation blocked',
+              'dead':'Dead / unavailable',
+              'parked':'Parked / for sale',
+              'error':'Verification error',
+              'uncertain':'Needs review',
+              'timeout':'Timed out',
+              'server_error':'Server error',
+          }
+          merged={}
+          for row in raw:
+              a=amap.get(norm(row[2]))
+              if not a:
+                  raise SystemExit(f'No audit match for {row[2]}')
+              label=labels[a['verdict']]
+              row[10]=label
+              merged[label]=merged.get(label,0)+1
+
+          expected={
+              'Live verified':1529,
+              'Automation blocked':207,
+              'Dead / unavailable':32,
+              'Parked / for sale':1,
+              'Verification error':28,
+              'Needs review':10,
+              'Timed out':22,
+              'Server error':5,
+          }
+          if merged != expected:
+              raise SystemExit(f'Verification merge mismatch: {merged}')
+
+          packed=json.dumps(raw,separators=(',',':'),ensure_ascii=False).encode('utf-8')
+          new_data=base64.b64encode(gzip.compress(packed,compresslevel=9,mtime=0)).decode('ascii')
+
+          def replace_once(text,old,new,label):
+              if text.count(old) != 1:
+                  raise SystemExit(f'{label}: expected exactly one match, found {text.count(old)}')
+              return text.replace(old,new,1)
+
+          old='<select class="control" id="verificationFilter" aria-label="Verification"><option value="">All verification</option><option value="Live verified">Live verified</option><option value="not-live">Not live-verified</option></select>'
+          new='<select class="control" id="verificationFilter" aria-label="Verification"><option value="">All verification</option><option value="Live verified">Live verified</option><option value="not-live">Not live-verified</option><option value="Automation blocked">Automation blocked</option><option value="Dead / unavailable">Dead / unavailable</option><option value="Parked / for sale">Parked / for sale</option><option value="Needs review">Needs review</option><option value="Timed out">Timed out</option><option value="Verification error">Verification error</option><option value="Server error">Server error</option></select>'
+          shell=replace_once(shell,old,new,'verification filter')
+          shell=replace_once(shell,'Browse all source-indexed records','Review 305 non-live-verified records','archive review button')
+
+          old='if(state.verification==="Live verified"&&t.verification!=="Live verified")return false;\n  if(state.verification==="not-live"&&t.verification==="Live verified")return false;'
+          new='if(state.verification==="Live verified"&&t.verification!=="Live verified")return false;\n  if(state.verification==="not-live"&&t.verification==="Live verified")return false;\n  if(state.verification&&state.verification!=="Live verified"&&state.verification!=="not-live"&&t.verification!==state.verification)return false;'
+          shell=replace_once(shell,old,new,'verification filter logic')
+
+          shell=replace_once(shell,'.badge.pending{background:#fffaeb;color:#b54708}', '.badge.pending{background:#fffaeb;color:#b54708}.badge.bad{background:#fef3f2;color:#b42318}.badge.blocked{background:#f2f4f7;color:#344054}','status badge styles')
+          old='const live=t.verification==="Live verified";\n return `<article class="tool">'
+          new='const live=t.verification==="Live verified";\n const statusClass=live?"live":(/^(Dead|Parked|Server error)/.test(t.verification||"")?"bad":(t.verification==="Automation blocked"?"blocked":"pending"));\n return `<article class="tool">'
+          shell=replace_once(shell,old,new,'tool status class')
+          shell=replace_once(shell,'<span class="badge ${live?"live":"pending"}">${live?"✓ Live verified":esc(t.verification||"Source listed")}</span>','<span class="badge ${statusClass}">${live?"✓ Live verified":esc(t.verification||"Source listed")}</span>','tool status badge')
+
+          old='<p><b>Live verified</b> means the current curated audit recorded a successful live-page verification. <b>Source verified / Source listed</b> means the website is present in an indexed source, not that every current feature or pricing claim has been re-tested.</p>'
+          new='<p><b>Live verified</b> means Chromium successfully rendered the destination during the September 3, 2026 full-library audit. <b>Automation blocked</b> means the site was reached but prevented automated verification; it does not mean the site is dead. Other statuses identify dead, parked, timed-out, server-error, or review-needed destinations.</p>'
+          shell=replace_once(shell,old,new,'quality explanation')
+
+          old='<table><tr><td>Unique launchable URLs</td><td id="qIndexed"></td></tr><tr><td>Source-sheet entries</td><td id="qSource"></td></tr><tr><td>Live-verified</td><td id="qVerified"></td></tr><tr><td>Explicit access audits</td><td id="qAccess"></td></tr><tr><td>Audit date</td><td id="qDate"></td></tr></table>'
+          new='<table><tr><td>Unique launchable URLs</td><td id="qIndexed"></td></tr><tr><td>Source-sheet entries</td><td id="qSource"></td></tr><tr><td>Live-verified</td><td id="qVerified"></td></tr><tr><td>Automation-blocked</td><td id="qBlocked"></td></tr><tr><td>Dead / unavailable</td><td id="qDead"></td></tr><tr><td>Parked / for sale</td><td id="qParked"></td></tr><tr><td>Needs review / retry</td><td id="qReview"></td></tr><tr><td>Explicit access audits</td><td id="qAccess"></td></tr><tr><td>Audit date</td><td id="qDate"></td></tr></table>'
+          shell=replace_once(shell,old,new,'quality table')
+
+          old='const META={"sourceEntries":1802,"indexedTools":1834,"liveVerified":70,"explicitAccessAudits":4,"sourceStats":{"AI":270,"Design & Creative":366,"Gaming":388,"Education & Learning":778},"lastAudit":"2026-08-27","built":"2026-09-03"};'
+          new='const META={"sourceEntries":1802,"indexedTools":1834,"liveVerified":1529,"explicitAccessAudits":4,"auditBreakdown":{"blocked":207,"dead":32,"parked":1,"error":28,"timeout":22,"uncertain":10,"serverError":5},"sourceStats":{"AI":270,"Design & Creative":366,"Gaming":388,"Education & Learning":778},"lastAudit":"2026-09-03","built":"2026-09-03"};'
+          shell=replace_once(shell,old,new,'audit metadata')
+
+          old='$("#qIndexed").textContent=fmt(META.indexedTools);$("#qSource").textContent=fmt(META.sourceEntries);$("#qVerified").textContent=fmt(META.liveVerified);$("#qAccess").textContent=fmt(META.explicitAccessAudits);$("#qDate").textContent=META.lastAudit;$("#footerDate").textContent=META.built;'
+          new='$("#qIndexed").textContent=fmt(META.indexedTools);$("#qSource").textContent=fmt(META.sourceEntries);$("#qVerified").textContent=fmt(META.liveVerified);$("#qBlocked").textContent=fmt(META.auditBreakdown.blocked);$("#qDead").textContent=fmt(META.auditBreakdown.dead);$("#qParked").textContent=fmt(META.auditBreakdown.parked);$("#qReview").textContent=fmt(META.auditBreakdown.error+META.auditBreakdown.timeout+META.auditBreakdown.uncertain+META.auditBreakdown.serverError);$("#qAccess").textContent=fmt(META.explicitAccessAudits);$("#qDate").textContent=META.lastAudit;$("#footerDate").textContent=META.built;'
+          shell=replace_once(shell,old,new,'quality assignments')
+
+          if '__DATA_B64__' not in shell:
+              raise SystemExit('Atlas shell marker missing')
+          bundle=shell.replace('__DATA_B64__',new_data)
+
+          def split_n(text,n):
+              q,r=divmod(len(text),n)
+              parts=[]; pos=0
+              for i in range(n):
+                  size=q+(1 if i<r else 0)
+                  parts.append(text[pos:pos+size]); pos+=size
+              if ''.join(parts) != text:
+                  raise SystemExit('Chunk split verification failed')
+              return parts
+
+          for i,part in enumerate(split_n(shell,3)):
+              (root/f'atlas-src/shell-{i:03d}.txt').write_text(part)
+          for i,part in enumerate(split_n(new_data,9)):
+              (root/f'atlas-src/data-{i:03d}.txt').write_text(part)
+
+          (root/'atlas-bundle.html').write_text(bundle)
+          report={
+              'tool_count':1834,
+              'bundle_bytes':len(bundle.encode()),
+              'data_b64_bytes':len(new_data.encode()),
+              'sha256':hashlib.sha256(bundle.encode()).hexdigest(),
+          }
+          (root/'atlas-build-report.json').write_text(json.dumps(report,indent=2)+'\n')
+          persisted={
+              'generatedAt':audit['generatedAt'],
+              'total':1834,
+              'liveVerified':1529,
+              'notLiveVerified':305,
+              'counts':audit['counts'],
+              'method':audit['auditMethod'],
+              'note':'Automation blocked means the site was reached but prevented automated verification; it is not classified as dead.'
+          }
+          (root/'atlas-audit-summary.json').write_text(json.dumps(persisted,indent=2)+'\n')
+
+          # Keep the existing comprehensive QA suite, only update snapshot expectations.
+          q=root/'qa/atlas-live-qa.js'
+          qs=q.read_text()
+          replacements=[
+              ("c==='70'","c==='1,529'"),
+              ("===70","===1529"),
+              ("===1764","===305"),
+              ("Live verified=70; not-live=1,764","Live verified=1,529; not-live=305"),
+              ("1,764 non-live-verified source-indexed records","305 non-live-verified source-indexed records"),
+              ("v[2]==='70'","v[2]==='1,529'"),
+              ("v[4]==='2026-08-27'","v[4]==='2026-09-03'"),
+              ("Power User: Browse all source-indexed records","Power User: Review non-live-verified records"),
+          ]
+          for old,new in replacements:
+              qs=qs.replace(old,new)
+          for required in ["c==='1,529'","===1529","===305","v[4]==='2026-09-03'"]:
+              if required not in qs:
+                  raise SystemExit(f'QA expectation patch missing: {required}')
+          q.write_text(qs)
+
+          # Final integrity checks.
+          check=json.loads(gzip.decompress(base64.b64decode(new_data)))
+          if len(check)!=1834 or sum(1 for r in check if r[10]=='Live verified')!=1529:
+              raise SystemExit('Final data integrity verification failed')
+          print(json.dumps({'verification':merged,'report':report},indent=2))
+          PY
+
+      - name: Commit audited Atlas to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add atlas-src/shell-*.txt atlas-src/data-*.txt atlas-bundle.html atlas-build-report.json atlas-audit-summary.json qa/atlas-live-qa.js
+          git commit -m "Apply 1,834-site Atlas verification audit"
+          git push origin HEAD:main
+
+      - name: Checkout published site
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: public
+
+      - name: Publish audited Atlas to gh-pages
+        run: |
+          mkdir -p public/atlas
+          cp atlas-bundle.html public/atlas/index.html
+          cp atlas-build-report.json public/atlas/build-report.json
+          cp atlas-audit-summary.json public/atlas/audit-summary.json
+          touch public/.nojekyll
+          cd public
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add atlas/index.html atlas/build-report.json atlas/audit-summary.json .nojekyll
+          if git diff --cached --quiet; then
+            echo "Audited Atlas already published"
+          else
+            git commit -m "Publish fully audited Nick's Digital Atlas"
+            git push origin HEAD:gh-pages
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Chromium for final live QA
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Wait for audited production snapshot
+        env:
+          ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+        run: |
+          python - <<'PY'
+          import os,time,urllib.request
+          url=os.environ['ATLAS_URL']
+          last=''
+          for i in range(48):
+              try:
+                  req=urllib.request.Request(url,headers={'User-Agent':'Atlas-QA/1.0'})
+                  html=urllib.request.urlopen(req,timeout=15).read().decode('utf-8','replace')
+                  if '"liveVerified":1529' in html and '"lastAudit":"2026-09-03"' in html:
+                      print(f'Production is current after {i*5}s')
+                      break
+                  last='old snapshot'
+              except Exception as e:
+                  last=str(e)
+              time.sleep(5)
+          else:
+              raise SystemExit(f'Production did not update in time: {last}')
+          PY
+
+      - name: Run comprehensive live click-through QA
+        env:
+          ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+        run: node qa/atlas-live-qa.js
+
+      - name: Verify new audit status filters
+        env:
+          ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+        run: |
+          node - <<'JS'
+          const { chromium } = require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const page=await browser.newPage({viewport:{width:1440,height:1000}});
+            const r=await page.goto(process.env.ATLAS_URL,{waitUntil:'networkidle',timeout:60000});
+            if(!r||r.status()!==200)throw new Error(`HTTP ${r?r.status():'none'}`);
+            await page.waitForFunction(()=>document.querySelector('#statVerified')?.textContent==='1,529');
+            await page.locator('.navlinks button[data-view="library"]').click();
+            const expected={'Live verified':1529,'Automation blocked':207,'Dead / unavailable':32,'Parked / for sale':1,'Needs review':10,'Timed out':22,'Verification error':28,'Server error':5,'not-live':305};
+            for(const [value,count] of Object.entries(expected)){
+              await page.locator('#verificationFilter').selectOption(value);
+              await page.waitForTimeout(80);
+              const text=await page.locator('#resultCount').innerText();
+              const n=Number((text.match(/[\d,]+/)||['0'])[0].replace(/,/g,''));
+              if(n!==count)throw new Error(`${value}: expected ${count}, got ${n}`);
+              console.log(`PASS | ${value} | ${n}`);
+            }
+            await page.locator('.navlinks button[data-view="quality"]').click();
+            const actual=[await page.locator('#qVerified').innerText(),await page.locator('#qBlocked').innerText(),await page.locator('#qDead').innerText(),await page.locator('#qParked').innerText(),await page.locator('#qReview').innerText(),await page.locator('#qDate').innerText()];
+            const wanted=['1,529','207','32','1','65','2026-09-03'];
+            if(JSON.stringify(actual)!==JSON.stringify(wanted))throw new Error(`Quality snapshot mismatch ${JSON.stringify(actual)}`);
+            console.log('PASS | Audit quality snapshot | '+actual.join(' / '));
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+
+      - name: Upload final QA artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-post-audit-live-qa
+          path: qa-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
