@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<title>Nick’s Digital Atlas — AI, Tools & Useful Websites</title>
+<meta name="description" content="A searchable digital atlas of AI tools, websites, research resources, design tools, gaming tools, and learning resources.">
+<style>
+:root{
+ --bg:#f5f7fb;--panel:#ffffff;--panel2:#f9fbff;--ink:#101828;--muted:#667085;--line:#e4e7ec;
+ --navy:#0b1020;--blue:#2563eb;--blue2:#60a5fa;--green:#16a34a;--amber:#d97706;--red:#dc2626;
+ --purple:#7c3aed;--pink:#db2777;--shadow:0 16px 45px rgba(16,24,40,.08);--r:20px;
+ --max:1240px
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+a{color:inherit}.skip{position:absolute;left:-9999px}.skip:focus{left:16px;top:16px;z-index:999;background:#fff;padding:10px 14px;border-radius:10px}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(11,16,32,.95);backdrop-filter:blur(14px);color:white;border-bottom:1px solid rgba(255,255,255,.09)}
+.nav{max-width:var(--max);margin:auto;height:68px;display:flex;align-items:center;gap:18px;padding:0 22px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em;white-space:nowrap}.brandmark{width:35px;height:35px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,#60a5fa,#8b5cf6);box-shadow:0 8px 22px rgba(96,165,250,.24)}
+.navlinks{display:flex;gap:4px;margin-left:auto}.navbtn{border:0;background:transparent;color:#d0d5dd;padding:9px 11px;border-radius:10px;font:inherit;cursor:pointer}.navbtn:hover,.navbtn.active{background:rgba(255,255,255,.1);color:#fff}.menu{display:none;margin-left:auto;border:1px solid rgba(255,255,255,.2);background:transparent;color:#fff;border-radius:10px;padding:8px 10px}
+.wrap{max-width:var(--max);margin:auto;padding:0 22px 70px}.view{display:none}.view.active{display:block}
+.hero{margin:26px 0 20px;position:relative;overflow:hidden;border-radius:30px;background:linear-gradient(135deg,#0b1020 0%,#172554 52%,#4c1d95 110%);color:#fff;padding:56px 54px;box-shadow:var(--shadow)}
+.hero:after{content:"";position:absolute;width:360px;height:360px;border-radius:50%;right:-90px;top:-145px;background:radial-gradient(circle,rgba(96,165,250,.35),transparent 68%)}
+.eyebrow{text-transform:uppercase;letter-spacing:.13em;font-size:12px;font-weight:800;color:#93c5fd}.hero h1{font-size:clamp(38px,6vw,70px);line-height:1.02;max-width:900px;margin:12px 0 16px;letter-spacing:-.055em}.hero p{font-size:18px;max-width:720px;color:#dbeafe;margin:0 0 24px}.actions{display:flex;flex-wrap:wrap;gap:10px}
+.btn{appearance:none;border:0;border-radius:12px;padding:11px 15px;font:600 14px/1.2 inherit;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.btn.primary{background:#fff;color:#111827}.btn.blue{background:var(--blue);color:#fff}.btn.ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.16)}.btn.soft{background:#eef4ff;color:#1849a9}.btn.outline{background:#fff;border:1px solid var(--line);color:#344054}.btn:focus-visible,.navbtn:focus-visible,input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0 34px}.stat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:17px 18px}.stat b{font-size:26px;display:block;letter-spacing:-.03em}.stat span{color:var(--muted);font-size:13px}
+.section{margin:36px 0}.sectionhead{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:15px}.sectionhead h2{font-size:28px;line-height:1.1;letter-spacing:-.035em;margin:0}.sectionhead p{margin:4px 0 0;color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:0 2px 2px rgba(16,24,40,.01);transition:.18s transform,.18s box-shadow,.18s border-color}.card.click{cursor:pointer}.card.click:hover{transform:translateY(-2px);border-color:#b2ccff;box-shadow:var(--shadow)}.icon{font-size:28px}.card h3{margin:8px 0 5px;font-size:17px}.card p{margin:0;color:var(--muted);font-size:14px}
+.callout{border-radius:20px;padding:22px;border:1px solid #b2ddff;background:#eff8ff}.callout.green{background:#ecfdf3;border-color:#abefc6}.callout.purple{background:#f4f3ff;border-color:#d9d6fe}.callout.gray{background:#f9fafb;border-color:#eaecf0}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.step{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px}.num{width:32px;height:32px;border-radius:10px;background:#eef4ff;color:#1849a9;display:grid;place-items:center;font-weight:800}
+.command{margin-top:16px;border:1px solid #b2ddff;background:linear-gradient(145deg,#eff8ff,#fff);border-radius:22px;padding:20px}.commandbox{display:flex;gap:10px;margin-top:12px}.commandbox input{flex:1;border:1px solid #d0d5dd;border-radius:12px;padding:13px 14px;font:inherit;min-width:0}.suggestions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:15px}.suggestion{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}.suggestion b{display:block}.suggestion span{font-size:13px;color:var(--muted)}
+.libraryHero{padding:28px 0 12px}.libraryHero h1,.pagehead h1{font-size:42px;letter-spacing:-.045em;line-height:1.08;margin:0 0 8px}.libraryHero p,.pagehead p{color:var(--muted);max-width:760px}
+.searchbar{position:sticky;top:68px;z-index:35;background:rgba(245,247,251,.95);backdrop-filter:blur(12px);padding:12px 0;border-bottom:1px solid transparent}.searchrow{display:grid;grid-template-columns:minmax(260px,2fr) repeat(4,minmax(135px,1fr)) auto;gap:9px}.control{border:1px solid #d0d5dd;background:#fff;border-radius:12px;padding:10px 12px;font:inherit;color:#344054;min-width:0}.filtermeta{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:16px 0 10px;color:var(--muted);font-size:13px}.chiprow{display:flex;flex-wrap:wrap;gap:7px}.chip{border:1px solid var(--line);background:#fff;color:#475467;padding:7px 10px;border-radius:999px;font-size:12px;cursor:pointer}.chip.active{background:#101828;color:#fff;border-color:#101828}
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.tool{background:#fff;border:1px solid var(--line);border-radius:17px;padding:17px;display:flex;flex-direction:column;min-height:235px}.tooltop{display:flex;gap:10px;align-items:flex-start}.favicon{width:38px;height:38px;border-radius:11px;background:#f2f4f7;display:grid;place-items:center;font-weight:900;color:#475467;flex:none}.tool h3{margin:0;font-size:16px;line-height:1.25}.domain{font-size:12px;color:#98a2b3;margin-top:2px;word-break:break-all}.tool p{color:#667085;font-size:13px;margin:11px 0 12px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}.badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto}.badge{font-size:11px;font-weight:700;padding:4px 7px;border-radius:999px;background:#f2f4f7;color:#475467}.badge.live{background:#ecfdf3;color:#067647}.badge.pending{background:#fffaeb;color:#b54708}.badge.ai{background:#f4f3ff;color:#5925dc}.badge.free{background:#eff8ff;color:#175cd3}.toolactions{display:flex;gap:7px;margin-top:13px}.toolactions .btn{flex:1;padding:9px 10px;font-size:12px}.fav{width:38px;flex:none!important}
+.pagination{display:flex;justify-content:center;align-items:center;gap:8px;margin:24px 0}.pagination button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 11px;cursor:pointer}.pagination button:disabled{opacity:.4;cursor:not-allowed}
+.categorygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.category{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px;cursor:pointer}.category strong{font-size:18px}.category .count{float:right;color:var(--muted)}
+.archivegrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.sourcecard{background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px}.sourcecard .big{font-size:32px;font-weight:800}.sourcecard a{color:#175cd3}
+.quality{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}.quality .panel{background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px}.quality table{width:100%;border-collapse:collapse}.quality td{padding:10px 0;border-bottom:1px solid var(--line)}.quality td:last-child{text-align:right;font-weight:700}
+.faq details{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 17px;margin:8px 0}.faq summary{font-weight:700;cursor:pointer}.faq p{color:var(--muted)}
+.empty{background:#fff;border:1px dashed #98a2b3;border-radius:18px;padding:34px;text-align:center;color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(11,16,32,.58);display:none;align-items:center;justify-content:center;padding:20px;z-index:100}.modal.open{display:flex}.modalbox{max-width:660px;width:100%;max-height:88vh;overflow:auto;background:#fff;border-radius:22px;padding:24px;box-shadow:0 30px 80px rgba(0,0,0,.25)}.modalclose{float:right;border:0;background:#f2f4f7;border-radius:10px;width:34px;height:34px;cursor:pointer}.detailgrid{display:grid;grid-template-columns:140px 1fr;gap:7px 14px;margin:18px 0}.detailgrid dt{color:#667085}.detailgrid dd{margin:0;font-weight:600;word-break:break-word}
+.footer{margin-top:60px;border-top:1px solid var(--line);padding:28px 0 10px;color:#667085;font-size:13px}.footer b{color:#344054}
+.mobilepanel{display:none;position:fixed;top:68px;left:0;right:0;background:#0b1020;color:#fff;padding:14px 20px;z-index:49;border-top:1px solid rgba(255,255,255,.08)}.mobilepanel.open{display:grid;gap:4px}
+.note{font-size:12px;color:#667085}
+@media(max-width:1000px){.navlinks{display:none}.menu{display:block}.grid{grid-template-columns:repeat(2,1fr)}.tools{grid-template-columns:repeat(2,1fr)}.searchrow{grid-template-columns:1fr 1fr 1fr}.searchrow .query{grid-column:1/-1}.stats{grid-template-columns:repeat(2,1fr)}.suggestions{grid-template-columns:1fr 1fr}.quality{grid-template-columns:1fr}}
+@media(max-width:680px){.wrap{padding:0 14px 55px}.nav{padding:0 14px}.brand span:last-child{display:none}.hero{padding:36px 25px;margin-top:14px;border-radius:22px}.hero h1{font-size:42px}.hero p{font-size:16px}.stats{grid-template-columns:1fr 1fr;gap:8px}.stat{padding:14px}.stat b{font-size:22px}.grid,.steps,.tools,.categorygrid,.archivegrid,.suggestions{grid-template-columns:1fr}.commandbox{display:grid}.searchbar{top:68px}.searchrow{grid-template-columns:1fr 1fr}.searchrow .query{grid-column:1/-1}.libraryHero h1,.pagehead h1{font-size:34px}.detailgrid{grid-template-columns:1fr}.detailgrid dt{margin-top:8px}.filtermeta{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+ <nav class="nav" aria-label="Primary">
+  <button class="brand navbtn" data-view="home" aria-label="Digital Atlas home"><span class="brandmark">🧭</span><span>Nick’s Digital Atlas</span></button>
+  <div class="navlinks">
+   <button class="navbtn active" data-view="home">Home</button>
+   <button class="navbtn" data-view="library">Master Library</button>
+   <button class="navbtn" data-view="categories">Categories</button>
+   <button class="navbtn" data-view="free">Free / No Login</button>
+   <button class="navbtn" data-view="archive">Power User</button>
+   <button class="navbtn" data-view="quality">Data Quality</button>
+  </div>
+  <button class="menu" id="menuBtn" aria-expanded="false" aria-controls="mobileNav">Menu</button>
+ </nav>
+ <div class="mobilepanel" id="mobileNav">
+   <button class="navbtn" data-view="home">Home</button><button class="navbtn" data-view="library">Master Library</button><button class="navbtn" data-view="categories">Categories</button><button class="navbtn" data-view="free">Free / No Login</button><button class="navbtn" data-view="archive">Power User</button><button class="navbtn" data-view="quality">Data Quality</button>
+ </div>
+</header>
+<main class="wrap" id="main">
+<section class="view active" id="view-home">
+ <div class="hero">
+  <div class="eyebrow">AI • Tools • Useful Websites</div>
+  <h1>Find the right tool without memorizing the internet.</h1>
+  <p>A friendly, searchable digital toolbox. Start with what you want to accomplish—the Atlas helps you choose where to go next.</p>
+  <div class="actions"><button class="btn primary" data-view="library">Search the library</button><button class="btn ghost" id="jumpCommand">New here? Start here</button></div>
+ </div>
+ <div class="stats">
+   <div class="stat"><b id="statIndexed"></b><span>unique launchable tools/sites</span></div>
+   <div class="stat"><b id="statSource"></b><span>entries in connected source sheets</span></div>
+   <div class="stat"><b id="statVerified"></b><span>live-verified in current audit</span></div>
+   <div class="stat"><b>4</b><span>connected Web Surfers source libraries</span></div>
+ </div>
+ <div class="callout green" id="newHere">
+  <strong>🧭 New here? This is the best place to start.</strong>
+  <p>Tell the guide what you want in ordinary language—“Help me make a video,” “Research this topic,” or “Find me a free tool.”</p>
+  <div class="command">
+   <label for="commandInput"><b>Family AI Command Center</b></label>
+   <div class="commandbox"><input id="commandInput" placeholder="What do you want to accomplish?" autocomplete="off"><button class="btn blue" id="routeBtn">Find my route</button></div>
+   <div class="suggestions" id="routeSuggestions" aria-live="polite"></div>
+  </div>
+ </div>
+ <div class="section">
+  <div class="sectionhead"><div><h2>What is the Digital Atlas?
