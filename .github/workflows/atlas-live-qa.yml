@@ -5,6 +5,8 @@ on:
   push:
     branches: ["main"]
     paths:
+      - "atlas-bundle.html"
+      - "atlas-build-report.json"
       - "qa/atlas-live-qa.js"
       - ".github/workflows/atlas-live-qa.yml"
 
