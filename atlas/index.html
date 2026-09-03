@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<title>Nick’s Digital Atlas — Loading</title>
+<style>
+html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#0b1020;color:#fff;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.load{width:min(520px,86vw);text-align:center}.mark{font-size:42px}.bar{height:8px;background:#1d2939;border-radius:999px;overflow:hidden;margin:18px 0}.bar:after{content:"";display:block;height:100%;width:40%;border-radius:999px;background:linear-gradient(90deg,#60a5fa,#8b5cf6);animation:go 1.15s ease-in-out infinite alternate}@keyframes go{to{transform:translateX(150%)}}.muted{color:#98a2b3}.error{display:none;color:#fecaca;background:#451a1a;border:1px solid #7f1d1d;padding:14px;border-radius:12px;text-align:left;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<div class="load"><div class="mark">🧭</div><h1>Nick’s Digital Atlas</h1><div class="bar"></div><div class="muted">Loading the complete website library…</div><div class="error" id="err"></div></div>
+<script>
+(async()=>{
+ const root="../atlas-src/";
+ const shellNames=["shell-fixed-000.txt","shell-001.txt","shell-002.txt"];
+ const dataNames=["data-000.txt","data-001.txt","data-002.txt","data-003.txt","tail-000.txt","tail-001.txt","tail-002.txt","tail-003.txt","tail-004.txt","tail-005.txt"];
+ async function load(names){return Promise.all(names.map(async n=>{const r=await fetch(root+n,{cache:"no-store"});if(!r.ok)throw new Error(n+" returned HTTP "+r.status);return r.text()}));}
+ const [shellParts,dataParts]=await Promise.all([load(shellNames),load(dataNames)]);
+ const shell=shellParts.join("");
+ const data=dataParts.join("").replace(/\s/g,"");
+ if(data.length!==119460)throw new Error("Library integrity check failed: expected 119460 encoded bytes, received "+data.length+".");
+ if(!shell.includes("__DATA_B64__"))throw new Error("Website shell integrity check failed.");
+ const finished=shell.replace("__DATA_B64__",data);
+ document.open();document.write(finished);document.close();
+})().catch(e=>{document.querySelector('.bar').style.display='none';document.querySelector('.muted').textContent='The Atlas could not initialize.';const el=document.getElementById('err');el.style.display='block';el.textContent=String(e&&e.message||e)+"\nReload the page to retry.";});
+</script>
+</body>
+</html>
