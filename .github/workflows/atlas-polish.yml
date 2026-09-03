@@ -1,0 +1,53 @@
+name: Atlas Final Polish
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/atlas-polish.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Correct heading and refresh build report
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, hashlib
+
+          bundle = Path('atlas-bundle.html')
+          raw = bundle.read_text(encoding='utf-8')
+          old = 'What is the Digital Atlas??'
+          new = 'What is the Digital Atlas?'
+          count = raw.count(old)
+          if count != 1:
+              raise SystemExit(f'Expected exactly one heading typo, found {count}')
+          raw = raw.replace(old, new)
+          bundle.write_text(raw, encoding='utf-8')
+
+          data = bundle.read_bytes()
+          report_path = Path('atlas-build-report.json')
+          report = json.loads(report_path.read_text(encoding='utf-8'))
+          report['bundle_bytes'] = len(data)
+          report['sha256'] = hashlib.sha256(data).hexdigest()
+          report_path.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+          print(f"bundle_bytes={len(data)}")
+          print(f"sha256={report['sha256']}")
+          print(f"tool_count={report['tool_count']}")
+          PY
+
+      - name: Commit final polish
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add atlas-bundle.html atlas-build-report.json
+          git commit -m "Polish Atlas heading and refresh build fingerprint"
+          git push origin HEAD:main
