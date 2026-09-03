@@ -1,8 +1,6 @@
-name: Deploy static content to Pages
+name: Legacy Pages Deploy (manual only)
 
 on:
-  push:
-    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -10,18 +8,17 @@ permissions:
   pages: write
   id-token: write
 
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
 jobs:
   deploy:
     environment:
-      name: atlas-pages
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout gh-pages
         uses: actions/checkout@v4
+        with:
+          ref: gh-pages
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
