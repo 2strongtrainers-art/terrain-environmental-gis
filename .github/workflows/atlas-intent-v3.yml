@@ -4,8 +4,6 @@ on:
   push:
     branches: [main]
     paths:
-      - scripts/apply_atlas_intent_v3.py
-      - scripts/apply_atlas_intent_v31.py
       - scripts/apply_atlas_intent_v32.py
       - qa/atlas-common-intents-20.js
       - qa/atlas-intent-stress-60.js
@@ -26,11 +24,8 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Apply intent engines V3 through V3.2
-        run: |
-          python scripts/apply_atlas_intent_v3.py
-          python scripts/apply_atlas_intent_v31.py
-          python scripts/apply_atlas_intent_v32.py
+      - name: Apply current intent engine V3.2 idempotently
+        run: python scripts/apply_atlas_intent_v32.py
 
       - name: Commit production source and synchronized QA
         shell: bash
