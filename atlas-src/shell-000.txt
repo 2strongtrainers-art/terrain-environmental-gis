@@ -136,6 +136,7 @@ button.card,button.category{appearance:none;-webkit-appearance:none}
 .suggestion[data-smart-query]{border-color:#8ddbd5;background:#f2fbfa}.suggestion[data-smart-query] b{color:#0a6667}
 
 /* ATLAS-MULTIMEDIA-V4 */
+/* ATLAS-MULTIMEDIA-V41 — live-cam + browse-intent precision */
 .watchHero{margin:26px 0 18px;position:relative;overflow:hidden;border-radius:28px;background:linear-gradient(135deg,#071b1d 0%,#0f4c5c 52%,#0d9488 125%);color:#fff;padding:48px 46px;box-shadow:var(--shadow)}
 .watchHero:after{content:"";position:absolute;width:320px;height:320px;border-radius:50%;right:-80px;top:-150px;background:radial-gradient(circle,rgba(94,234,212,.26),transparent 68%)}
 .watchHero h1{font-size:clamp(38px,6vw,64px);line-height:1.02;margin:10px 0 14px;letter-spacing:-.05em}.watchHero p{font-size:17px;max-width:760px;color:#d5fffb;margin:0 0 22px}.watchHero .eyebrow{color:#99f6e4}
@@ -218,4 +219,7 @@ button.card,button.category{appearance:none;-webkit-appearance:none}
  <div class="section">
    <div class="sectionhead"><div><h2>Prompts that make the guide more useful</h2></div></div>
    <div class="chiprow"><span class="chip">“Find me a free option.”</span><span class="chip">“It must work on my phone.”</span><span class="chip">“I do not want to create an account.”</span><span class="chip">“Give me the easiest choice.”</span><span class="chip">“I care more about quality than speed.”</span><span class="chip">“Explain it simply.”</span></div>
-   <div class="callout" style="margin-top:14px"><b>Example:</b> “I want to turn five vacation photos into a short video on my phone. Find the easiest free option and explain 
+   <div class="callout" style="margin-top:14px"><b>Example:</b> “I want to turn five vacation photos into a short video on my phone. Find the easiest free option and explain exactly what to do.”</div>
+ </div>
+ <div class="section faq">
+   <div class="sectionhea
