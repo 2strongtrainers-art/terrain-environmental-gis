@@ -4,8 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071b1d">
-<title>Nick’s Digital Atlas — AI, Tools & Useful Websites</title>
-<meta name="description" content="A searchable digital atlas of AI tools, websites, research resources, design tools, gaming tools, and learning resources.">
+<title>Nick’s Digital Atlas — 1,834 AI Tools & Useful Websites</title>
+<meta name="description" content="Browse 1,834 AI tools and useful websites by goal, category, price and verification status. 1,529 destinations were live-checked on September 3, 2026.">
+<link rel="canonical" href="https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/">
+<link rel="sitemap" type="application/xml" href="https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/sitemap.xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Nick’s Digital Atlas — 1,834 AI Tools & Useful Websites">
+<meta property="og:description" content="Find the right tool or useful website by goal, category, price or verification status.">
+<meta property="og:url" content="https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Nick’s Digital Atlas — 1,834 AI Tools & Useful Websites">
+<meta name="twitter:description" content="Find the right tool or useful website by goal, category, price or verification status.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Nick’s Digital Atlas","url":"https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/","description":"A searchable directory of AI tools and useful websites organized by goal, category, price and verification status.","potentialAction":{"@type":"SearchAction","target":"https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/#library","query-input":"required name=search_term_string"}}</script>
 <style>
 :root{
  --bg:#f5f7fb;--panel:#ffffff;--panel2:#f9fbff;--ink:#101828;--muted:#667085;--line:#e4e7ec;
@@ -81,4 +91,32 @@ body{background:radial-gradient(circle at 10% -10%,rgba(103,232,223,.12),transpa
 .icon{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:21px;background:#eaf8f6;border:1px solid #d5f0ed}.card h3{color:#153638}
 .callout{border-color:#c6ece8;background:#effaf8}.callout.green{background:#effaf6;border-color:#ccecdf}.callout.purple{background:#eef8f8;border-color:#cfe7e7}.callout.gray{background:#f8faf9;border-color:#e1e9e8}
 .steps{gap:15px}.step{border-color:rgba(7,73,76,.1);border-radius:19px}.num{background:#e8f8f6;color:#0a7474}
-.command{border:1px solid rgba(15,157,154,.18);background:linear-gradient(145deg,#f1fbfa,#fff 68%);border-radius:24px;padding:23px;box-shadow:
+.command{border:1px solid rgba(15,157,154,.18);background:linear-gradient(145deg,#f1fbfa,#fff 68%);border-radius:24px;padding:23px;box-shadow:0 14px 42px rgba(7,73,76,.055)}
+.commandbox input{border-color:rgba(9,75,78,.18);border-radius:13px;background:#fff}.suggestion{border-color:rgba(9,75,78,.12)}
+.libraryHero{padding:34px 0 13px}.libraryHero h1,.pagehead h1{color:#102b2d;font-weight:760}
+.searchbar{top:72px;background:rgba(244,248,247,.91);border-bottom-color:rgba(7,73,76,.07)}
+.control{border-color:rgba(7,73,76,.15);border-radius:12px;color:#2e4d4f;box-shadow:0 2px 6px rgba(8,61,64,.02)}
+.chip{border-color:rgba(7,73,76,.13);color:#4d6769}.chip.active{background:#0a3437;color:#fff;border-color:#0a3437}
+.tools{gap:14px}.tool{border-color:rgba(7,73,76,.105);border-radius:19px;padding:18px;box-shadow:0 7px 24px rgba(8,61,64,.025);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.tool:hover{transform:translateY(-2px);border-color:rgba(15,157,154,.27);box-shadow:0 17px 38px rgba(8,73,76,.075)}
+.favicon{background:#eaf8f6;color:#0b7778;border:1px solid #d8efed}.tool h3{color:#153638}.domain{color:#849395}.tool p{color:#637577}
+.badge.live{background:#e8f8ef;color:#08734f}.badge.free{background:#eaf7f8;color:#0a7276}.badge.ai{background:#edf7f7;color:#276a6d}.badge.pending{background:#fff7e7;color:#98600e}.badge.blocked{background:#f0f4f4;color:#4b6163}
+.pagination button{border-color:rgba(7,73,76,.13);border-radius:11px}
+.category,.sourcecard,.quality .panel,.faq details,.modalbox{border-color:rgba(7,73,76,.105);box-shadow:0 9px 30px rgba(8,61,64,.035)}
+.category:hover{border-color:rgba(15,157,154,.3)}.sourcecard a{color:#087f80}.quality table td{border-bottom-color:rgba(7,73,76,.1)}
+.modal{background:rgba(4,26,28,.62);backdrop-filter:blur(4px)}.footer{border-top-color:rgba(7,73,76,.1);color:#6d7e80}.footer b{color:#254547}.mobilepanel{top:72px;background:#071b1d;border-top-color:rgba(101,232,223,.1)}
+@media(max-width:680px){.hero{min-height:410px;padding:44px 25px 50px;margin-top:16px;border-radius:24px}.hero h1{font-size:46px;max-width:95%}.hero p{font-size:15.5px;line-height:1.65}.hero:before{right:-26%;width:92%;height:60%;opacity:.7}.hero:after{width:100%;opacity:.22}.searchbar{top:72px}.stat{padding:15px}.stat b{font-size:23px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+
+/* ATLAS-CRO-V2 — clarity, discovery, accessibility, monetization and measurement */
+.card,.category{font:inherit;text-align:left;color:inherit;width:100%}
+button.card,button.category{appearance:none;-webkit-appearance:none}
+.btn,.navbtn,.menu,.chip,.pagination button,.quicksearch button{min-height:44px}
+.modalclose{width:44px;height:44px}.fav{width:44px}
+.discovery-first{margin-top:28px}
+.quicksearch{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:4px 0 2px;color:var(--muted);font-size:12px}
+.quicksearch button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 11px;color:#35595b;cursor:pointer;font:inherit}
+.quicksearch button:hover,.quicksearch button:focus-visible{border-color:#78cfc8;background:#f2fbfa}
+.empty .actions{margin-top:16px}.partner-callout{display:flex;align-items:center;justify-content:space-between;gap:20px}.partner-callout p{margin:5px 0 0;max-width:760px}
+.trus

@@ -1,19 +1,6 @@
-0 14px 42px rgba(7,73,76,.055)}
-.commandbox input{border-color:rgba(9,75,78,.18);border-radius:13px;background:#fff}.suggestion{border-color:rgba(9,75,78,.12)}
-.libraryHero{padding:34px 0 13px}.libraryHero h1,.pagehead h1{color:#102b2d;font-weight:760}
-.searchbar{top:72px;background:rgba(244,248,247,.91);border-bottom-color:rgba(7,73,76,.07)}
-.control{border-color:rgba(7,73,76,.15);border-radius:12px;color:#2e4d4f;box-shadow:0 2px 6px rgba(8,61,64,.02)}
-.chip{border-color:rgba(7,73,76,.13);color:#4d6769}.chip.active{background:#0a3437;color:#fff;border-color:#0a3437}
-.tools{gap:14px}.tool{border-color:rgba(7,73,76,.105);border-radius:19px;padding:18px;box-shadow:0 7px 24px rgba(8,61,64,.025);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
-.tool:hover{transform:translateY(-2px);border-color:rgba(15,157,154,.27);box-shadow:0 17px 38px rgba(8,73,76,.075)}
-.favicon{background:#eaf8f6;color:#0b7778;border:1px solid #d8efed}.tool h3{color:#153638}.domain{color:#849395}.tool p{color:#637577}
-.badge.live{background:#e8f8ef;color:#08734f}.badge.free{background:#eaf7f8;color:#0a7276}.badge.ai{background:#edf7f7;color:#276a6d}.badge.pending{background:#fff7e7;color:#98600e}.badge.blocked{background:#f0f4f4;color:#4b6163}
-.pagination button{border-color:rgba(7,73,76,.13);border-radius:11px}
-.category,.sourcecard,.quality .panel,.faq details,.modalbox{border-color:rgba(7,73,76,.105);box-shadow:0 9px 30px rgba(8,61,64,.035)}
-.category:hover{border-color:rgba(15,157,154,.3)}.sourcecard a{color:#087f80}.quality table td{border-bottom-color:rgba(7,73,76,.1)}
-.modal{background:rgba(4,26,28,.62);backdrop-filter:blur(4px)}.footer{border-top-color:rgba(7,73,76,.1);color:#6d7e80}.footer b{color:#254547}.mobilepanel{top:72px;background:#071b1d;border-top-color:rgba(101,232,223,.1)}
-@media(max-width:680px){.hero{min-height:410px;padding:44px 25px 50px;margin-top:16px;border-radius:24px}.hero h1{font-size:46px;max-width:95%}.hero p{font-size:15.5px;line-height:1.65}.hero:before{right:-26%;width:92%;height:60%;opacity:.7}.hero:after{width:100%;opacity:.22}.searchbar{top:72px}.stat{padding:15px}.stat b{font-size:23px}}
-@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+t-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.trust-grid .callout{height:100%}
+.footerlinks{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}.footerlinks a,.linkbutton{color:#246b6d;text-decoration:underline;text-underline-offset:3px}.linkbutton{border:0;background:none;padding:0;font:inherit;cursor:pointer}
+@media(max-width:680px){.discovery-first{margin-top:24px}.discovery-first .sectionhead h2{font-size:27px}.partner-callout{align-items:flex-start;flex-direction:column}.trust-grid{grid-template-columns:1fr}.quicksearch{padding-top:8px}}
 
 </style>
 </head>
@@ -39,28 +26,32 @@
 <main class="wrap" id="main">
 <section class="view active" id="view-home">
  <div class="hero">
-  <div class="eyebrow">Verified discovery • 1,834 useful resources</div>
-  <h1>Your map to the best AI tools & resources.</h1>
-  <p>A curated, searchable atlas built to get you from an idea to the right tool faster. Explore by goal, category, verification status, or simply tell the Atlas what you want to accomplish.</p>
-  <div class="actions"><button class="btn primary" data-view="library">Search the library</button><button class="btn ghost" id="jumpCommand">New here? Start here</button></div>
+  <div class="eyebrow">1,834 tools & useful websites • 1,529 live verified</div>
+  <h1>Find the right tool or useful website for what you want to do.</h1>
+  <p>Browse 1,834 resources by goal, category, price or verification status. 1,529 destinations were live-checked on September 3, 2026.</p>
+  <div class="actions"><button class="btn primary" data-view="library" id="heroBrowse">Browse all 1,834 tools</button><button class="btn ghost" id="jumpCommand">Help me choose</button></div>
  </div>
  <div class="stats">
    <div class="stat"><b id="statIndexed"></b><span>unique launchable tools/sites</span></div>
    <div class="stat"><b id="statSource"></b><span>entries in connected source sheets</span></div>
    <div class="stat"><b id="statVerified"></b><span>live-verified in current audit</span></div>
-   <div class="stat"><b>4</b><span>connected Web Surfers source libraries</span></div>
+   <div class="stat"><b>4</b><span>explicitly audited Free • No Login tools</span></div>
  </div>
  <div class="callout green" id="newHere">
-  <strong>🧭 New here? This is the best place to start.</strong>
-  <p>Tell the guide what you want in ordinary language—“Help me make a video,” “Research this topic,” or “Find me a free tool.”</p>
+  <strong>🧭 New here? Start here.</strong>
+  <p>Describe the outcome—not the software. The Atlas will show matching tools and categories.</p>
   <div class="command">
-   <label for="commandInput"><b>Family AI Command Center</b></label>
-   <div class="commandbox"><input id="commandInput" placeholder="What do you want to accomplish?" autocomplete="off"><button class="btn blue" id="routeBtn">Find my route</button></div>
+   <label for="commandInput"><b>Tell the Atlas what you want to do</b></label>
+   <div class="commandbox"><input id="commandInput" placeholder="Example: make a short video from five photos" autocomplete="off"><button class="btn blue" id="routeBtn">Show matching tools</button></div>
    <div class="suggestions" id="routeSuggestions" aria-live="polite"></div>
   </div>
  </div>
+ <div class="section discovery-first">
+  <div class="sectionhead"><div><h2>Start with what you want to do</h2><p>Not sure what to search? Pick an outcome and explore matching tools.</p></div></div>
+  <div class="grid" id="goalGrid"></div>
+ </div>
  <div class="section">
-  <div class="sectionhead"><div><h2>What is the Digital Atlas??</h2><p>Think of it as a well-organized digital toolbox.</p></div></div>
+  <div class="sectionhead"><div><h2>What is the Digital Atlas?</h2><p>Think of it as a well-organized digital toolbox.</p></div></div>
   <div class="callout"><b>The simple rule:</b> describe the outcome first. Choose the tool second. Instead of searching for hours or memorizing hundreds of names, begin with the result you want.</div>
  </div>
  <div class="section">
@@ -68,16 +59,19 @@
   <div class="steps"><div class="step"><div class="num">1</div><h3>Describe your goal</h3><p>Say what you want to make, learn, research, fix, compare or organize.</p></div><div class="step"><div class="num">2</div><h3>Choose a route</h3><p>Use the beginner guide, pick a category, or search the full library.</p></div><div class="step"><div class="num">3</div><h3>Open the tool</h3><p>Launch the specialist website directly. External links open in a separate tab.</p></div></div>
  </div>
  <div class="section">
-  <div class="sectionhead"><div><h2>Try something right now</h2><p>Goal-first routes mirror the Notion Atlas.</p></div></div>
-  <div class="grid" id="goalGrid"></div>
- </div>
- <div class="section">
   <div class="sectionhead"><div><h2>Pick the experience that fits you</h2></div></div>
   <div class="grid">
-   <div class="card click" id="friendMode"><div class="icon">🌱</div><h3>Friend Mode</h3><p>Best if you do not know where to start. Describe your goal in normal language.</p></div>
-   <div class="card click" data-view="categories"><div class="icon">🧩</div><h3>Browse by goal</h3><p>Best if you know the kind of task you want to complete.</p></div>
-   <div class="card click" data-view="archive"><div class="icon">⚡</div><h3>Power User Mode</h3><p>Best when you want the broadest coverage and the raw source layers.</p></div>
-   <div class="card click" data-view="library"><div class="icon">🔎</div><h3>Master Library</h3><p>Search every indexed launchable URL in one fast interface.</p></div>
+   <button type="button" class="card click" id="friendMode"><div class="icon">🌱</div><h3>Friend Mode</h3><p>Best if you do not know where to start. Describe your goal in normal language.</p></button>
+   <button type="button" class="card click" data-view="categories"><div class="icon">🧩</div><h3>Browse by goal</h3><p>Best if you know the kind of task you want to complete.</p></button>
+   <button type="button" class="card click" data-view="archive"><div class="icon">⚡</div><h3>Source Archive</h3><p>Best when you want the broadest coverage and the original source layers.</p></button>
+   <button type="button" class="card click" data-view="library"><div class="icon">🔎</div><h3>All Tools</h3><p>Search every indexed launchable URL in one fast interface.</p></button>
+  </div>
+ </div>
+
+ <div class="section">
+  <div class="callout purple partner-callout">
+   <div><strong>Building a useful tool?</strong><p>Atlas accepts partnership and sponsorship inquiries. Paid placements are clearly labeled and never change verification status or editorial ranking.</p></div>
+   <a class="btn outline" id="partnerCta" href="mailto:2strongtrainers@gmail.com?subject=Digital%20Atlas%20partnership%20inquiry">Partner with Atlas</a>
   </div>
  </div>
  <div class="section">
@@ -100,15 +94,16 @@
  <div class="libraryHero"><div class="eyebrow" style="color:#175cd3">Master Library</div><h1>Search every indexed tool.</h1><p>Search names, descriptions, categories and subcategories. Filters operate locally and instantly.</p></div>
  <div class="searchbar">
   <div class="searchrow">
-   <input class="control query" id="searchInput" placeholder="Search tools, descriptions, categories…" aria-label="Search library">
+   <input class="control query" id="searchInput" placeholder="Search tools, tasks or websites…" aria-label="Search library" autocomplete="off">
    <select class="control" id="sourceFilter" aria-label="Source category"><option value="">All sources</option></select>
    <select class="control" id="pricingFilter" aria-label="Pricing"><option value="">All pricing</option></select>
    <select class="control" id="verificationFilter" aria-label="Verification"><option value="">All verification</option><option value="Live verified">Live verified</option><option value="not-live">Not live-verified</option><option value="Automation blocked">Automation blocked</option><option value="Dead / unavailable">Dead / unavailable</option><option value="Parked / for sale">Parked / for sale</option><option value="Needs review">Needs review</option><option value="Timed out">Timed out</option><option value="Verification error">Verification error</option><option value="Server error">Server error</option></select>
    <select class="control" id="priorityFilter" aria-label="Priority"><option value="">All priorities</option><option>High</option><option>Medium</option><option>Low</option></select>
    <select class="control" id="sortFilter" aria-label="Sort"><option value="relevance">Sort: relevance</option><option value="az">Name A–Z</option><option value="verified">Verified first</option><option value="priority">Priority first</option></select>
   </div>
+  <div class="quicksearch" aria-label="Suggested searches"><span>Try:</span><button type="button" data-quick-search="video">video</button><button type="button" data-quick-search="research">research</button><button type="button" data-quick-search="website">website</button><button type="button" data-quick-search="mapping">mapping</button><button type="button" data-quick-search="resume">resume</button><button type="button" data-quick-search="image">image</button></div>
  </div>
- <div class="filtermeta"><div><b id="resultCount"></b> <span id="filterSummary"></span></div><div class="chiprow"><button class="chip" id="favOnly">★ Favorites only</button><button class="chip" id="clearFilters">Clear filters</button></div></div>
+ <div class="filtermeta"><div><b id="resultCount" aria-live="polite" aria-atomic="true"></b> <span id="filterSummary"></span></div><div class="chiprow"><button class="chip" id="favOnly">★ Favorites only</button><button class="chip" id="clearFilters">Clear filters</button></div></div>
  <div class="tools" id="toolGrid"></div>
  <div class="pagination" id="pagination"></div>
 </section>
@@ -145,18 +140,43 @@
     <table><tr><td>Unique launchable URLs</td><td id="qIndexed"></td></tr><tr><td>Source-sheet entries</td><td id="qSource"></td></tr><tr><td>Live-verified</td><td id="qVerified"></td></tr><tr><td>Automation-blocked</td><td id="qBlocked"></td></tr><tr><td>Dead / unavailable</td><td id="qDead"></td></tr><tr><td>Parked / for sale</td><td id="qParked"></td></tr><tr><td>Needs review / retry</td><td id="qReview"></td></tr><tr><td>Explicit access audits</td><td id="qAccess"></td></tr><tr><td>Audit date</td><td id="qDate"></td></tr></table>
    </div>
  </div>
+
+ <div class="section trust-grid">
+  <div class="callout green"><strong>What “Live verified” means</strong><p>A live-verified destination successfully rendered during the latest automated browser audit. This verifies availability—not every feature, claim, price, privacy policy or security practice of the third-party service.</p></div>
+  <div class="callout gray"><strong>Editorial & commercial policy</strong><p>Verification status cannot be purchased. Sponsorships or affiliate relationships, when present, are labeled and do not change verification status or organic editorial ranking.</p></div>
+ </div>
+ <div class="section"><div class="callout gray"><strong>Anonymous product analytics</strong><p>Atlas uses lightweight PostHog product analytics to measure actions such as searches, filters and outbound tool visits. Search text itself is not sent. Session recording is disabled.</p><div class="actions"><button type="button" class="btn outline" id="analyticsOptOut">Disable analytics on this device</button><span class="note" id="analyticsStatus" aria-live="polite"></span></div></div></div>
  <div class="section">
   <div class="callout gray"><b>Build provenance:</b> source libraries were read from the connected AI, Design & Creative, Gaming, and Education & Learning Google Sheets; verification metadata was merged from the saved link-checked master workbook and the curated Notion website database.</div>
  </div>
 </section>
 
-<footer class="footer"><b>Nick’s Digital Atlas</b> · Built from connected source libraries and curated verification data. External websites are third-party services. Data snapshot: <span id="footerDate"></span>.</footer>
+<footer class="footer"><div><b>Nick’s Digital Atlas</b> · Built from connected source libraries and curated verification data. External websites are third-party services. Data snapshot: <span id="footerDate"></span>.</div><div class="footerlinks"><a href="collections/ai-tools/">AI tools</a><a href="collections/design-tools/">Design tools</a><a href="collections/education-tools/">Education tools</a><a href="collections/gaming-tools/">Gaming tools</a><a href="collections/live-verified-tools/">Live verified</a><a href="collections/free-no-login/">Free • No Login</a><a href="partners/">Partner policy</a><button type="button" class="linkbutton" id="shareAtlas">Share Atlas</button></div></footer>
 </main>
 
 <div class="modal" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
  <div class="modalbox"><button class="modalclose" id="modalClose" aria-label="Close">×</button><div id="modalContent"></div></div>
 </div>
 
+
+<script id="atlasAnalytics">
+/* ATLAS-CRO-V2 analytics: custom events only, session replay disabled */
+window.__atlasAnalyticsQueue=[];
+window.trackAtlas=function(name,props){
+  if(localStorage.getItem('atlasAnalyticsOptOut')==='1') return;
+  const payload=Object.assign({atlas_version:'cro-v2',path:location.pathname,view:(location.hash||'#home').slice(1)},props||{});
+  if(window.posthog&&typeof window.posthog.capture==='function') window.posthog.capture(name,payload);
+  else window.__atlasAnalyticsQueue.push([name,payload]);
+};
+(function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split('.');2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement('script')).type='text/javascript',p.crossOrigin='anonymous',p.async=!0,p.src=s.api_host.replace('.i.posthog.com','-assets.i.posthog.com')+'/static/array.js',(r=t.getElementsByTagName('script')[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a='posthog',u.people=u.people||[],o='capture opt_out_capturing has_opted_out_capturing opt_in_capturing'.split(' '),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)})(document,window.posthog||[]);
+function initAtlasAnalytics(){
+ if(localStorage.getItem('atlasAnalyticsOptOut')==='1') return;
+ posthog.init('phc_pBipv2roqvT6HULpBA5Z4H2N63cwaUkRqgYmguFk3Zbm',{api_host:'https://us.i.posthog.com',person_profiles:'identified_only',autocapture:false,capture_pageview:false,capture_pageleave:true,disable_session_recording:true,persistence:'localStorage'});
+ const queued=window.__atlasAnalyticsQueue.splice(0); queued.forEach(x=>posthog.capture(x[0],x[1]));
+ trackAtlas('atlas_page_loaded',{referrer_host:(()=>{try{return new URL(document.referrer).hostname}catch{return ''}})()});
+}
+if('requestIdleCallback' in window)requestIdleCallback(initAtlasAnalytics,{timeout:1800});else setTimeout(initAtlasAnalytics,900);
+</script>
 <script>
 const DATA_B64="__DATA_B64__";
 async function decodeAtlasData(){
@@ -169,4 +189,19 @@ async function decodeAtlasData(){
 (async()=>{
  const RAW=JSON.parse(await decodeAtlasData());
  const TOOLS=RAW.map(x=>({id:x[0],name:x[1],url:x[2],description:x[3],pricing:x[4],sourceCategory:x[5],sourceCategories:[x[5]],section:x[6],subsection:x[7],curatedCategory:x[8],priority:x[9],verification:x[10],accessType:x[11],functionQA:x[12]}));
-const META={"sourceEntries":1802,"indexedTools":1834,"liveVerified":1529,"expl
+const META={"sourceEntries":1802,"indexedTools":1834,"liveVerified":1529,"explicitAccessAudits":4,"auditBreakdown":{"blocked":207,"dead":32,"parked":1,"error":28,"timeout":22,"uncertain":10,"serverError":5},"sourceStats":{"AI":270,"Design & Creative":366,"Gaming":388,"Education & Learning":778},"lastAudit":"2026-09-03","built":"2026-09-03"};
+const SOURCE_LINKS={"AI":"https://docs.google.com/spreadsheets/d/1ryROQ0UO904kM7jY16wP0mjMTmrFsiZj4P07rLxwoss/edit","Design & Creative":"https://docs.google.com/spreadsheets/d/17zjPsKp8ZOXumyn-JH5Mzi_SA3BXYDPJAK51jzcktNg/edit","Gaming":"https://docs.google.com/spreadsheets/d/1nnlkuhRFf5g2xl3IXOc3Ftj3rh361qf-mgQ0Shl8JQ0/edit","Education & Learning":"https://docs.google.com/spreadsheets/d/1Mn2IozwzNX0S6spUZ0_6onjHZ06L4ZHOt6k3A6QNCVM/edit"};
+const PAGE_SIZE=60;
+let state={view:"home",query:"",source:"",pricing:"",verification:"",priority:"",sort:"relevance",page:1,favoritesOnly:false};
+let favorites=new Set(JSON.parse(localStorage.getItem("atlasFavorites")||"[]"));
+const $=(q)=>document.querySelector(q), $$=(q)=>[...document.querySelectorAll(q)];
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+const domain=u=>{try{return new URL(u).hostname.replace(/^www\./,"")}catch{return u}};
+const fmt=n=>new Intl.NumberFormat().format(n);
+
+const SEARCH_ALIASES={
+  photo:["image","picture"],photos:["image","picture"],picture:["image","photo"],
+  movie:["video"],film:["video"],website:["site","web"],site:["website","web"],
+  automate:["automation","workflow"],automation:["workflow","agent"],study:["research","learn"],
+  researching:["research"],cv:["resume"],mapping:["map","gis"],gis:["map","mapping"],
+  voice:["audio","speech"],audio:["voice","sound"],logo:["brand
