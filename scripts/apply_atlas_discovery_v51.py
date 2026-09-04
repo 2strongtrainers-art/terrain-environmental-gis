@@ -11,19 +11,19 @@ MARK = 'ATLAS-DISCOVERY-V51'
 old_total = len(records)
 
 # The expanded benchmark exposed one concentrated gap: all ten grant/funding
-# paraphrases were being swallowed by the older generic research intent.  Put a
+# paraphrases were being swallowed by the older generic research intent. Put a
 # high-specificity grant rule before generic intents, while preserving the
 # existing V5 preferred/avoid maps and strict access semantics.
 if MARK not in shell:
-    anchor = 'const INTENTS=['
+    anchor = 'const INTENT_RULES=['
     if anchor not in shell:
-        raise SystemExit('INTENTS anchor not found')
-    grant_guard = '''const INTENTS=[\n /* ATLAS-DISCOVERY-V51 — grant/funding intent precedence repair */\n {id:"grant-funding-v5",route:"research",patterns:["grant research funding opportunities","grant funding opportunities","grant research","grant funding","funding opportunities","grant opportunities","research grant","grant proposal","government grants","find grants","grants"],anchors:["grant","grants","funding"],terms:["opportunity","proposal","government","funding","assistance"]},'''
+        raise SystemExit('INTENT_RULES anchor not found')
+    grant_guard = '''const INTENT_RULES=[\n /* ATLAS-DISCOVERY-V51 — grant/funding intent precedence repair */\n {id:"grant-funding-v5",route:"research",patterns:["grant research funding opportunities","grant funding opportunities","grant research","grant funding","funding opportunities","grant opportunities","research grant","grant proposal","government grants","find grants","grants"],anchors:["grant","grants","funding"],terms:["opportunity","proposal","government","funding","assistance"]},'''
     shell = shell.replace(anchor, grant_guard, 1)
 
-# Add only authoritative grant-discovery destinations.  These are deliberately
+# Add only authoritative grant-discovery destinations. These are deliberately
 # Needs review / Unknown for Atlas link/access auditing even though their
-# official capabilities were validated independently on 2026-09-04.
+# official capabilities were independently validated on 2026-09-04.
 grant_rows = [
     ['curated-grants-gov','Grants.gov','https://www.grants.gov/','Official U.S. government portal to search federal grant funding opportunities and learn the grant application lifecycle.','Free','Curated Library','Research & Intelligence','Grants & Funding','General Utility','High','Needs review','Unknown','Official federal grant-search capability validated 2026-09-04; Atlas link/access audit pending.'],
     ['curated-sam-assistance','SAM.gov Assistance Listings','https://sam.gov/assistance-listings','Official searchable catalog of federal assistance programs including grants, loans, cooperative agreements, scholarships, insurance, and other assistance.','Free','Curated Library','Research & Intelligence','Grants & Funding','General Utility','High','Needs review','Unknown','Official federal assistance-listing capability validated 2026-09-04; Atlas link/access audit pending.'],
@@ -46,8 +46,6 @@ new_total = len(records)
 if new_total != old_total:
     shell = shell.replace(f'{old_total:,}', f'{new_total:,}')
 
-# Re-encode and split authoritative source chunks deterministically enough for
-# the current static build pipeline.
 encoded = base64.b64encode(gzip.compress(json.dumps(records, separators=(',', ':'), ensure_ascii=False).encode('utf-8'))).decode('ascii')
 
 def split_n(text, n):
