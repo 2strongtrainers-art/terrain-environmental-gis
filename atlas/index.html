@@ -23,7 +23,7 @@ html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#
  if(data.length!==119460)throw new Error("Library integrity check failed: expected 119460 encoded bytes, received "+data.length+".");
  if(!shell.includes("__DATA_B64__"))throw new Error("Website shell integrity check failed.");
  let finished=shell.replace("__DATA_B64__",data);
- finished=finished.replace('</body>','<script src="../atlas-upgrade.js?v=20260904" defer><\\/script></body>');
+ finished=finished.replace('</body>','<script src="../atlas-upgrade.js?v=20260904-v5" defer><\\/script></body>');
  document.open();document.write(finished);document.close();
 })().catch(e=>{document.querySelector('.bar').style.display='none';document.querySelector('.muted').textContent='The Atlas could not initialize.';const el=document.getElementById('err');el.style.display='block';el.textContent=String(e&&e.message||e)+"\nReload the page to retry.";});
 </script>
