@@ -12,6 +12,7 @@ on:
       - scripts/apply_atlas_multimedia_v41.py
       - scripts/apply_atlas_discovery_v5_search.py
       - scripts/apply_atlas_discovery_v51.py
+      - scripts/sync_atlas_qa_counts.py
       - qa/atlas-common-intents-20.js
       - qa/atlas-intent-stress-60.js
       - qa/atlas-expanded-benchmark-220.js
@@ -45,6 +46,7 @@ jobs:
           python scripts/apply_atlas_multimedia_v41.py
           python scripts/apply_atlas_discovery_v5_search.py
           python scripts/apply_atlas_discovery_v51.py
+          python scripts/sync_atlas_qa_counts.py
           test -s atlas-bundle.html
           grep -q 'ATLAS-INTENT-V32' atlas-bundle.html
           grep -q 'ATLAS-MULTIMEDIA-V41' atlas-bundle.html
