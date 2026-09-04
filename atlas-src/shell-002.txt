@@ -1,22 +1,41 @@
-research"],cv:["resume"],mapping:["map","gis"],gis:["map","mapping"],
-  voice:["audio","speech"],audio:["voice","sound"],logo:["branding","design"],
-  slides:["presentation"],presentation:["slides"],write:["writing","writer"],writer:["writing"]
-};
+ditor","generator","media"]},
+ {id:"research",route:"research",patterns:["research","study","science"],anchors:["research","study","science"],terms:["learn","academic"]},
+ {id:"maps",route:"maps",patterns:["map","mapping","gis","terrain"],anchors:["map","mapping","gis","terrain"],terms:["geo","earth"]},
+ {id:"writing",route:"research",patterns:["writing","write","rewrite"],anchors:["writing","writer","rewrite"],terms:["editor","text"]}
+];
 function normalizeText(s){return String(s??"").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
-function oneEditAway(a,b){
- if(a===b)return true;if(Math.abs(a.length-b.length)>1)return false;
- let i=0,j=0,edits=0;
- while(i<a.length&&j<b.length){if(a[i]===b[j]){i++;j++;continue}if(++edits>1)return false;if(a.length>b.length)i++;else if(b.length>a.length)j++;else{i++;j++;}}
- return edits+(i<a.length||j<b.length?1:0)<=1;
+function oneEditAway(a,b){if(a===b)return true;if(Math.abs(a.length-b.length)>1)return false;let i=0,j=0,e=0;while(i<a.length&&j<b.length){if(a[i]===b[j]){i++;j++;continue}if(++e>1)return false;if(a.length>b.length)i++;else if(b.length>a.length)j++;else{i++;j++;}}return e+(i<a.length||j<b.length?1:0)<=1}
+const SEARCH_INDEX=new Map(TOOLS.map(t=>{const name=normalizeText(t.name),desc=normalizeText(t.description),tax=normalizeText([t.sourceCategory,t.section,t.subsection,t.curatedCategory].join(" ")),pricing=normalizeText(t.pricing),access=normalizeText(t.accessType);return [t.id,{name,desc,tax,pricing,access,all:[name,desc,tax,pricing,access].join(" "),tokens:[...new Set([name,desc,tax].join(" ").split(/\s+/).filter(Boolean))]}]}));
+function parseSmartQuery(q){
+ const norm=normalizeText(q),raw=norm.split(/\s+/).filter(Boolean);
+ const explicitNoLogin=/(no login|no account|without an account|without account|without creating an account|without signing up|without sign up|no signup|no sign up)/.test(norm);
+ const wantsFree=/\bfree\b/.test(norm);
+ let intent=null,best=0;
+ for(const rule of INTENT_RULES){let s=0;for(const p of rule.patterns){if(norm.includes(p))s=Math.max(s,p.split(" ").length*10+p.length/20)}if(s>best){best=s;intent=rule}}
+ const rawTokens=raw.filter(x=>!QUERY_STOP.has(x)&&!QUERY_MODIFIERS.has(x)&&x.length>1);
+ const anchors=intent?intent.anchors:[];
+ const extras=intent?intent.terms:[];
+ const tokenSet=new Set(rawTokens);
+ for(const a of anchors)for(const x of normalizeText(a).split(" "))if(x.length>1)tokenSet.add(x);
+ for(const x of extras)for(const t of normalizeText(x).split(" "))if(t.length>2)tokenSet.add(t);
+ return {norm,rawTokens,tokens:[...tokenSet],intent,anchors,extras,wantsFree,explicitNoLogin};
 }
-const SEARCH_INDEX=new Map(TOOLS.map(t=>{const text=normalizeText([t.name,t.description,t.sourceCategory,t.section,t.subsection,t.curatedCategory,t.pricing].join(" "));return [t.id,{text,tokens:[...new Set(text.split(/\s+/).filter(Boolean))]}]}));
-function matchesQuery(t,q){
- const terms=normalizeText(q).split(/\s+/).filter(Boolean),idx=SEARCH_INDEX.get(t.id);if(!terms.length)return true;
- return terms.every(term=>{
-   const candidates=[term,...(SEARCH_ALIASES[term]||[])];
-   return candidates.some(c=>idx.text.includes(c)||(c.length>=5&&idx.tokens.some(tok=>Math.abs(tok.length-c.length)<=1&&oneEditAway(c,tok))));
- });
+function phraseScore(idx,p){p=normalizeText(p);if(!p)return 0;let s=0;if(idx.name===p)s+=130;else if(idx.name.includes(p))s+=80;if(idx.desc.includes(p))s+=34;if(idx.tax.includes(p))s+=10;return s}
+function tokenScore(idx,t){let s=0;if(!t||t.length<2)return 0;if(idx.name.split(" ").includes(t))s+=28;else if(idx.name.includes(t))s+=16;if(idx.desc.split(" ").includes(t))s+=10;else if(idx.desc.includes(t))s+=6;if(idx.tax.split(" ").includes(t))s+=3;const al=SEARCH_ALIASES[t]||[];for(const a of al){const n=normalizeText(a);if(idx.name.includes(n))s+=12;if(idx.desc.includes(n))s+=5;if(idx.tax.includes(n))s+=2}if(t.length>=5&&s===0&&idx.tokens.some(tok=>Math.abs(tok.length-t.length)<=1&&oneEditAway(t,tok)))s+=4;return s}
+function scoreTool(t,q){
+ const p=typeof q==="string"?parseSmartQuery(q):q,idx=SEARCH_INDEX.get(t.id);if(!p.norm)return 1;
+ let s=0,anchorHit=0;
+ if(p.intent){for(const a of p.anchors){const ps=phraseScore(idx,a);if(ps>0)anchorHit++;s+=ps}for(const e of p.extras)s+=phraseScore(idx,e)*0.32}
+ for(const tok of p.rawTokens)s+=tokenScore(idx,tok)*1.35;
+ for(const tok of p.tokens)s+=tokenScore(idx,tok)*0.45;
+ if(p.intent&&anchorHit===0)s*=0.16;
+ if(p.wantsFree){if(idx.pricing.includes("free"))s+=26;else if(idx.pricing.includes("paid"))s-=8}
+ if(p.explicitNoLogin){if(idx.access.includes("no login")||idx.access.includes("optional login"))s+=70;else s-=12}
+ if(t.verification==="Live verified")s+=4;if(t.priority==="High")s+=2;
+ if(/^(Dead \/ unavailable|Parked \/ for sale)$/.test(t.verification||""))s-=60;
+ return s;
 }
+function matchesQuery(t,q){return scoreTool(t,q)>3}
 
 function saveFav(){localStorage.setItem("atlasFavorites",JSON.stringify([...favorites]))}
 function showView(view){
@@ -90,15 +109,25 @@ function applyGoal(g){
  if(g!=="recommended"){state.query=$("#searchInput").value}
  renderLibrary();
 }
+function applyIntentSearch(q){
+ const p=parseSmartQuery(q);state.query=q;state.source="";state.pricing="";state.verification="";state.priority="";state.sort="relevance";state.page=1;state.favoritesOnly=false;
+ showView("library");$("#searchInput").value=q;$("#sourceFilter").value="";$("#pricingFilter").value="";$("#verificationFilter").value="";$("#priorityFilter").value="";$("#sortFilter").value="relevance";$("#favOnly").classList.remove("active");renderLibrary();
+ trackAtlas("atlas_intent_search",{intent:p.intent?.id||"general",query_length:p.norm.length,result_count:getFiltered().length,wants_free:p.wantsFree,no_login:p.explicitNoLogin});
+}
 function routeCommand(){
- const q=$("#commandInput").value.trim().toLowerCase();
- if(!q){$("#routeSuggestions").innerHTML='<div class="suggestion"><b>Tell me the outcome.</b><span>For example: make a video, research a topic, build a website, find a free tool.</span></div>';return}
- const scored=Object.entries(ROUTES).filter(([k])=>k!=="recommended").map(([k,v])=>[k,v,v.terms.reduce((n,t)=>n+(q.includes(t)?3:0),0)+(k==="no-login"&&/(free|no login|no account)/.test(q)?6:0)]).sort((a,b)=>b[2]-a[2]);
- const top=scored.filter(x=>x[2]>0).slice(0,3);
- const picks=top.length?top:[["research",ROUTES.research,1],["design",ROUTES.design,1],["automation",ROUTES.automation,1]];
- trackAtlas("atlas_command_submit",{query_length:q.length,matched_routes:picks.map(x=>x[0]).join(",")});
- $("#routeSuggestions").innerHTML=picks.map(([k,v])=>`<button class="suggestion" data-route="${k}" style="text-align:left;cursor:pointer"><b>${esc(v.label)}</b><span>Open matching tools →</span></button>`).join("");
+ const raw=$("#commandInput").value.trim();const p=parseSmartQuery(raw);
+ if(!p.norm){$("#routeSuggestions").innerHTML='<div class="suggestion"><b>Tell me the outcome.</b><span>For example: make a video, edit a PDF, create a logo, learn Python, or find a no-login tool.</span></div>';return}
+ const genericNoLogin=p.explicitNoLogin&&!p.intent;
+ let html="";
+ if(genericNoLogin)html+='<button class="suggestion" data-route="no-login" style="text-align:left;cursor:pointer"><b>Free • No Login</b><span>Only explicitly audited no-account tools →</span></button>';
+ else html+=`<button class="suggestion" data-smart-query="${esc(raw)}" style="text-align:left;cursor:pointer"><b>Best matches for this task</b><span>Rank all 1,834 tools by task relevance →</span></button>`;
+ const route=p.intent?.route;
+ if(route&&route!=="no-login")html+=`<button class="suggestion" data-route="${route}" style="text-align:left;cursor:pointer"><b>${esc(ROUTES[route].label)}</b><span>Browse the broader category →</span></button>`;
+ if(p.explicitNoLogin&&!genericNoLogin)html+='<button class="suggestion" data-route="no-login" style="text-align:left;cursor:pointer"><b>Strict no-login collection</b><span>Only explicitly audited no-account tools →</span></button>';
+ $("#routeSuggestions").innerHTML=html;
+ $$("[data-smart-query]").forEach(x=>x.onclick=()=>applyIntentSearch(raw));
  $$("[data-route]").forEach(x=>x.onclick=()=>applyGoal(x.dataset.route));
+ trackAtlas("atlas_command_submit",{query_length:p.norm.length,intent:p.intent?.id||"general",wants_free:p.wantsFree,no_login:p.explicitNoLogin});
 }
 $("#routeBtn").onclick=routeCommand;$("#commandInput").addEventListener("keydown",e=>{if(e.key==="Enter")routeCommand()});
 
@@ -118,9 +147,9 @@ $$("[data-quick-search]").forEach(b=>b.addEventListener("click",()=>{$("#searchI
 $("#favOnly").onclick=()=>{state.favoritesOnly=!state.favoritesOnly;$("#favOnly").classList.toggle("active",state.favoritesOnly);state.page=1;renderLibrary()};
 $("#clearFilters").onclick=()=>{state={...state,query:"",source:"",pricing:"",verification:"",priority:"",sort:"relevance",page:1,favoritesOnly:false};$("#searchInput").value="";$("#sourceFilter").value="";$("#pricingFilter").value="";$("#verificationFilter").value="";$("#priorityFilter").value="";$("#sortFilter").value="relevance";$("#favOnly").classList.remove("active");renderLibrary()};
 
-function tokenize(q){return q.toLowerCase().split(/\s+/).filter(Boolean)}
+function tokenize(q){return normalizeText(q).split(/\s+/).filter(Boolean)}
 function getFiltered(){
- const terms=tokenize(state.query);
+ const hasQuery=!!normalizeText(state.query);const parsed=hasQuery?parseSmartQuery(state.query):null;
  let arr=TOOLS.filter(t=>{
   if(state.source&&t.sourceCategory!==state.source&&!t.sourceCategories?.includes(state.source))return false;
   if(state.pricing&&t.pricing!==state.pricing)return false;
@@ -129,16 +158,15 @@ function getFiltered(){
   if(state.verification&&state.verification!=="Live verified"&&state.verification!=="not-live"&&t.verification!==state.verification)return false;
   if(state.priority&&t.priority!==state.priority)return false;
   if(state.favoritesOnly&&!favorites.has(t.id))return false;
-  if(terms.length&&!matchesQuery(t,state.query))return false;
+  if(hasQuery&&scoreTool(t,parsed)<=3)return false;
   return true;
  });
  if(state.sort==="az")arr.sort((a,b)=>a.name.localeCompare(b.name));
  else if(state.sort==="verified")arr.sort((a,b)=>(b.verification==="Live verified")-(a.verification==="Live verified")||a.name.localeCompare(b.name));
  else if(state.sort==="priority"){const p={High:3,Medium:2,Low:1};arr.sort((a,b)=>(p[b.priority]||0)-(p[a.priority]||0)||a.name.localeCompare(b.name))}
- else if(terms.length){arr.sort((a,b)=>scoreTool(b,terms)-scoreTool(a,terms)||a.name.localeCompare(b.name))}
+ else if(hasQuery)arr.sort((a,b)=>scoreTool(b,parsed)-scoreTool(a,parsed)||a.name.localeCompare(b.name));
  return arr;
 }
-function scoreTool(t,terms){const n=t.name.toLowerCase(),d=t.description.toLowerCase();return terms.reduce((s,q)=>s+(n.includes(q)?8:0)+(d.includes(q)?3:0)+(t.section.toLowerCase().includes(q)?2:0),0)+(t.verification==="Live verified"?1:0)+(t.priority==="High"?1:0)}
 function toolCard(t){
  const live=t.verification==="Live verified";
  const statusClass=live?"live":(/^(Dead|Parked|Server error)/.test(t.verification||"")?"bad":(t.verification==="Automation blocked"?"blocked":"pending"));

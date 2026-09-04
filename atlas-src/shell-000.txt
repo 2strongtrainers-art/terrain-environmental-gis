@@ -119,4 +119,57 @@ button.card,button.category{appearance:none;-webkit-appearance:none}
 .quicksearch{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:4px 0 2px;color:var(--muted);font-size:12px}
 .quicksearch button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 11px;color:#35595b;cursor:pointer;font:inherit}
 .quicksearch button:hover,.quicksearch button:focus-visible{border-color:#78cfc8;background:#f2fbfa}
-.empty .actions{margin-top:16px}.partner-callout{display:flex;align-items:center;
+.empty .actions{margin-top:16px}.partner-callout{display:flex;align-items:center;justify-content:space-between;gap:20px}.partner-callout p{margin:5px 0 0;max-width:760px}
+.trust-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.trust-grid .callout{height:100%}
+.footerlinks{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}.footerlinks a,.linkbutton{color:#246b6d;text-decoration:underline;text-underline-offset:3px}.linkbutton{border:0;background:none;padding:0;font:inherit;cursor:pointer}
+@media(max-width:680px){.discovery-first{margin-top:24px}.discovery-first .sectionhead h2{font-size:27px}.partner-callout{align-items:flex-start;flex-direction:column}.trust-grid{grid-template-columns:1fr}.quicksearch{padding-top:8px}}
+
+
+/* ATLAS-CRO-A11Y-V21 — WCAG AA contrast repair */
+.btn.blue{background:#087f80;color:#fff}
+.sectionhead p{color:#53696b}
+.stat span{color:#586b6d}
+.note{color:#53696b}
+
+/* ATLAS-INTENT-V3 */
+.suggestion[data-smart-query]{border-color:#8ddbd5;background:#f2fbfa}.suggestion[data-smart-query] b{color:#0a6667}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+ <nav class="nav" aria-label="Primary">
+  <button class="brand navbtn" data-view="home" aria-label="Digital Atlas home"><span class="brandmark">🧭</span><span>Nick’s Digital Atlas</span></button>
+  <div class="navlinks">
+   <button class="navbtn active" data-view="home">Home</button>
+   <button class="navbtn" data-view="library">Master Library</button>
+   <button class="navbtn" data-view="categories">Categories</button>
+   <button class="navbtn" data-view="free">Free / No Login</button>
+   <button class="navbtn" data-view="archive">Power User</button>
+   <button class="navbtn" data-view="quality">Data Quality</button>
+  </div>
+  <button class="menu" id="menuBtn" aria-expanded="false" aria-controls="mobileNav">Menu</button>
+ </nav>
+ <div class="mobilepanel" id="mobileNav">
+   <button class="navbtn" data-view="home">Home</button><button class="navbtn" data-view="library">Master Library</button><button class="navbtn" data-view="categories">Categories</button><button class="navbtn" data-view="free">Free / No Login</button><button class="navbtn" data-view="archive">Power User</button><button class="navbtn" data-view="quality">Data Quality</button>
+ </div>
+</header>
+<main class="wrap" id="main">
+<section class="view active" id="view-home">
+ <div class="hero">
+  <div class="eyebrow">1,834 tools & useful websites • 1,529 live verified</div>
+  <h1>Find the right tool or useful website for what you want to do.</h1>
+  <p>Browse 1,834 resources by goal, category, price or verification status. 1,529 destinations were live-checked on September 3, 2026.</p>
+  <div class="actions"><button class="btn primary" data-view="library" id="heroBrowse">Browse all 1,834 tools</button><button class="btn ghost" id="jumpCommand">Help me choose</button></div>
+ </div>
+ <div class="stats">
+   <div class="stat"><b id="statIndexed"></b><span>unique launchable tools/sites</span></div>
+   <div class="stat"><b id="statSource"></b><span>entries in connected source sheets</span></div>
+   <div class="stat"><b id="statVerified"></b><span>live-verified in current audit</span></div>
+   <div class="stat"><b>4</b><span>explicitly audited Free • No Login tools</span></div>
+ </div>
+ <div class="callout green" id="newHere">
+  <strong>🧭 New here? Start here.</strong>
+  <p>Describe the outcome—not the software. The Atlas ranks all 1,834 tools for your task, then offers broader categories when useful.</p>
+  <div class="command">
+   <label for="commandInput"><b>Tell the Atlas what you want to do</b></la

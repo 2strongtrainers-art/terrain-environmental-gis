@@ -1,55 +1,4 @@
-justify-content:space-between;gap:20px}.partner-callout p{margin:5px 0 0;max-width:760px}
-.trust-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.trust-grid .callout{height:100%}
-.footerlinks{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}.footerlinks a,.linkbutton{color:#246b6d;text-decoration:underline;text-underline-offset:3px}.linkbutton{border:0;background:none;padding:0;font:inherit;cursor:pointer}
-@media(max-width:680px){.discovery-first{margin-top:24px}.discovery-first .sectionhead h2{font-size:27px}.partner-callout{align-items:flex-start;flex-direction:column}.trust-grid{grid-template-columns:1fr}.quicksearch{padding-top:8px}}
-
-
-/* ATLAS-CRO-A11Y-V21 — WCAG AA contrast repair */
-.btn.blue{background:#087f80;color:#fff}
-.sectionhead p{color:#53696b}
-.stat span{color:#586b6d}
-.note{color:#53696b}
-
-</style>
-</head>
-<body>
-<a class="skip" href="#main">Skip to content</a>
-<header class="topbar">
- <nav class="nav" aria-label="Primary">
-  <button class="brand navbtn" data-view="home" aria-label="Digital Atlas home"><span class="brandmark">🧭</span><span>Nick’s Digital Atlas</span></button>
-  <div class="navlinks">
-   <button class="navbtn active" data-view="home">Home</button>
-   <button class="navbtn" data-view="library">Master Library</button>
-   <button class="navbtn" data-view="categories">Categories</button>
-   <button class="navbtn" data-view="free">Free / No Login</button>
-   <button class="navbtn" data-view="archive">Power User</button>
-   <button class="navbtn" data-view="quality">Data Quality</button>
-  </div>
-  <button class="menu" id="menuBtn" aria-expanded="false" aria-controls="mobileNav">Menu</button>
- </nav>
- <div class="mobilepanel" id="mobileNav">
-   <button class="navbtn" data-view="home">Home</button><button class="navbtn" data-view="library">Master Library</button><button class="navbtn" data-view="categories">Categories</button><button class="navbtn" data-view="free">Free / No Login</button><button class="navbtn" data-view="archive">Power User</button><button class="navbtn" data-view="quality">Data Quality</button>
- </div>
-</header>
-<main class="wrap" id="main">
-<section class="view active" id="view-home">
- <div class="hero">
-  <div class="eyebrow">1,834 tools & useful websites • 1,529 live verified</div>
-  <h1>Find the right tool or useful website for what you want to do.</h1>
-  <p>Browse 1,834 resources by goal, category, price or verification status. 1,529 destinations were live-checked on September 3, 2026.</p>
-  <div class="actions"><button class="btn primary" data-view="library" id="heroBrowse">Browse all 1,834 tools</button><button class="btn ghost" id="jumpCommand">Help me choose</button></div>
- </div>
- <div class="stats">
-   <div class="stat"><b id="statIndexed"></b><span>unique launchable tools/sites</span></div>
-   <div class="stat"><b id="statSource"></b><span>entries in connected source sheets</span></div>
-   <div class="stat"><b id="statVerified"></b><span>live-verified in current audit</span></div>
-   <div class="stat"><b>4</b><span>explicitly audited Free • No Login tools</span></div>
- </div>
- <div class="callout green" id="newHere">
-  <strong>🧭 New here? Start here.</strong>
-  <p>Describe the outcome—not the software. The Atlas will show matching tools and categories.</p>
-  <div class="command">
-   <label for="commandInput"><b>Tell the Atlas what you want to do</b></label>
+bel>
    <div class="commandbox"><input id="commandInput" placeholder="Example: make a short video from five photos" autocomplete="off"><button class="btn blue" id="routeBtn">Show matching tools</button></div>
    <div class="suggestions" id="routeSuggestions" aria-live="polite"></div>
   </div>
@@ -99,7 +48,7 @@ justify-content:space-between;gap:20px}.partner-callout p{margin:5px 0 0;max-wid
 </section>
 
 <section class="view" id="view-library">
- <div class="libraryHero"><div class="eyebrow" style="color:#175cd3">Master Library</div><h1>Search every indexed tool.</h1><p>Search names, descriptions, categories and subcategories. Filters operate locally and instantly.</p></div>
+ <div class="libraryHero"><div class="eyebrow" style="color:#175cd3">Master Library</div><h1>Search every indexed tool.</h1><p>Search naturally by task. Atlas weights exact capability matches above broad categories, with typo tolerance, synonyms and transparent filters.</p></div>
  <div class="searchbar">
   <div class="searchrow">
    <input class="control query" id="searchInput" placeholder="Search tools, tasks or websites…" aria-label="Search library" autocomplete="off">
@@ -207,8 +156,48 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&
 const domain=u=>{try{return new URL(u).hostname.replace(/^www\./,"")}catch{return u}};
 const fmt=n=>new Intl.NumberFormat().format(n);
 
+/* ATLAS-INTENT-V3 — task-first ranking, modifiers, synonyms, fuzzy matching */
 const SEARCH_ALIASES={
-  photo:["image","picture"],photos:["image","picture"],picture:["image","photo"],
-  movie:["video"],film:["video"],website:["site","web"],site:["website","web"],
-  automate:["automation","workflow"],automation:["workflow","agent"],study:["research","learn"],
-  researching:["
+ photo:["image","picture"],photos:["image","picture","stock"],picture:["image","photo"],pictures:["image","photo"],
+ movie:["video"],film:["video"],reel:["video","clip"],reels:["video","clip"],shorts:["video","clip"],
+ website:["site","web"],site:["website","web"],webpage:["website","site"],nocode:["no code","website builder"],
+ automate:["automation","workflow"],automation:["workflow","agent"],study:["research","learn"],researching:["research"],
+ cv:["resume"],mapping:["map","gis"],gis:["map","mapping"],voice:["audio","speech","tts"],audio:["voice","sound"],
+ logo:["branding","design"],slides:["presentation","slideshow","deck"],presentation:["slides","slideshow","deck"],
+ write:["writing","writer"],writer:["writing"],proofread:["grammar","writing"],proofreading:["grammar","writing"],
+ translate:["translation","translator","language"],translator:["translate","translation"],transcribe:["transcription","speech to text"],
+ transcription:["transcribe","speech to text"],citation:["cite","bibliography","reference"],citations:["citation","bibliography","reference"],
+ qr:["qr code"],math:["calculator","calculate"],calculate:["calculator"],python:["programming","coding"],pdf:["document"],
+ background:["remove background","background remover","transparent"],stock:["stock photo","stock image","royalty free"],
+ weather:["forecast","radar"],resume:["cv","career"],grammar:["proofread","writing"],spreadsheet:["excel","sheets"],
+ speech:["voice","audio"],tts:["text to speech","voice"],ocr:["image to text","scan"],diagram:["flowchart","visualize"]
+};
+const QUERY_STOP=new Set("i me my we our us you your a an the this that these those is are am be been being to for of on in at by with from into and or but if then than as it its do does did can could would should please help need want find give show make create use using get tool tools useful something thing online today right now".split(/\s+/));
+const QUERY_MODIFIERS=new Set(["best","easy","easiest","simple","quick","fast","good","great","ai","free"]);
+const INTENT_RULES=[
+ {id:"image-generator",route:"design",patterns:["image generator","ai image","generate image","generate images","text to image","make an image","create image"],anchors:["image generator","text to image","image","art"],terms:["generator","photo","picture","design"]},
+ {id:"short-video",route:"video",patterns:["short video","social media video","make a video","create a video","video for social","reel","shorts"],anchors:["video","reel","clip"],terms:["editor","generator","social media","media"]},
+ {id:"logo",route:"design",patterns:["design a logo","make a logo","create a logo","logo"],anchors:["logo","branding","brand"],terms:["design","graphic"]},
+ {id:"resume",route:"business",patterns:["resume","cv","curriculum vitae"],anchors:["resume","cv"],terms:["career","job","application","builder"]},
+ {id:"pdf",route:"research",patterns:["pdf","edit pdf","work with a pdf","pdf editor","pdf converter"],anchors:["pdf"],terms:["document","editor","edit","convert","merge","compress","annotate"]},
+ {id:"research-summary",route:"research",patterns:["summarize a research paper","summarize research","research paper","academic paper","paper summary"],anchors:["research","paper","academic","scholar"],terms:["summary","summarize","study","science"]},
+ {id:"citation",route:"research",patterns:["citation","citation generator","bibliography","cite source","apa citation","mla citation"],anchors:["citation","bibliography","cite"],terms:["reference","apa","mla","academic"]},
+ {id:"python-learning",route:"research",patterns:["learn python","python course","python tutorial","python programming"],anchors:["python"],terms:["learn","course","tutorial","programming","coding"]},
+ {id:"calculator",route:"research",patterns:["calculator","calculate","math problem","equation solver"],anchors:["calculator","calculate"],terms:["math","equation","solver","formula"]},
+ {id:"qr-code",route:"automation",patterns:["qr code","make a qr","create a qr","qr generator"],anchors:["qr","qr code"],terms:["generator","barcode","code"]},
+ {id:"weather-map",route:"maps",patterns:["weather","forecast","weather map","weather or map","radar map"],anchors:["weather","forecast","radar"],terms:["map","earth","geo","gis"]},
+ {id:"background-removal",route:"design",patterns:["remove the background","remove background","background remover","transparent background"],anchors:["background","background remover","remove background"],terms:["image","photo","transparent","cutout"]},
+ {id:"transcription",route:"video",patterns:["transcribe","transcription","audio to text","speech to text","voice recording to text"],anchors:["transcribe","transcription","speech to text"],terms:["audio","voice","recording","text"]},
+ {id:"voice-generator",route:"video",patterns:["voice generator","ai voice","text to speech","tts","generate voice"],anchors:["voice","text to speech","tts"],terms:["speech","audio","generator","narration"]},
+ {id:"website-builder",route:"automation",patterns:["build a website","website builder","make a website","create a website","without coding","no code website","nocode website"],anchors:["website","website builder","site builder","no code"],terms:["web","builder","site","design","hosting"]},
+ {id:"presentation",route:"design",patterns:["presentation","slideshow","slide deck","powerpoint","create slides","make slides"],anchors:["presentation","slides","slideshow","powerpoint","deck"],terms:["design","pitch"]},
+ {id:"grammar",route:"research",patterns:["grammar","check my writing","grammar checker","proofread","spell check"],anchors:["grammar","proofread","spell"],terms:["writing","editor","rewrite"]},
+ {id:"translation",route:"research",patterns:["translate","translation","translator","another language"],anchors:["translate","translation","translator"],terms:["language","text"]},
+ {id:"stock-photos",route:"design",patterns:["stock photos","stock photo","free photos","royalty free photos","stock images"],anchors:["stock photo","stock image","photo","image"],terms:["royalty free","pictures"]},
+ {id:"spreadsheet",route:"business",patterns:["spreadsheet","excel","google sheets"],anchors:["spreadsheet","excel","sheets"],terms:["data","table","csv"]},
+ {id:"ocr",route:"research",patterns:["ocr","image to text","scan text","extract text from image"],anchors:["ocr","image to text"],terms:["scan","text","document"]},
+ {id:"diagram",route:"design",patterns:["diagram","flowchart","mind map","mindmap"],anchors:["diagram","flowchart","mind map"],terms:["visual","chart"]},
+ {id:"automation",route:"automation",patterns:["automate","automation","workflow","agent"],anchors:["automation","workflow","agent"],terms:["ai","assistant"]},
+ {id:"coding",route:"automation",patterns:["coding","programming","write code","developer"],anchors:["code","coding","programming","developer"],terms:["ai","assistant"]},
+ {id:"image-editing",route:"design",patterns:["edit image","edit photo","photo editor","image editor"],anchors:["image","photo"],terms:["editor","edit","design"]},
+ {id:"video",route:"video",patterns:["video"],anchors:["video"],terms:["e
