@@ -88,7 +88,7 @@ jobs:
               try:
                   req=urllib.request.Request(u,headers={'Cache-Control':'no-cache','User-Agent':'Atlas-Intent-V32-QA'})
                   h=urllib.request.urlopen(req,timeout=15).read().decode('utf-8','replace')
-                  if 'ATLAS-INTENT-V32' in h and 'QRCode Monkey' in h:
+                  if 'ATLAS-INTENT-V32' in h and '1,838' in h:
                       print('V3.2 live after',i*5,'seconds');break
               except Exception as e: print('wait',e)
               time.sleep(5)
