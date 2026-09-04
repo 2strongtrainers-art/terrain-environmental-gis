@@ -1,0 +1,111 @@
+name: Atlas Intent Engine V3
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/apply_atlas_intent_v3.py
+      - .github/workflows/atlas-intent-v3.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply intent engine V3
+        run: python scripts/apply_atlas_intent_v3.py
+
+      - name: Commit production source
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add atlas-src/shell-*.txt atlas-bundle.html atlas-build-report.json
+          if git diff --cached --quiet; then
+            echo "Intent V3 source already current"
+          else
+            git commit -m "Ship Atlas task-first intent engine V3"
+            git push origin HEAD:main
+          fi
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: public
+          fetch-depth: 0
+
+      - name: Publish Atlas V3
+        shell: bash
+        run: |
+          mkdir -p public/atlas
+          cp atlas-bundle.html public/atlas/index.html
+          cp atlas-build-report.json public/atlas/build-report.json
+          cd public
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add atlas/index.html atlas/build-report.json
+          if git diff --cached --quiet; then
+            echo "Published Atlas already current"
+          else
+            git commit -m "Publish Atlas intent engine V3"
+            git push origin HEAD:gh-pages
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install browser driver
+        run: npm install --no-save playwright-core@1.55.0
+
+      - name: Wait for production V3
+        env:
+          URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+        run: |
+          python - <<'PY'
+          import os,time,urllib.request
+          u=os.environ['URL']
+          for i in range(72):
+              try:
+                  req=urllib.request.Request(u,headers={'Cache-Control':'no-cache','User-Agent':'Atlas-Intent-V3-QA'})
+                  h=urllib.request.urlopen(req,timeout=15).read().decode('utf-8','replace')
+                  if 'ATLAS-INTENT-V3' in h and 'Best matches for this task' in h:
+                      print('V3 live after',i*5,'seconds');break
+              except Exception as e: print('wait',e)
+              time.sleep(5)
+          else: raise SystemExit('V3 production marker not found')
+          PY
+
+      - name: Run 20 common-intent benchmark
+        env:
+          ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node qa/atlas-common-intents-20.js
+
+      - name: Run full production regression
+        env:
+          ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node qa/atlas-live-qa.js
+
+      - name: Upload intent evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: atlas-intent-v3-evidence
+          path: |
+            intent-qa/
+            qa-artifacts/
+          retention-days: 30
