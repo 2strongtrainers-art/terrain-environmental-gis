@@ -1,5 +1,5 @@
 from pathlib import Path
-import base64, gzip, hashlib, json
+import base64, gzip, hashlib, json, re
 
 ROOT = Path('.')
 SHELL = [ROOT / f'atlas-src/shell-{i:03d}.txt' for i in range(3)]
@@ -10,10 +10,10 @@ records = json.loads(gzip.decompress(base64.b64decode(data_b64)))
 MARK = 'ATLAS-DISCOVERY-V51'
 old_total = len(records)
 
-# The expanded benchmark exposed one concentrated gap: all ten grant/funding
-# paraphrases were being swallowed by the older generic research intent. Put a
-# high-specificity grant rule before generic intents, while preserving the
-# existing V5 preferred/avoid maps and strict access semantics.
+# The expanded benchmark exposed one concentrated gap: grant/funding paraphrases
+# were being swallowed by the older generic research intent. Put a high-
+# specificity grant rule before generic intents while preserving strict access
+# semantics and all prior V5 preferred/avoid behavior.
 if MARK not in shell:
     anchor = 'const INTENT_RULES=['
     if anchor not in shell:
@@ -43,8 +43,27 @@ for row in grant_rows:
         existing_names.add(name)
 
 new_total = len(records)
+needs_review = sum(1 for r in records if len(r) > 10 and str(r[10]) == 'Needs review')
+live_verified = sum(1 for r in records if len(r) > 10 and str(r[10]) == 'Live verified')
+non_live_total = new_total - live_verified
+
+# Keep every consumer-facing and metadata count synchronized with the actual
+# encoded dataset. The old build only changed comma-formatted prose, leaving the
+# META object and the quality snapshot stale after curated additions.
 if new_total != old_total:
     shell = shell.replace(f'{old_total:,}', f'{new_total:,}')
+shell = re.sub(r'"indexedTools":\d+', f'"indexedTools":{new_total}', shell, count=1)
+shell = re.sub(r'"taskEssentialNeedsReview":\d+', f'"taskEssentialNeedsReview":{needs_review}', shell, count=1)
+shell = re.sub(r'Review [\d,]+ non-live-verified records', f'Review {non_live_total:,} non-live-verified records', shell)
+shell = shell.replace('"built":"2026-09-03"', '"built":"2026-09-04"', 1)
+
+# Repair an accumulated patching defect where taskEssentialNeedsReview had been
+# added repeatedly in qReview. It must be counted exactly once.
+qreview_pattern = r'\$\("#qReview"\)\.textContent=fmt\([^;]+\);'
+qreview_replacement = '$("#qReview").textContent=fmt(META.auditBreakdown.error+META.auditBreakdown.timeout+META.auditBreakdown.uncertain+META.auditBreakdown.serverError+(META.auditBreakdown.taskEssentialNeedsReview||0));'
+shell, qreview_repairs = re.subn(qreview_pattern, qreview_replacement, shell, count=1)
+if qreview_repairs != 1:
+    raise SystemExit(f'Expected one qReview repair, found {qreview_repairs}')
 
 encoded = base64.b64encode(gzip.compress(json.dumps(records, separators=(',', ':'), ensure_ascii=False).encode('utf-8'))).decode('ascii')
 
@@ -67,6 +86,7 @@ bundle = shell.replace('__DATA_B64__', encoded)
 (ROOT / 'atlas-bundle.html').write_text(bundle)
 report = json.loads((ROOT / 'atlas-build-report.json').read_text())
 report['tool_count'] = new_total
+report['live_verified'] = live_verified
 report['bundle_bytes'] = len(bundle.encode('utf-8'))
 report['data_b64_bytes'] = len(encoded.encode('ascii'))
 report['sha256'] = hashlib.sha256(bundle.encode('utf-8')).hexdigest()
@@ -77,6 +97,9 @@ report['discovery_v51'] = {
     'new_records_verification': 'Needs review',
     'new_records_access': 'Unknown',
     'total_tools': new_total,
+    'needs_review': needs_review,
+    'non_live_total': non_live_total,
+    'quality_snapshot_count_repair': True,
     'preserves_free_vs_no_login': True
 }
 (ROOT / 'atlas-build-report.json').write_text(json.dumps(report, indent=2) + '\n')
@@ -84,4 +107,7 @@ report['discovery_v51'] = {
 assert MARK in bundle
 assert '__DATA_B64__' not in bundle
 assert len(records) == new_total
+assert f'"indexedTools":{new_total}' in bundle
+assert f'"taskEssentialNeedsReview":{needs_review}' in bundle
+assert bundle.count('META.auditBreakdown.taskEssentialNeedsReview||0') == 1
 print(json.dumps(report['discovery_v51'], indent=2))
