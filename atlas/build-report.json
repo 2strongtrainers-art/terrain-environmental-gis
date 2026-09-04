@@ -2,9 +2,9 @@
   "tool_count": 1850,
   "live_verified": 1529,
   "source_entries": 1802,
-  "bundle_bytes": 215893,
+  "bundle_bytes": 215543,
   "data_b64_bytes": 122712,
-  "sha256": "d617e6ad18af7764d7e305fc59387a2dce86aa5aae897ed0347beeced8bbfa2c",
+  "sha256": "edd688d9ad19e0992c25b72f9f6335046b43177da5db6fbdb9f211f2b09e3e2e",
   "visual_theme": "Atlas Brand V2 + CRO V2.1",
   "cro_v2": {
     "clarity": true,
@@ -94,6 +94,9 @@
     "new_records_verification": "Needs review",
     "new_records_access": "Unknown",
     "total_tools": 1850,
+    "needs_review": 26,
+    "non_live_total": 321,
+    "quality_snapshot_count_repair": true,
     "preserves_free_vs_no_login": true
   }
 }
