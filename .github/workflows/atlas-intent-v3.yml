@@ -1,12 +1,15 @@
-name: Atlas Intent Engine V3
+name: Atlas Intent + Multimedia V4
 
 on:
   push:
     branches: [main]
     paths:
       - scripts/apply_atlas_intent_v32.py
+      - scripts/apply_atlas_multimedia_v4.py
       - qa/atlas-common-intents-20.js
       - qa/atlas-intent-stress-60.js
+      - qa/atlas-watch-multimedia.js
+      - qa/atlas-live-qa.js
       - .github/workflows/atlas-intent-v3.yml
   workflow_dispatch:
 
@@ -16,7 +19,7 @@ permissions:
 jobs:
   deploy-and-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -24,19 +27,21 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Apply current intent engine V3.2 idempotently
-        run: python scripts/apply_atlas_intent_v32.py
+      - name: Apply current Atlas engines idempotently
+        run: |
+          python scripts/apply_atlas_intent_v32.py
+          python scripts/apply_atlas_multimedia_v4.py
 
       - name: Commit production source and synchronized QA
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add atlas-src/shell-*.txt atlas-src/data-*.txt atlas-bundle.html atlas-build-report.json qa/atlas-live-qa.js qa/atlas-common-intents-20.js qa/atlas-intent-stress-60.js
+          git add atlas-src/shell-*.txt atlas-src/data-*.txt atlas-bundle.html atlas-build-report.json qa/atlas-live-qa.js qa/atlas-common-intents-20.js qa/atlas-intent-stress-60.js qa/atlas-watch-multimedia.js
           if git diff --cached --quiet; then
-            echo "Intent source already current"
+            echo "Atlas V4 source already current"
           else
-            git commit -m "Ship Atlas intent engine V3.2 with essential task coverage"
+            git commit -m "Ship Atlas Watch and Multimedia V4"
             git push origin HEAD:main
           fi
 
@@ -47,7 +52,7 @@ jobs:
           path: public
           fetch-depth: 0
 
-      - name: Publish Atlas V3.2
+      - name: Publish Atlas V4
         shell: bash
         run: |
           mkdir -p public/atlas
@@ -60,7 +65,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "Published Atlas already current"
           else
-            git commit -m "Publish Atlas intent engine V3.2"
+            git commit -m "Publish Atlas Watch and Multimedia V4"
             git push origin HEAD:gh-pages
           fi
 
@@ -72,7 +77,7 @@ jobs:
       - name: Install browser driver
         run: npm install --no-save playwright@1.55.0
 
-      - name: Wait for production V3.2
+      - name: Wait for production V4
         env:
           URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
         run: |
@@ -81,13 +86,13 @@ jobs:
           u=os.environ['URL']
           for i in range(72):
               try:
-                  req=urllib.request.Request(u,headers={'Cache-Control':'no-cache','User-Agent':'Atlas-Intent-V32-QA'})
+                  req=urllib.request.Request(u,headers={'Cache-Control':'no-cache','User-Agent':'Atlas-Multimedia-V4-QA'})
                   h=urllib.request.urlopen(req,timeout=15).read().decode('utf-8','replace')
-                  if 'ATLAS-INTENT-V32' in h and '1,838' in h:
-                      print('V3.2 live after',i*5,'seconds');break
+                  if 'ATLAS-MULTIMEDIA-V4' in h and '1,846' in h and 'id="view-watch"' in h:
+                      print('V4 live after',i*5,'seconds');break
               except Exception as e: print('wait',e)
               time.sleep(5)
-          else: raise SystemExit('V3.2 production marker not found')
+          else: raise SystemExit('V4 production marker not found')
           PY
 
       - name: Run strict 20 common-intent benchmark
@@ -97,10 +102,17 @@ jobs:
         run: node qa/atlas-common-intents-20.js
 
       - name: Run 60-query stress benchmark
+        continue-on-error: true
         env:
           ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
           CHROME_PATH: /usr/bin/google-chrome
         run: node qa/atlas-intent-stress-60.js
+
+      - name: Run Watch and Multimedia QA
+        env:
+          ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node qa/atlas-watch-multimedia.js
 
       - name: Run full production regression
         env:
@@ -108,12 +120,30 @@ jobs:
           CHROME_PATH: /usr/bin/google-chrome
         run: node qa/atlas-live-qa.js
 
-      - name: Upload intent evidence
+      - name: Certification gate
+        run: |
+          python - <<'PY'
+          import json
+          stress=json.load(open('intent-qa/atlas-intent-stress-60.json'))
+          watch=json.load(open('watch-qa/atlas-watch-report.json'))
+          live=json.load(open('qa-artifacts/atlas-live-qa-report.json'))
+          s=stress.get('summary',{})
+          if s.get('structural')!=60 or s.get('relevant')!=60 or s.get('jsErrors')!=0:
+              raise SystemExit(f"Stress benchmark not certified: {s}")
+          if len(watch.get('queries',[]))!=8 or sum(1 for x in watch['queries'] if x.get('ok'))!=8 or watch.get('errors'):
+              raise SystemExit('Watch QA not certified')
+          if live.get('failed')!=0 or live.get('page_errors') or live.get('request_failures'):
+              raise SystemExit('Full regression not certified')
+          print('CERTIFIED: 20/20 core, 60/60 stress, 8/8 watch queries, full regression green')
+          PY
+
+      - name: Upload V4 evidence
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: atlas-intent-v32-evidence
+          name: atlas-multimedia-v4-evidence
           path: |
             intent-qa/
+            watch-qa/
             qa-artifacts/
           retention-days: 30
