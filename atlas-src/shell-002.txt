@@ -1,7 +1,18 @@
-"mindmap"],anchors:["diagram","flowchart","mind map"],terms:["visual","chart"]},
+ilder","make a website","create a website","without coding","no code website","nocode website","build a web page","web page visually","visual website builder"],anchors:["website","website builder","site builder","no code"],terms:["web","builder","site","design","hosting"]},
+ {id:"presentation",route:"design",patterns:["presentation","slideshow","slide deck","powerpoint","create slides","make slides"],anchors:["presentation","slides","slideshow","powerpoint","deck"],terms:["design","pitch"]},
+ {id:"grammar",route:"research",patterns:["grammar","check my writing","grammar checker","proofread","spell check"],anchors:["grammar","proofread","spell"],terms:["writing","editor","rewrite"]},
+ {id:"translation",route:"research",patterns:["translate","translation","translator","another language"],anchors:["translate","translation","translator"],terms:["language","text"]},
+ {id:"stock-photos",route:"design",patterns:["stock photos","stock photo","free photos","royalty free photos","stock images"],anchors:["stock photo","stock image","photo","image"],terms:["royalty free","pictures"]},
+ {id:"spreadsheet",route:"business",patterns:["spreadsheet","excel","google sheets"],anchors:["spreadsheet","excel","sheets"],terms:["data","table","csv"]},
+ {id:"ocr",route:"research",patterns:["ocr","image to text","scan text","extract text from image"],anchors:["ocr","image to text"],terms:["scan","text","document"]},
+ {id:"diagram",route:"design",patterns:["diagram","flowchart","mind map","mindmap"],anchors:["diagram","flowchart","mind map"],terms:["visual","chart"]},
  {id:"automation",route:"automation",patterns:["automate","automation","workflow","agent"],anchors:["automation","workflow","agent"],terms:["ai","assistant"]},
  {id:"coding",route:"automation",patterns:["coding","programming","write code","developer"],anchors:["code","coding","programming","developer"],terms:["ai","assistant"]},
  {id:"image-editing",route:"design",patterns:["edit image","edit photo","photo editor","image editor"],anchors:["image","photo"],terms:["editor","edit","design"]},
+ {id:"library-streaming",route:"watch",patterns:["library card movies","movies with my library card","watch with library card","library streaming","hoopla","kanopy"],anchors:["library","library card","movies"],terms:["streaming","hoopla","kanopy","film"]},
+ {id:"nature-livecam",route:"watch",patterns:["live animal cam","live animal cams","live nature cam","live nature cams","wildlife cam","wildlife cams","animal webcam","nature webcam"],anchors:["live cam","nature","wildlife","animal"],terms:["webcam","camera","stream","explore"]},
+ {id:"space-streaming",route:"watch",patterns:["nasa plus","nasa+","space documentary","space documentaries","live mission","nasa mission"],anchors:["nasa","space","mission"],terms:["documentary","science","streaming","live"]},
+ {id:"watch-free",route:"watch",patterns:["watch free","watch something free","free movie","free movies","free tv","free streaming","stream free","live tv","live news","watch a movie","watch movie","watch tv","free documentary","watch documentary","something to watch","im bored","i m bored"],anchors:["movie","movies","tv","streaming","watch","documentary","live"],terms:["free","shows","channels","on demand","entertainment"]},
  {id:"video",route:"video",patterns:["video"],anchors:["video"],terms:["editor","generator","media"]},
  {id:"research",route:"research",patterns:["research","study","science"],anchors:["research","study","science"],terms:["learn","academic"]},
  {id:"maps",route:"maps",patterns:["map","mapping","gis","terrain"],anchors:["map","mapping","gis","terrain"],terms:["geo","earth"]},
@@ -60,7 +71,7 @@ $$("[data-view]").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.v
 $("#menuBtn").onclick=()=>{let o=$("#mobileNav").classList.toggle("open");$("#menuBtn").setAttribute("aria-expanded",String(o))};
 
 async function shareAtlas(){
- const data={title:"Nick’s Digital Atlas",text:"Browse 1,838 AI tools and useful websites.",url:location.origin+location.pathname};
+ const data={title:"Nick’s Digital Atlas",text:"Browse 1,846 AI tools and useful websites.",url:location.origin+location.pathname};
  try{if(navigator.share)await navigator.share(data);else{await navigator.clipboard.writeText(data.url);alert("Atlas link copied.")}trackAtlas("atlas_share",{method:navigator.share?"native":"clipboard"})}catch(e){}
 }
 $("#shareAtlas").addEventListener("click",shareAtlas);
@@ -77,7 +88,7 @@ $("#friendMode").onclick=()=>{showView("home");setTimeout(()=>{$("#newHere").scr
 $("#statIndexed").textContent=fmt(META.indexedTools);
 $("#statSource").textContent=fmt(META.sourceEntries);
 $("#statVerified").textContent=fmt(META.liveVerified);
-$("#qIndexed").textContent=fmt(META.indexedTools);$("#qSource").textContent=fmt(META.sourceEntries);$("#qVerified").textContent=fmt(META.liveVerified);$("#qBlocked").textContent=fmt(META.auditBreakdown.blocked);$("#qDead").textContent=fmt(META.auditBreakdown.dead);$("#qParked").textContent=fmt(META.auditBreakdown.parked);$("#qReview").textContent=fmt(META.auditBreakdown.error+META.auditBreakdown.timeout+META.auditBreakdown.uncertain+META.auditBreakdown.serverError);$("#qAccess").textContent=fmt(META.explicitAccessAudits);$("#qDate").textContent=META.lastAudit;$("#footerDate").textContent=META.built;
+$("#qIndexed").textContent=fmt(META.indexedTools);$("#qSource").textContent=fmt(META.sourceEntries);$("#qVerified").textContent=fmt(META.liveVerified);$("#qBlocked").textContent=fmt(META.auditBreakdown.blocked);$("#qDead").textContent=fmt(META.auditBreakdown.dead);$("#qParked").textContent=fmt(META.auditBreakdown.parked);$("#qReview").textContent=fmt(META.auditBreakdown.error+META.auditBreakdown.timeout+META.auditBreakdown.uncertain+META.auditBreakdown.serverError+(META.auditBreakdown.taskEssentialNeedsReview||0));$("#qAccess").textContent=fmt(META.explicitAccessAudits);$("#qDate").textContent=META.lastAudit;$("#footerDate").textContent=META.built;
 
 const goals=[
  ["🎬","Make an AI video","Ideas, scripts, editing, voice and video tools.","video"],
@@ -86,6 +97,7 @@ const goals=[
  ["💼","Find a business or money tool","Marketing, productivity, finance and business resources.","business"],
  ["🌐","Build a website or automate a task","Coding, assistants, agents and digital workflows.","automation"],
  ["🗺️","Explore maps, 3D or interactive worlds","Mapping, geographic, gaming and visualization resources.","maps"],
+ ["🍿","Watch something free","Movies, TV, documentaries, live channels and nature cams.","watch"],
  ["🆓","Use something free without an account","Only explicitly audited no-login tools.","no-login"],
  ["⭐","Just show me something useful","High-priority or live-verified places to begin.","recommended"]
 ];
@@ -99,10 +111,12 @@ const ROUTES={
  business:{label:"Business & productivity",terms:["business","marketing","money","finance","productivity","sales","resume","job"],source:""},
  automation:{label:"AI & automation",terms:["automation","agent","workflow","code","coding","website","app","developer"],source:"AI"},
  maps:{label:"Games, maps & 3D",terms:["map","3d","world","terrain","game","minecraft"],source:"Gaming"},
+ watch:{label:"Watch & Multimedia",terms:["free movies","streaming","live tv","documentary","nature cams"],source:"Curated Library"},
  "no-login":{label:"Free • No Login",terms:[],source:""},
  recommended:{label:"Recommended starting points",terms:[],source:""}
 };
 function applyGoal(g){
+ if(g==="watch"){showView("watch");return}
  if(g==="no-login"){showView("free");return}
  state.query=ROUTES[g]?.terms.slice(0,1).join(" ")||"";
  state.source=ROUTES[g]?.source||"";
@@ -121,11 +135,11 @@ function applyIntentSearch(q){
 }
 function routeCommand(){
  const raw=$("#commandInput").value.trim();const p=parseSmartQuery(raw);
- if(!p.norm){$("#routeSuggestions").innerHTML='<div class="suggestion"><b>Tell me the outcome.</b><span>For example: make a video, edit a PDF, create a logo, learn Python, or find a no-login tool.</span></div>';return}
+ if(!p.norm){$("#routeSuggestions").innerHTML='<div class="suggestion"><b>Tell me the outcome.</b><span>For example: make a video, watch something free, edit a PDF, create a logo, learn Python, or find a no-login tool.</span></div>';return}
  const genericNoLogin=p.explicitNoLogin&&!p.intent;
  let html="";
  if(genericNoLogin)html+='<button class="suggestion" data-route="no-login" style="text-align:left;cursor:pointer"><b>Free • No Login</b><span>Only explicitly audited no-account tools →</span></button>';
- else html+=`<button class="suggestion" data-smart-query="${esc(raw)}" style="text-align:left;cursor:pointer"><b>Best matches for this task</b><span>Rank the strongest task matches across all 1,838 tools →</span></button>`;
+ else html+=`<button class="suggestion" data-smart-query="${esc(raw)}" style="text-align:left;cursor:pointer"><b>Best matches for this task</b><span>Rank the strongest task matches across all 1,846 tools →</span></button>`;
  const route=p.intent?.route;
  if(route&&route!=="no-login")html+=`<button class="suggestion" data-route="${route}" style="text-align:left;cursor:pointer"><b>${esc(ROUTES[route].label)}</b><span>Browse the broader category →</span></button>`;
  if(p.explicitNoLogin&&!genericNoLogin)html+='<button class="suggestion" data-route="no-login" style="text-align:left;cursor:pointer"><b>Strict no-login collection</b><span>Only explicitly audited no-account tools →</span></button>';
@@ -134,7 +148,9 @@ function routeCommand(){
  $$("[data-route]").forEach(x=>x.onclick=()=>applyGoal(x.dataset.route));
  trackAtlas("atlas_command_submit",{query_length:p.norm.length,intent:p.intent?.id||"general",wants_free:p.wantsFree,no_login:p.explicitNoLogin});
 }
-$("#routeBtn").onclick=routeCommand;$("#commandInput").addEventListener("keydown",e=>{if(e.key==="Enter")routeCommand()});
+$("#routeBtn").onclick=routeCommand;
+$$('[data-watch-query]').forEach(b=>b.addEventListener('click',()=>{trackAtlas('atlas_watch_browse',{query_type:b.dataset.watchQuery.slice(0,60)});applyIntentSearch(b.dataset.watchQuery)}));
+document.addEventListener('click',e=>{const a=e.target.closest('[data-watch-link]');if(a)trackAtlas('atlas_watch_launch',{service:a.dataset.watchLink})});$("#commandInput").addEventListener("keydown",e=>{if(e.key==="Enter")routeCommand()});
 
 const sourceValues=[...new Set(TOOLS.map(x=>x.sourceCategory))].sort();
 const pricingValues=[...new Set(TOOLS.map(x=>x.pricing).filter(Boolean))].sort();

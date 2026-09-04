@@ -1,10 +1,10 @@
 {
-  "tool_count": 1838,
+  "tool_count": 1846,
   "live_verified": 1529,
   "source_entries": 1802,
-  "bundle_bytes": 200758,
-  "data_b64_bytes": 121560,
-  "sha256": "eaa169baadd39ac7a64e7e492fc2211ac1d481848a5a73b68ddb17e5215081a9",
+  "bundle_bytes": 211949,
+  "data_b64_bytes": 122548,
+  "sha256": "4639fb407ab2cebb8ef98b85908842f10c241e319ed37d25eb3ac8bd6ef970fc",
   "visual_theme": "Atlas Brand V2 + CRO V2.1",
   "cro_v2": {
     "clarity": true,
@@ -49,5 +49,30 @@
     "hard_false_positive_exclusion": true,
     "task_results_capped": 30,
     "strict_free_vs_no_login_preserved": true
+  },
+  "multimedia_v4": {
+    "watch_view": true,
+    "official_free_streaming_services": 9,
+    "new_records": [
+      "Tubi",
+      "Pluto TV",
+      "Plex Free Movies & TV",
+      "The Roku Channel",
+      "NASA+",
+      "PBS",
+      "Hoopla Movies",
+      "Kanopy"
+    ],
+    "watch_intents": [
+      "watch-free",
+      "library-streaming",
+      "nature-livecam",
+      "space-streaming"
+    ],
+    "legal_official_only": true,
+    "access_verification_kept_separate": true,
+    "post_audit_needs_review": 12,
+    "non_live_total": 317,
+    "instagram_video_intent_repair": true
   }
 }
