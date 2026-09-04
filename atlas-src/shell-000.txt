@@ -223,4 +223,4 @@ button.card,button.category{appearance:none;-webkit-appearance:none}
  </div>
  <div class="section faq">
    <div class="sectionhead"><div><h2>Common questions</h2></div></div>
-   <details><summary>
+   <details><summary>Do I need to und

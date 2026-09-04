@@ -1,4 +1,4 @@
-Do I need to understand AI?</summary><p>No. Describe what you want in normal language. The goal comes first; the tool comes second.</p></details>
+erstand AI?</summary><p>No. Describe what you want in normal language. The goal comes first; the tool comes second.</p></details>
    <details><summary>Does every tool cost money?</summary><p>No. The source collection includes free, free/paid, paid and not-yet-audited records. Pricing shown here comes from the source material or curated audit.</p></details>
    <details><summary>Does “no login” mean every free tool needs no account?</summary><p>No. Only tools explicitly audited as no-login or optional-login are shown in the dedicated no-login collection. Unknown access is left unknown.</p></details>
    <details><summary>Can ChatGPT operate every website for me?</summary><p>No. Some tasks can be completed directly in ChatGPT or through connected capabilities; other tasks require opening the specialist site.</p></details>
@@ -235,4 +235,4 @@ const INTENT_RULES=[
  {id:"transcription",route:"video",patterns:["transcribe","transcription","audio transcription","audio to text","speech to text","speech to text tool","voice recording to text","voice recording into text","turn voice recording into text"],anchors:["transcribe","transcription","speech to text"],terms:["audio","voice","recording","text"]},
  {id:"voice-generator",route:"video",patterns:["voice generator","ai voice","text to speech","tts","generate voice","voiceover","voice over","voiceover generator"],anchors:["voice","text to speech","tts"],terms:["speech","audio","generator","narration"]},
  {id:"website-builder",route:"automation",patterns:["build a website","website builder","make a website","create a website","without coding","no code website","nocode website","build a web page","web page visually","visual website builder"],anchors:["website","website builder","site builder","no code"],terms:["web","builder","site","design","hosting"]},
- {id:"presentation",route:"design",patterns:["presentation","slideshow","slide deck","powerpoint
+ {id:"presentation",route:"design",patterns:["presentation","slideshow","slide deck","powerpoint","create slides","make slides"],
