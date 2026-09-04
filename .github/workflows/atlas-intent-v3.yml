@@ -1,4 +1,4 @@
-name: Atlas Discovery V5 Production Gate
+name: Atlas Discovery V5.1 Production Gate
 
 on:
   push:
@@ -11,6 +11,7 @@ on:
       - scripts/apply_atlas_multimedia_v4.py
       - scripts/apply_atlas_multimedia_v41.py
       - scripts/apply_atlas_discovery_v5_search.py
+      - scripts/apply_atlas_discovery_v51.py
       - qa/atlas-common-intents-20.js
       - qa/atlas-intent-stress-60.js
       - qa/atlas-expanded-benchmark-220.js
@@ -43,11 +44,19 @@ jobs:
           python scripts/apply_atlas_multimedia_v4.py
           python scripts/apply_atlas_multimedia_v41.py
           python scripts/apply_atlas_discovery_v5_search.py
+          python scripts/apply_atlas_discovery_v51.py
           test -s atlas-bundle.html
           grep -q 'ATLAS-INTENT-V32' atlas-bundle.html
           grep -q 'ATLAS-MULTIMEDIA-V41' atlas-bundle.html
           grep -q 'ATLAS-DISCOVERY-V5-SEARCH' atlas-bundle.html
-          grep -q '1,846' atlas-bundle.html
+          grep -q 'ATLAS-DISCOVERY-V51' atlas-bundle.html
+          python - <<'PY'
+          import json
+          r=json.load(open('atlas-build-report.json'))
+          assert r['tool_count'] >= 1850, r
+          assert r.get('discovery_v51',{}).get('grant_intent_precedence_repair') is True
+          print('Atlas build',r['tool_count'],'tools')
+          PY
 
       - name: Checkout gh-pages
         uses: actions/checkout@v4
@@ -56,14 +65,14 @@ jobs:
           path: public
           fetch-depth: 0
 
-      - name: Publish monolithic Atlas core plus V5 discovery layer
+      - name: Publish monolithic Atlas core plus V5.1 discovery layer
         shell: bash
         run: |
           mkdir -p public/atlas
           python - <<'PY'
           from pathlib import Path
           core=Path('atlas-bundle.html').read_text()
-          tag='<script src="../atlas-upgrade.js?v=20260904-v5" defer></script>'
+          tag='<script src="../atlas-upgrade.js?v=20260904-v51" defer></script>'
           if tag not in core:
               if '</body>' not in core: raise SystemExit('Atlas bundle has no closing body tag')
               core=core.replace('</body>',tag+'</body>',1)
@@ -79,7 +88,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "Published Atlas candidate already current"
           else
-            git commit -m "Publish Atlas Discovery V5 candidate"
+            git commit -m "Publish Atlas Discovery V5.1 candidate"
             git fetch origin gh-pages
             git rebase origin/gh-pages
             git push origin HEAD:gh-pages
@@ -93,24 +102,25 @@ jobs:
       - name: Install browser driver
         run: npm install --no-save playwright@1.55.0
 
-      - name: Wait for production V5
+      - name: Wait for production V5.1
         env:
           URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
-          UPGRADE: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas-upgrade.js?v=20260904-v5
+          UPGRADE: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas-upgrade.js?v=20260904-v51
+          REPORT: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/build-report.json
         run: |
           python - <<'PY'
-          import os,time,urllib.request
+          import json,os,time,urllib.request
           for i in range(72):
               try:
                   def get(u):
-                      req=urllib.request.Request(u,headers={'Cache-Control':'no-cache','User-Agent':'Atlas-V5-QA'})
+                      req=urllib.request.Request(u,headers={'Cache-Control':'no-cache','User-Agent':'Atlas-V51-QA'})
                       return urllib.request.urlopen(req,timeout=15).read().decode('utf-8','replace')
-                  page=get(os.environ['URL']); upgrade=get(os.environ['UPGRADE'])
-                  if '1,846' in page and 'ATLAS-MULTIMEDIA-V41' in page and 'ATLAS-DISCOVERY-V5-SEARCH' in page and '20260904-v5' in page and "atlas_discovery_version:'5.0'" in upgrade and 'PLAYBOOKS' in upgrade:
-                      print('Atlas V5 live after',i*5,'seconds');break
+                  page=get(os.environ['URL']); upgrade=get(os.environ['UPGRADE']); report=json.loads(get(os.environ['REPORT']))
+                  if 'ATLAS-DISCOVERY-V51' in page and '20260904-v51' in page and "atlas_discovery_version:'5.0'" in upgrade and 'PLAYBOOKS' in upgrade and report.get('tool_count',0)>=1850 and report.get('discovery_v51',{}).get('grant_intent_precedence_repair'):
+                      print('Atlas V5.1 live after',i*5,'seconds with',report['tool_count'],'tools');break
               except Exception as e: print('wait',e)
               time.sleep(5)
-          else: raise SystemExit('Atlas V5 production candidate not found')
+          else: raise SystemExit('Atlas V5.1 production candidate not found')
           PY
 
       - name: Run strict 20 core-intent benchmark
@@ -132,26 +142,28 @@ jobs:
         run: node qa/atlas-expanded-benchmark-220.js
 
       - name: Run Watch and Multimedia QA
+        if: always()
         env:
           ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
           CHROME_PATH: /usr/bin/google-chrome
         run: node qa/atlas-watch-multimedia.js
 
       - name: Run full production regression
+        if: always()
         env:
           ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
           CHROME_PATH: /usr/bin/google-chrome
         run: node qa/atlas-live-qa.js
 
-      - name: V5 certification gate
+      - name: V5.1 certification gate
+        if: always()
         run: |
           python - <<'PY'
-          import json
-          core=json.load(open('intent-qa/atlas-common-intents-20.json'))
-          stress=json.load(open('intent-qa/atlas-intent-stress-60.json'))
-          expanded=json.load(open('expanded-qa/atlas-expanded-benchmark-220.json'))
-          watch=json.load(open('watch-qa/atlas-watch-report.json'))
-          live=json.load(open('qa-artifacts/atlas-live-qa-report.json'))
+          import json,os
+          required=['intent-qa/atlas-common-intents-20.json','intent-qa/atlas-intent-stress-60.json','expanded-qa/atlas-expanded-benchmark-220.json','watch-qa/atlas-watch-report.json','qa-artifacts/atlas-live-qa-report.json']
+          missing=[p for p in required if not os.path.exists(p)]
+          if missing: raise SystemExit(f'Missing certification evidence: {missing}')
+          core=json.load(open(required[0])); stress=json.load(open(required[1])); expanded=json.load(open(required[2])); watch=json.load(open(required[3])); live=json.load(open(required[4]))
           c=core.get('summary',{}); s=stress.get('summary',{}); e=expanded.get('summary',{})
           if c.get('structuralPassed')!=20 or c.get('relevancePassed')!=20 or c.get('jsErrors'):
               raise SystemExit(f"Core benchmark not certified: {c}")
@@ -165,14 +177,14 @@ jobs:
               raise SystemExit('Watch QA not certified')
           if live.get('failed')!=0 or live.get('page_errors') or live.get('request_failures'):
               raise SystemExit('Full regression not certified')
-          print(f"CERTIFIED V5: core 20/20; stress 60/60; expanded {e['relevant']}/220 ({e['relevanceRate']*100:.2f}%); 3 mobile widths no overflow; Watch 8/8; regression green")
+          print(f"CERTIFIED V5.1: core 20/20; stress 60/60; expanded {e['relevant']}/220 ({e['relevanceRate']*100:.2f}%); 3 mobile widths no overflow; Watch 8/8; regression green")
           PY
 
-      - name: Upload V5 evidence
+      - name: Upload V5.1 evidence
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: atlas-discovery-v5-evidence
+          name: atlas-discovery-v51-evidence
           path: |
             intent-qa/
             expanded-qa/
