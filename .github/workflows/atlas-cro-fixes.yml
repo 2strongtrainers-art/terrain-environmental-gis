@@ -23,7 +23,9 @@ jobs:
           fetch-depth: 0
 
       - name: Apply CRO V2 changes
-        run: python scripts/apply_atlas_cro_v2.py
+        run: |
+          python scripts/apply_atlas_cro_v2.py
+          python scripts/apply_atlas_a11y_v21.py
 
       - name: Commit improved source to main
         shell: bash
@@ -34,7 +36,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "Main source already current"
           else
-            git commit -m "Ship Atlas CRO V2 conversion and discovery system"
+            git commit -m "Ship Atlas CRO V2.1 accessibility repair"
             git push origin HEAD:main
           fi
 
@@ -63,7 +65,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "Published Atlas already current"
           else
-            git commit -m "Publish Atlas CRO V2"
+            git commit -m "Publish Atlas CRO V2.1"
             git push origin HEAD:gh-pages
           fi
 
@@ -71,6 +73,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
 
       - name: Install browser audit tooling
         shell: bash
@@ -89,9 +92,9 @@ jobs:
           last=''
           for i in range(72):
               try:
-                  req=urllib.request.Request(url,headers={'User-Agent':'Atlas-CRO-V2-QA/1.0','Cache-Control':'no-cache'})
+                  req=urllib.request.Request(url,headers={'User-Agent':'Atlas-CRO-V21-QA/1.0','Cache-Control':'no-cache'})
                   html=urllib.request.urlopen(req,timeout=15).read().decode('utf-8','replace')
-                  if 'ATLAS-CRO-V2' in html and 'Browse all 1,834 tools' in html:
+                  if 'ATLAS-CRO-V2' in html and 'ATLAS-CRO-A11Y-V21' in html and 'Browse all 1,834 tools' in html:
                       print('Production updated after',i*5,'seconds')
                       break
                   last='old production snapshot'
