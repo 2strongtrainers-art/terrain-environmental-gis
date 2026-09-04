@@ -1,8 +1,27 @@
 {
   "tool_count": 1834,
-  "bundle_bytes": 170387,
+  "live_verified": 1529,
+  "source_entries": 1802,
+  "bundle_bytes": 184270,
   "data_b64_bytes": 120544,
-  "sha256": "912086d1b26c9d3b3d6ddc128bae705ad67e308c92330f630ced70e2a50d8c5e",
-  "visual_theme": "Atlas Brand V2 \u2014 custom exploration identity + premium minimal UI",
-  "live_verified": 1529
+  "sha256": "de4f15e93c7d438b2d36f40bc0bc64e392806a47c0a5d2de0c2868664f1d0114",
+  "visual_theme": "Atlas Brand V2 + CRO V2",
+  "cro_v2": {
+    "clarity": true,
+    "discovery_first": true,
+    "semantic_buttons": true,
+    "min_touch_target_px": 44,
+    "zero_result_recovery": true,
+    "dead_parked_visit_guards": true,
+    "fuzzy_search": true,
+    "posthog_custom_events": true,
+    "session_recording": false,
+    "analytics_opt_out": true,
+    "partner_conversion_path": true,
+    "sponsorship_independence_policy": true,
+    "canonical_social_schema": true,
+    "crawlable_collection_pages": 6,
+    "sitemap": true,
+    "hidden_home_library_render_removed": true
+  }
 }
