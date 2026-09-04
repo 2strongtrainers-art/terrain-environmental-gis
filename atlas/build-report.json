@@ -2,9 +2,9 @@
   "tool_count": 1846,
   "live_verified": 1529,
   "source_entries": 1802,
-  "bundle_bytes": 212703,
+  "bundle_bytes": 215274,
   "data_b64_bytes": 122548,
-  "sha256": "f04d933f0917bca14a40a0bf8589ab38087e85f3f569563c550ecc496994a609",
+  "sha256": "fbf74f012e2220f89aacd264c5ac9bb54c7f09cc8d33ac0ed6cc6389895a18fc",
   "visual_theme": "Atlas Brand V2 + CRO V2.1",
   "cro_v2": {
     "clarity": true,
@@ -69,5 +69,17 @@
   "multimedia_v41": {
     "live_cam_phrase_expansion": true,
     "browse_free_watch_phrase_expansion": true
+  },
+  "discovery_v5_search": {
+    "marker": "ATLAS-DISCOVERY-V5-SEARCH",
+    "benchmark_driven_intents": [
+      "social-video",
+      "automation-workflow",
+      "fitness-coaching",
+      "grant-funding",
+      "marketing-leads"
+    ],
+    "preserves_free_vs_no_login": true,
+    "behavior_ranking_active": false
   }
 }
