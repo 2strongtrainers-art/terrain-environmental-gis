@@ -1,14 +1,19 @@
-name: Atlas Intent + Multimedia V4
+name: Atlas Discovery V5 Production Gate
 
 on:
   push:
     branches: [main]
     paths:
+      - atlas/index.html
+      - atlas-upgrade.js
+      - atlas-src/**
+      - analytics/atlas-behavior-ranking-policy.json
       - scripts/apply_atlas_intent_v32.py
       - scripts/apply_atlas_multimedia_v4.py
       - scripts/apply_atlas_multimedia_v41.py
       - qa/atlas-common-intents-20.js
       - qa/atlas-intent-stress-60.js
+      - qa/atlas-expanded-benchmark-220.js
       - qa/atlas-watch-multimedia.js
       - qa/atlas-live-qa.js
       - .github/workflows/atlas-intent-v3.yml
@@ -17,10 +22,14 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: atlas-production-gate
+  cancel-in-progress: true
+
 jobs:
   deploy-and-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 55
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -28,22 +37,22 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Apply current Atlas engines idempotently
+      - name: Apply current Atlas core engines idempotently
         run: |
           python scripts/apply_atlas_intent_v32.py
           python scripts/apply_atlas_multimedia_v4.py
           python scripts/apply_atlas_multimedia_v41.py
 
-      - name: Commit production source and synchronized QA
+      - name: Commit synchronized core if generators changed it
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add atlas-src/shell-*.txt atlas-src/data-*.txt atlas-bundle.html atlas-build-report.json qa/atlas-live-qa.js qa/atlas-common-intents-20.js qa/atlas-intent-stress-60.js qa/atlas-watch-multimedia.js
           if git diff --cached --quiet; then
-            echo "Atlas V4 source already current"
+            echo "Atlas core already current"
           else
-            git commit -m "Ship Atlas Watch and Multimedia V4.1"
+            git commit -m "Synchronize Atlas V5 core engines"
             git push origin HEAD:main
           fi
 
@@ -54,20 +63,24 @@ jobs:
           path: public
           fetch-depth: 0
 
-      - name: Publish Atlas V4.1
+      - name: Publish modular Atlas V5 production candidate
         shell: bash
         run: |
+          rm -rf public/atlas public/atlas-src
           mkdir -p public/atlas
-          cp atlas-bundle.html public/atlas/index.html
+          cp atlas/index.html public/atlas/index.html
+          cp -R atlas-src public/atlas-src
+          cp atlas-upgrade.js public/atlas-upgrade.js
           cp atlas-build-report.json public/atlas/build-report.json
+          touch public/.nojekyll
           cd public
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add atlas/index.html atlas/build-report.json
+          git add atlas/index.html atlas-src atlas-upgrade.js atlas/build-report.json .nojekyll
           if git diff --cached --quiet; then
-            echo "Published Atlas already current"
+            echo "Published Atlas candidate already current"
           else
-            git commit -m "Publish Atlas Watch and Multimedia V4.1"
+            git commit -m "Publish Atlas Discovery V5 candidate"
             git push origin HEAD:gh-pages
           fi
 
@@ -79,39 +92,46 @@ jobs:
       - name: Install browser driver
         run: npm install --no-save playwright@1.55.0
 
-      - name: Wait for production V4.1
+      - name: Wait for modular production V5
         env:
           URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+          UPGRADE: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas-upgrade.js?v=20260904-v5
         run: |
           python - <<'PY'
           import os,time,urllib.request
-          u=os.environ['URL']
+          urls=[os.environ['URL'],os.environ['UPGRADE']]
           for i in range(72):
               try:
-                  req=urllib.request.Request(u,headers={'Cache-Control':'no-cache','User-Agent':'Atlas-Multimedia-V41-QA'})
-                  h=urllib.request.urlopen(req,timeout=15).read().decode('utf-8','replace')
-                  if 'ATLAS-MULTIMEDIA-V41' in h and '1,846' in h and 'id="view-watch"' in h:
-                      print('V4.1 live after',i*5,'seconds');break
+                  docs=[]
+                  for u in urls:
+                      req=urllib.request.Request(u,headers={'Cache-Control':'no-cache','User-Agent':'Atlas-V5-QA'})
+                      docs.append(urllib.request.urlopen(req,timeout=15).read().decode('utf-8','replace'))
+                  if '20260904-v5' in docs[0] and "atlas_discovery_version:'5.0'" in docs[1] and 'PLAYBOOKS' in docs[1]:
+                      print('Atlas V5 assets live after',i*5,'seconds');break
               except Exception as e: print('wait',e)
               time.sleep(5)
-          else: raise SystemExit('V4.1 production marker not found')
+          else: raise SystemExit('Atlas V5 production assets not found')
           PY
 
-      - name: Run strict 20 common-intent benchmark
+      - name: Run strict 20 core-intent benchmark
         env:
           ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
           CHROME_PATH: /usr/bin/google-chrome
         run: node qa/atlas-common-intents-20.js
 
-      - name: Run 60-query stress benchmark
-        continue-on-error: true
+      - name: Run legacy 60-query stress benchmark
         env:
           ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
           CHROME_PATH: /usr/bin/google-chrome
         run: node qa/atlas-intent-stress-60.js
 
+      - name: Run strict 220-query expanded benchmark and target-mobile smoke
+        env:
+          ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node qa/atlas-expanded-benchmark-220.js
+
       - name: Run Watch and Multimedia QA
-        continue-on-error: true
         env:
           ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
           CHROME_PATH: /usr/bin/google-chrome
@@ -123,30 +143,42 @@ jobs:
           CHROME_PATH: /usr/bin/google-chrome
         run: node qa/atlas-live-qa.js
 
-      - name: Certification gate
+      - name: V5 certification gate
         run: |
           python - <<'PY'
           import json
+          core=json.load(open('intent-qa/atlas-common-intents-20.json'))
           stress=json.load(open('intent-qa/atlas-intent-stress-60.json'))
+          expanded=json.load(open('expanded-qa/atlas-expanded-benchmark-220.json'))
           watch=json.load(open('watch-qa/atlas-watch-report.json'))
           live=json.load(open('qa-artifacts/atlas-live-qa-report.json'))
+          c=core.get('summary',{})
           s=stress.get('summary',{})
+          e=expanded.get('summary',{})
+          if c.get('structuralPassed')!=20 or c.get('relevancePassed')!=20 or c.get('jsErrors'):
+              raise SystemExit(f"Core benchmark not certified: {c}")
           if s.get('structural')!=60 or s.get('relevant')!=60 or s.get('jsErrors')!=0:
               raise SystemExit(f"Stress benchmark not certified: {s}")
+          if e.get('total')!=220 or e.get('structural')!=220 or e.get('relevanceRate',0)<0.97:
+              raise SystemExit(f"Expanded relevance gate failed: {e}")
+          if e.get('jsErrors') or e.get('sameOriginFailures') or e.get('overflowRuns'):
+              raise SystemExit(f"Expanded production/mobile gate failed: {e}")
           if len(watch.get('queries',[]))!=8 or sum(1 for x in watch['queries'] if x.get('ok'))!=8 or watch.get('errors'):
               raise SystemExit('Watch QA not certified')
           if live.get('failed')!=0 or live.get('page_errors') or live.get('request_failures'):
               raise SystemExit('Full regression not certified')
-          print('CERTIFIED: 20/20 core, 60/60 stress, 8/8 watch queries, full regression green')
+          print(f"CERTIFIED V5: core 20/20; stress 60/60; expanded {e['relevant']}/220 ({e['relevanceRate']*100:.2f}%); 3 mobile widths no overflow; Watch 8/8; regression green")
           PY
 
-      - name: Upload V4 evidence
+      - name: Upload V5 evidence
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: atlas-multimedia-v41-evidence
+          name: atlas-discovery-v5-evidence
           path: |
             intent-qa/
+            expanded-qa/
             watch-qa/
             qa-artifacts/
+            analytics/atlas-behavior-ranking-policy.json
           retention-days: 30
