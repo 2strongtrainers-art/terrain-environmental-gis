@@ -13,6 +13,7 @@ verified_fmt=f'{verified:,}'
 qa_paths=[
     ROOT/'qa/atlas-common-intents-20.js',
     ROOT/'qa/atlas-intent-stress-60.js',
+    ROOT/'qa/atlas-expanded-benchmark-220.js',
     ROOT/'qa/atlas-watch-multimedia.js',
     ROOT/'qa/atlas-live-qa.js',
 ]
