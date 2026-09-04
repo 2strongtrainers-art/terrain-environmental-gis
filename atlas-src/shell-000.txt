@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#071b1d">
 <title>Nick’s Digital Atlas — 1,834 AI Tools & Useful Websites</title>
 <meta name="description" content="Browse 1,834 AI tools and useful websites by goal, category, price and verification status. 1,529 destinations were live-checked on September 3, 2026.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect rx='16' width='64' height='64' fill='%23087f80'/%3E%3Cpath d='M32 10l9 22-9 22-9-22z' fill='white'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/">
 <link rel="sitemap" type="application/xml" href="https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/sitemap.xml">
 <meta property="og:type" content="website">
@@ -118,5 +119,4 @@ button.card,button.category{appearance:none;-webkit-appearance:none}
 .quicksearch{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:4px 0 2px;color:var(--muted);font-size:12px}
 .quicksearch button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 11px;color:#35595b;cursor:pointer;font:inherit}
 .quicksearch button:hover,.quicksearch button:focus-visible{border-color:#78cfc8;background:#f2fbfa}
-.empty .actions{margin-top:16px}.partner-callout{display:flex;align-items:center;justify-content:space-between;gap:20px}.partner-callout p{margin:5px 0 0;max-width:760px}
-.trus
+.empty .actions{margin-top:16px}.partner-callout{display:flex;align-items:center;

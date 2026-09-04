@@ -1,4 +1,5 @@
-ing","design"],
+research"],cv:["resume"],mapping:["map","gis"],gis:["map","mapping"],
+  voice:["audio","speech"],audio:["voice","sound"],logo:["branding","design"],
   slides:["presentation"],presentation:["slides"],write:["writing","writer"],writer:["writing"]
 };
 function normalizeText(s){return String(s??"").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}

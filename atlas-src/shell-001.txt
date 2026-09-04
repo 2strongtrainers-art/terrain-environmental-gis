@@ -1,6 +1,14 @@
-t-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.trust-grid .callout{height:100%}
+justify-content:space-between;gap:20px}.partner-callout p{margin:5px 0 0;max-width:760px}
+.trust-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.trust-grid .callout{height:100%}
 .footerlinks{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}.footerlinks a,.linkbutton{color:#246b6d;text-decoration:underline;text-underline-offset:3px}.linkbutton{border:0;background:none;padding:0;font:inherit;cursor:pointer}
 @media(max-width:680px){.discovery-first{margin-top:24px}.discovery-first .sectionhead h2{font-size:27px}.partner-callout{align-items:flex-start;flex-direction:column}.trust-grid{grid-template-columns:1fr}.quicksearch{padding-top:8px}}
+
+
+/* ATLAS-CRO-A11Y-V21 — WCAG AA contrast repair */
+.btn.blue{background:#087f80;color:#fff}
+.sectionhead p{color:#53696b}
+.stat span{color:#586b6d}
+.note{color:#53696b}
 
 </style>
 </head>
@@ -203,5 +211,4 @@ const SEARCH_ALIASES={
   photo:["image","picture"],photos:["image","picture"],picture:["image","photo"],
   movie:["video"],film:["video"],website:["site","web"],site:["website","web"],
   automate:["automation","workflow"],automation:["workflow","agent"],study:["research","learn"],
-  researching:["research"],cv:["resume"],mapping:["map","gis"],gis:["map","mapping"],
-  voice:["audio","speech"],audio:["voice","sound"],logo:["brand
+  researching:["
