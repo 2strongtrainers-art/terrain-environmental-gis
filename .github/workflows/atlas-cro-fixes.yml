@@ -1,0 +1,296 @@
+name: Apply Atlas CRO UX Fixes
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/atlas-cro-fixes.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  improve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply evidence-backed CRO, UX, SEO and accessibility fixes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64,gzip,hashlib,json,re
+
+          root=Path('.')
+          shell=''.join((root/f'atlas-src/shell-{i:03d}.txt').read_text() for i in range(3))
+          data=''.join((root/f'atlas-src/data-{i:03d}.txt').read_text().strip() for i in range(9))
+          records=json.loads(gzip.decompress(base64.b64decode(data)))
+          assert len(records)==1834
+          assert sum(1 for r in records if r[10]=='Live verified')==1529
+          assert '__DATA_B64__' in shell
+          assert 'ATLAS-CRO-V1' not in shell
+
+          def once(old,new,label):
+              global shell
+              n=shell.count(old)
+              if n!=1: raise SystemExit(f'{label}: expected 1 occurrence, got {n}')
+              shell=shell.replace(old,new,1)
+
+          # Metadata: useful for social previews/search engines without making unsupported claims.
+          once('<title>Nick’s Digital Atlas — AI, Tools & Useful Websites</title>\n<meta name="description" content="A searchable digital atlas of AI tools, websites, research resources, design tools, gaming tools, and learning resources.">',
+          '''<title>Nick’s Digital Atlas — 1,834 AI Tools & Useful Websites</title>
+<meta name="description" content="Browse 1,834 AI tools and useful websites by goal, category, price and verification status. 1,529 destinations were live-checked on September 3, 2026.">
+<link rel="canonical" href="https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Nick’s Digital Atlas — 1,834 AI Tools & Useful Websites">
+<meta property="og:description" content="Find the right tool or useful website by goal, category, price or verification status.">
+<meta property="og:url" content="https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Nick’s Digital Atlas — 1,834 AI Tools & Useful Websites">
+<meta name="twitter:description" content="Find the right tool or useful website by goal, category, price or verification status.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Nick’s Digital Atlas","url":"https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/","description":"A searchable directory of AI tools and useful websites organized by goal, category, price and verification status."}</script>''','metadata')
+
+          # Hero: eliminate unsupported “best”, increase specificity, and make CTA outcomes explicit.
+          once('<div class="eyebrow">Verified discovery • 1,834 useful resources</div>\n  <h1>Your map to the best AI tools & resources.</h1>\n  <p>A curated, searchable atlas built to get you from an idea to the right tool faster. Explore by goal, category, verification status, or simply tell the Atlas what you want to accomplish.</p>\n  <div class="actions"><button class="btn primary" data-view="library">Search the library</button><button class="btn ghost" id="jumpCommand">New here? Start here</button></div>',
+          '<div class="eyebrow">1,834 tools & useful websites • 1,529 live verified</div>\n  <h1>Find the right tool or useful website for what you want to do.</h1>\n  <p>Browse 1,834 resources by goal, category, price or verification status. 1,529 destinations were live-checked on September 3, 2026.</p>\n  <div class="actions"><button class="btn primary" data-view="library">Browse all 1,834 tools</button><button class="btn ghost" id="jumpCommand">Help me choose</button></div>','hero')
+          once('<div class="stat"><b>4</b><span>connected Web Surfers source libraries</span></div>',
+               '<div class="stat"><b>4</b><span>explicitly audited Free • No Login tools</span></div>','fourth stat')
+
+          # Make the beginner router accurate: it is deterministic routing, not an AI model.
+          once('<strong>🧭 New here? This is the best place to start.</strong>\n  <p>Tell the guide what you want in ordinary language—“Help me make a video,” “Research this topic,” or “Find me a free tool.”</p>\n  <div class="command">\n   <label for="commandInput"><b>Family AI Command Center</b></label>\n   <div class="commandbox"><input id="commandInput" placeholder="What do you want to accomplish?" autocomplete="off"><button class="btn blue" id="routeBtn">Find my route</button></div>',
+          '<strong>🧭 New here? Start here.</strong>\n  <p>Describe the outcome—not the software. The Atlas will show matching tools and categories.</p>\n  <div class="command">\n   <label for="commandInput"><b>Tell the Atlas what you want to do</b></label>\n   <div class="commandbox"><input id="commandInput" placeholder="Example: make a short video from five photos" autocomplete="off"><button class="btn blue" id="routeBtn">Show matching tools</button></div>','command center copy')
+
+          # Move discovery mode immediately after the beginner router, ahead of explanatory prose.
+          old_goal=''' <div class="section">
+  <div class="sectionhead"><div><h2>Try something right now</h2><p>Goal-first routes mirror the Notion Atlas.</p></div></div>
+  <div class="grid" id="goalGrid"></div>
+ </div>
+'''
+          n=shell.count(old_goal)
+          if n!=1: raise SystemExit(f'goal section: expected 1, got {n}')
+          shell=shell.replace(old_goal,'',1)
+          anchor='''  </div>
+ </div>
+ <div class="section">
+  <div class="sectionhead"><div><h2>What is the Digital Atlas??</h2><p>Think of it as a well-organized digital toolbox.</p></div></div>'''
+          new_anchor='''  </div>
+ </div>
+ <div class="section discovery-first">
+  <div class="sectionhead"><div><h2>Start with what you want to do</h2><p>Not sure what to search? Pick an outcome and explore matching tools.</p></div></div>
+  <div class="grid" id="goalGrid"></div>
+ </div>
+ <div class="section">
+  <div class="sectionhead"><div><h2>What is the Digital Atlas?</h2><p>Think of it as a well-organized digital toolbox.</p></div></div>'''
+          once(anchor,new_anchor,'move discovery + typo')
+
+          # Experience cards become real buttons. Existing JS data-view behavior still applies.
+          for old,new,label in [
+            ('<div class="card click" id="friendMode"><div class="icon">🌱</div><h3>Friend Mode</h3><p>Best if you do not know where to start. Describe your goal in normal language.</p></div>',
+             '<button type="button" class="card click" id="friendMode"><div class="icon">🌱</div><h3>Friend Mode</h3><p>Best if you do not know where to start. Describe your goal in normal language.</p></button>','friend card'),
+            ('<div class="card click" data-view="categories"><div class="icon">🧩</div><h3>Browse by goal</h3><p>Best if you know the kind of task you want to complete.</p></div>',
+             '<button type="button" class="card click" data-view="categories"><div class="icon">🧩</div><h3>Browse by goal</h3><p>Best if you know the kind of task you want to complete.</p></button>','category experience'),
+            ('<div class="card click" data-view="archive"><div class="icon">⚡</div><h3>Power User Mode</h3><p>Best when you want the broadest coverage and the raw source layers.</p></div>',
+             '<button type="button" class="card click" data-view="archive"><div class="icon">⚡</div><h3>Source Archive</h3><p>Best when you want the broadest coverage and the original source layers.</p></button>','archive experience'),
+            ('<div class="card click" data-view="library"><div class="icon">🔎</div><h3>Master Library</h3><p>Search every indexed launchable URL in one fast interface.</p></div>',
+             '<button type="button" class="card click" data-view="library"><div class="icon">🔎</div><h3>All Tools</h3><p>Search every indexed launchable URL in one fast interface.</p></button>','library experience')
+          ]: once(old,new,label)
+
+          # Result counts should be announced; goal/category discovery cards become keyboard-native.
+          once('<b id="resultCount"></b>','<b id="resultCount" aria-live="polite" aria-atomic="true"></b>','result aria-live')
+          once('$("#goalGrid").innerHTML=goals.map(g=>`<div class="card click" data-goal="${g[3]}"><div class="icon">${g[0]}</div><h3>${g[1]}</h3><p>${g[2]}</p></div>`).join("");',
+               '$("#goalGrid").innerHTML=goals.map(g=>`<button type="button" class="card click" data-goal="${g[3]}"><div class="icon">${g[0]}</div><h3>${g[1]}</h3><p>${g[2]}</p></button>`).join("");','goal semantics')
+          old_cat='$("#categoryGrid").innerHTML=Object.entries(groups).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div class="category" data-cat="${esc(k)}"><span class="count">${fmt(n)}</span><strong>${esc(k)}</strong><p style="color:#667085;margin:5px 0 0">Browse ${fmt(n)} indexed entries →</p></div>`).join("");'
+          new_cat='$("#categoryGrid").innerHTML=Object.entries(groups).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<button type="button" class="category" data-cat="${esc(k)}"><span class="count">${fmt(n)}</span><strong>${esc(k)}</strong><p style="color:#667085;margin:5px 0 0">Browse ${fmt(n)} indexed entries →</p></button>`).join("");'
+          once(old_cat,new_cat,'category semantics')
+
+          # Definitely dead/parked destinations must not encourage outbound clicks.
+          once('const statusClass=live?"live":(/^(Dead|Parked|Server error)/.test(t.verification||"")?"bad":(t.verification==="Automation blocked"?"blocked":"pending"));',
+               'const statusClass=live?"live":(/^(Dead|Parked|Server error)/.test(t.verification||"")?"bad":(t.verification==="Automation blocked"?"blocked":"pending"));\n const unavailable=/^(Dead \/ unavailable|Parked \/ for sale)$/.test(t.verification||"");','unavailable state')
+          once('<div class="toolactions"><button class="btn outline" onclick="openDetail(${t.id})">Details</button><a class="btn blue" href="${esc(t.url)}" target="_blank" rel="noopener noreferrer">Visit ↗</a><button class="btn outline fav" aria-label="Favorite ${esc(t.name)}" onclick="toggleFav(${t.id},this)">${favorites.has(t.id)?"★":"☆"}</button></div>',
+               '<div class="toolactions"><button class="btn outline" onclick="openDetail(${t.id})">Details</button>${unavailable?`<span class="btn outline" aria-disabled="true">Unavailable</span>`:`<a class="btn blue" href="${esc(t.url)}" target="_blank" rel="noopener noreferrer">Visit ↗</a>`}<button class="btn outline fav" aria-label="Favorite ${esc(t.name)}" onclick="toggleFav(${t.id},this)">${favorites.has(t.id)?"★":"☆"}</button></div>','tool visit guard')
+          # Detail modal: define same availability and guard the outbound button.
+          once('function openDetail(id){\n const t=TOOLS.find(x=>x.id===id);if(!t)return;',
+               'function openDetail(id){\n const t=TOOLS.find(x=>x.id===id);if(!t)return;\n const unavailable=/^(Dead \/ unavailable|Parked \/ for sale)$/.test(t.verification||"");','detail unavailable')
+          once('<div class="actions"><a class="btn blue" href="${esc(t.url)}" target="_blank" rel="noopener noreferrer">Open website ↗</a><button class="btn outline" onclick="toggleModalFav(${t.id},this)">${favorites.has(t.id)?"★ Favorited":"☆ Add favorite"}</button></div>`;',
+               '<div class="actions">${unavailable?`<span class="btn outline" aria-disabled="true">Website unavailable</span>`:`<a class="btn blue" href="${esc(t.url)}" target="_blank" rel="noopener noreferrer">Open website ↗</a>`}<button class="btn outline" onclick="toggleModalFav(${t.id},this)">${favorites.has(t.id)?"★ Favorited":"☆ Add favorite"}</button></div>`;','detail visit guard')
+
+          # Zero-result searches now offer recovery instead of a dead end.
+          old_empty='$("#toolGrid").innerHTML=slice.length?slice.map(toolCard).join(""):`<div class="empty" style="grid-column:1/-1"><h3>No matching tools</h3><p>Try clearing a filter or using a broader search.</p></div>`;'
+          new_empty='$("#toolGrid").innerHTML=slice.length?slice.map(toolCard).join(""):`<div class="empty" style="grid-column:1/-1"><h3>No matches yet.</h3><p>Try a broader phrase, clear filters, or browse verified destinations.</p><div class="actions" style="justify-content:center"><button class="btn blue" onclick="recoverClear()">Clear filters</button><button class="btn outline" onclick="recoverVerified()">Browse live-verified</button><button class="btn outline" onclick="showView(\'categories\')">Browse categories</button></div></div>`;'
+          once(old_empty,new_empty,'zero results recovery')
+          recovery='''
+window.recoverClear=()=>{$("#clearFilters").click()};
+window.recoverVerified=()=>{state.query="";state.source="";state.pricing="";state.verification="Live verified";state.priority="";state.page=1;state.favoritesOnly=false;$("#searchInput").value="";$("#sourceFilter").value="";$("#pricingFilter").value="";$("#verificationFilter").value="Live verified";$("#priorityFilter").value="";$("#favOnly").classList.remove("active");renderLibrary()};
+'''
+          once('window.goPage=p=>{state.page=p;renderLibrary();$("#view-library").scrollIntoView({behavior:"smooth"})};',
+               'window.goPage=p=>{state.page=p;renderLibrary();$("#view-library").scrollIntoView({behavior:"smooth"})};'+recovery,'recovery helpers')
+
+          # Do not render 60 hidden tool cards on the homepage during startup. The library renders on demand.
+          once('const initial=location.hash.replace("#","");if(["home","library","categories","free","archive","quality"].includes(initial))showView(initial);else renderLibrary();',
+               'const initial=location.hash.replace("#","");if(["home","library","categories","free","archive","quality"].includes(initial))showView(initial);','home startup render')
+
+          # CRO/accessibility design layer: touch targets + reset button-card appearance.
+          cro_css='''
+/* ATLAS-CRO-V1 — evidence-backed clarity, mobile and accessibility improvements */
+.card,.category{font:inherit;text-align:left;color:inherit;width:100%}
+button.card,button.category{appearance:none;-webkit-appearance:none}
+.btn,.navbtn,.menu,.chip,.pagination button{min-height:44px}
+.modalclose{width:44px;height:44px}
+.fav{width:44px}
+.discovery-first{margin-top:28px}
+.empty .actions{margin-top:16px}
+@media(max-width:680px){.discovery-first{margin-top:24px}.discovery-first .sectionhead h2{font-size:27px}}
+'''
+          if '</style>' not in shell: raise SystemExit('style close missing')
+          shell=shell.replace('</style>',cro_css+'\n</style>',1)
+
+          # Keep the current comprehensive regression QA aligned with the clarified hero CTA.
+          q=root/'qa/atlas-live-qa.js'
+          qs=q.read_text()
+          if 'button:has-text("Search the library")' not in qs: raise SystemExit('hero QA selector not found')
+          qs=qs.replace('button:has-text("Search the library")','button:has-text("Browse all 1,834 tools")',1)
+          q.write_text(qs)
+
+          # Persist source chunks and rebuild the single-file production bundle.
+          def split_n(text,n):
+              q,r=divmod(len(text),n);out=[];pos=0
+              for i in range(n):
+                  size=q+(1 if i<r else 0);out.append(text[pos:pos+size]);pos+=size
+              assert ''.join(out)==text
+              return out
+          for i,part in enumerate(split_n(shell,3)):(root/f'atlas-src/shell-{i:03d}.txt').write_text(part)
+          bundle=shell.replace('__DATA_B64__',data)
+          (root/'atlas-bundle.html').write_text(bundle)
+          report={
+              'tool_count':1834,'live_verified':1529,
+              'bundle_bytes':len(bundle.encode()),'data_b64_bytes':len(data.encode()),
+              'sha256':hashlib.sha256(bundle.encode()).hexdigest(),
+              'visual_theme':'Atlas Brand V2 + CRO V1',
+              'cro_fixes':['specific hero and CTAs','discovery moved earlier','honest router naming','native discovery buttons','44px controls','zero-result recovery','dead/parked visit guards','canonical/social/schema metadata','no hidden library render on homepage']
+          }
+          (root/'atlas-build-report.json').write_text(json.dumps(report,indent=2)+'\n')
+
+          # Integrity checks before any deployment.
+          assert 'ATLAS-CRO-V1' in bundle
+          assert 'What is the Digital Atlas??' not in bundle
+          assert 'Browse all 1,834 tools' in bundle
+          assert '<link rel="canonical"' in bundle
+          assert '<script type="application/ld+json">' in bundle
+          assert '<button type="button" class="card click" data-goal=' in bundle
+          assert 'No matches yet.' in bundle
+          assert 'else renderLibrary();' not in bundle
+          print(json.dumps(report,indent=2))
+          PY
+
+      - name: Commit improved Atlas to main
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add atlas-src/shell-*.txt atlas-bundle.html atlas-build-report.json qa/atlas-live-qa.js
+          git commit -m "Improve Atlas CRO discovery accessibility and SEO"
+          git push origin HEAD:main
+
+      - name: Checkout published site
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: public
+
+      - name: Publish improved Atlas directly
+        shell: bash
+        run: |
+          mkdir -p public/atlas
+          cp atlas-bundle.html public/atlas/index.html
+          cp atlas-build-report.json public/atlas/build-report.json
+          if [ -f atlas-audit-summary.json ]; then cp atlas-audit-summary.json public/atlas/audit-summary.json; fi
+          touch public/.nojekyll
+          cd public
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add atlas/index.html atlas/build-report.json atlas/audit-summary.json .nojekyll
+          git commit -m "Publish Atlas CRO UX improvements"
+          git push origin HEAD:gh-pages
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Chromium QA
+        shell: bash
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Wait for improved production
+        shell: bash
+        env:
+          URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+        run: |
+          python - <<'PY'
+          import os,time,urllib.request
+          url=os.environ['URL']; last=''
+          for i in range(60):
+              try:
+                  req=urllib.request.Request(url,headers={'User-Agent':'Atlas-CRO-QA/1.0'})
+                  html=urllib.request.urlopen(req,timeout=15).read().decode('utf-8','replace')
+                  if 'ATLAS-CRO-V1' in html and 'Browse all 1,834 tools' in html:
+                      print(f'Production current after {i*5}s');break
+                  last='old snapshot'
+              except Exception as e:last=str(e)
+              time.sleep(5)
+          else: raise SystemExit('Production did not update: '+last)
+          PY
+
+      - name: Run existing 35-point regression QA
+        env:
+          ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+        run: node qa/atlas-live-qa.js
+
+      - name: Run CRO-specific live checks
+        shell: bash
+        env:
+          URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+        run: |
+          mkdir -p cro-qa
+          node - <<'JS'
+          const {chromium}=require('playwright');const fs=require('fs');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const page=await browser.newPage({viewport:{width:390,height:844}});
+            const r=await page.goto(process.env.URL,{waitUntil:'networkidle',timeout:60000});
+            if(!r||r.status()!==200)throw new Error('HTTP '+(r&&r.status()));
+            const checks=[];const ok=(n,c,d='')=>{if(!c)throw new Error(n+' '+d);checks.push({name:n,detail:d})};
+            ok('specific hero',(await page.locator('h1').first().innerText())==='Find the right tool or useful website for what you want to do.');
+            ok('primary CTA',(await page.locator('#view-home .hero .btn.primary').innerText())==='Browse all 1,834 tools');
+            ok('canonical',await page.locator('link[rel="canonical"]').count()===1);
+            ok('open graph',await page.locator('meta[property="og:title"]').count()===1);
+            ok('structured data',await page.locator('script[type="application/ld+json"]').count()===1);
+            ok('goal buttons',await page.locator('#goalGrid button[data-goal]').count()===8);
+            const firstGoal=page.locator('#goalGrid button[data-goal]').first();await firstGoal.focus();ok('goal keyboard focus',await firstGoal.evaluate(el=>document.activeElement===el));
+            await page.goto(process.env.URL+'#categories',{waitUntil:'networkidle'});ok('category buttons',await page.locator('#categoryGrid button[data-cat]').count()>=5);
+            await page.goto(process.env.URL+'#library',{waitUntil:'networkidle'});ok('result aria-live',(await page.locator('#resultCount').getAttribute('aria-live'))==='polite');
+            await page.locator('#searchInput').fill('zzzz-no-match-987654');await page.waitForTimeout(100);ok('zero recovery',(await page.locator('#toolGrid').innerText()).includes('No matches yet.')&&await page.locator('#toolGrid button').count()>=3);
+            await page.locator('#clearFilters').click();await page.locator('#verificationFilter').selectOption('Dead / unavailable');await page.waitForTimeout(100);ok('dead visit guard',await page.locator('#toolGrid .tool a:has-text("Visit")').count()===0,await page.locator('#resultCount').innerText());
+            await page.goto(process.env.URL,{waitUntil:'networkidle'});const dims=await page.evaluate(()=>({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth}));ok('mobile no overflow',dims.sw<=dims.cw,dims.sw+'/'+dims.cw);
+            await page.screenshot({path:'cro-qa/mobile-home.png',fullPage:true});
+            fs.writeFileSync('cro-qa/report.json',JSON.stringify({checks,dims},null,2));
+            console.log('CRO_QA '+JSON.stringify(checks));await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+
+      - name: Upload CRO QA artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-cro-v1-live-qa
+          path: cro-qa/
+          retention-days: 14
