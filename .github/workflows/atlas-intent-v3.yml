@@ -10,6 +10,7 @@ on:
       - scripts/apply_atlas_intent_v32.py
       - scripts/apply_atlas_multimedia_v4.py
       - scripts/apply_atlas_multimedia_v41.py
+      - scripts/apply_atlas_discovery_v5_search.py
       - qa/atlas-common-intents-20.js
       - qa/atlas-intent-stress-60.js
       - qa/atlas-expanded-benchmark-220.js
@@ -41,9 +42,11 @@ jobs:
           python scripts/apply_atlas_intent_v32.py
           python scripts/apply_atlas_multimedia_v4.py
           python scripts/apply_atlas_multimedia_v41.py
+          python scripts/apply_atlas_discovery_v5_search.py
           test -s atlas-bundle.html
           grep -q 'ATLAS-INTENT-V32' atlas-bundle.html
           grep -q 'ATLAS-MULTIMEDIA-V41' atlas-bundle.html
+          grep -q 'ATLAS-DISCOVERY-V5-SEARCH' atlas-bundle.html
           grep -q '1,846' atlas-bundle.html
 
       - name: Checkout gh-pages
@@ -103,7 +106,7 @@ jobs:
                       req=urllib.request.Request(u,headers={'Cache-Control':'no-cache','User-Agent':'Atlas-V5-QA'})
                       return urllib.request.urlopen(req,timeout=15).read().decode('utf-8','replace')
                   page=get(os.environ['URL']); upgrade=get(os.environ['UPGRADE'])
-                  if '1,846' in page and 'ATLAS-MULTIMEDIA-V41' in page and '20260904-v5' in page and "atlas_discovery_version:'5.0'" in upgrade and 'PLAYBOOKS' in upgrade:
+                  if '1,846' in page and 'ATLAS-MULTIMEDIA-V41' in page and 'ATLAS-DISCOVERY-V5-SEARCH' in page and '20260904-v5' in page and "atlas_discovery_version:'5.0'" in upgrade and 'PLAYBOOKS' in upgrade:
                       print('Atlas V5 live after',i*5,'seconds');break
               except Exception as e: print('wait',e)
               time.sleep(5)
