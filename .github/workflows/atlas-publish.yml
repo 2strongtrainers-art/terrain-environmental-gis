@@ -1,19 +1,17 @@
-# Production publisher for Nick's Digital Atlas
-name: Publish Nick's Digital Atlas
+# Manual fallback publisher for Nick's Digital Atlas.
+# Normal production releases are owned by Atlas Discovery V5 Production Gate,
+# which deploys the candidate and then runs live production QA before certification.
+name: Publish Nick's Digital Atlas (manual fallback)
 
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - "atlas/**"
-      - "atlas-src/**"
-      - "atlas-upgrade.js"
-      - "atlas-build-report.json"
-      - ".github/workflows/atlas-publish.yml"
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: atlas-production-publish
+  cancel-in-progress: false
 
 jobs:
   publish:
@@ -24,12 +22,14 @@ jobs:
         with:
           ref: main
           path: source
+          fetch-depth: 0
 
       - name: Checkout published site
         uses: actions/checkout@v4
         with:
           ref: gh-pages
           path: public
+          fetch-depth: 0
 
       - name: Install Atlas into gh-pages
         shell: bash
@@ -42,7 +42,7 @@ jobs:
           cp source/atlas-build-report.json public/atlas/build-report.json
           touch public/.nojekyll
 
-      - name: Commit published Atlas
+      - name: Commit published Atlas safely
         shell: bash
         run: |
           cd public
@@ -52,6 +52,8 @@ jobs:
           if git diff --cached --quiet; then
             echo "Atlas already published"
           else
-            git commit -m "Publish Atlas workflow discovery upgrade"
+            git commit -m "Manual fallback publish of Nick's Digital Atlas"
+            git fetch origin gh-pages
+            git rebase origin/gh-pages
             git push origin HEAD:gh-pages
           fi
