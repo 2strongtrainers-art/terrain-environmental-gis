@@ -56,7 +56,6 @@ jobs:
       - name: Publish monolithic Atlas core plus V5 discovery layer
         shell: bash
         run: |
-          rm -rf public/atlas public/atlas-src
           mkdir -p public/atlas
           python - <<'PY'
           from pathlib import Path
@@ -73,7 +72,7 @@ jobs:
           cd public
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A atlas atlas-upgrade.js .nojekyll
+          git add atlas/index.html atlas/build-report.json atlas-upgrade.js .nojekyll
           if git diff --cached --quiet; then
             echo "Published Atlas candidate already current"
           else
