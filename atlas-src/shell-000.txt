@@ -172,4 +172,19 @@ button.card,button.category{appearance:none;-webkit-appearance:none}
   <strong>🧭 New here? Start here.</strong>
   <p>Describe the outcome—not the software. The Atlas ranks all 1,834 tools for your task, then offers broader categories when useful.</p>
   <div class="command">
-   <label for="commandInput"><b>Tell the Atlas what you want to do</b></la
+   <label for="commandInput"><b>Tell the Atlas what you want to do</b></label>
+   <div class="commandbox"><input id="commandInput" placeholder="Example: make a short video from five photos" autocomplete="off"><button class="btn blue" id="routeBtn">Show matching tools</button></div>
+   <div class="suggestions" id="routeSuggestions" aria-live="polite"></div>
+  </div>
+ </div>
+ <div class="section discovery-first">
+  <div class="sectionhead"><div><h2>Start with what you want to do</h2><p>Not sure what to search? Pick an outcome and explore matching tools.</p></div></div>
+  <div class="grid" id="goalGrid"></div>
+ </div>
+ <div class="section">
+  <div class="sectionhead"><div><h2>What is the Digital Atlas?</h2><p>Think of it as a well-organized digital toolbox.</p></div></div>
+  <div class="callout"><b>The simple rule:</b> describe the outcome first. Choose the tool second. Instead of searching for hours or memorizing hundreds of names, begin with the result you want.</div>
+ </div>
+ <div class="section">
+  <div class="sectionhead"><div><h2>How it works</h2></div></div>
+  <div class="steps"><div class="step"><div class="num">1</div><h3>Describe your goal</h3><p>Say what you want to make, learn, research, fix, compare or organize.</p></div><div class="step"><div class="num">2</div><h3>Choose a route</h3><p>Use th

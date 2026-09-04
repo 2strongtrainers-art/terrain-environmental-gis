@@ -222,7 +222,7 @@ button.card,button.category{appearance:none;-webkit-appearance:none}
 </section>
 
 <section class="view" id="view-library">
- <div class="libraryHero"><div class="eyebrow" style="color:#175cd3">Master Library</div><h1>Search every indexed tool.</h1><p>Search naturally by task. Atlas weights exact capability matches above broad categories, with typo tolerance, synonyms and transparent filters.</p></div>
+ <div class="libraryHero"><div class="eyebrow" style="color:#175cd3">Master Library</div><h1>Search every indexed tool.</h1><p>Search naturally by task. Atlas prioritizes exact capability matches, trusted task-specific candidates and modifiers like free/no-login before broad categories.</p></div>
  <div class="searchbar">
   <div class="searchrow">
    <input class="control query" id="searchInput" placeholder="Search tools, tasks or websites…" aria-label="Search library" autocomplete="off">
@@ -348,6 +348,43 @@ const SEARCH_ALIASES={
 };
 const QUERY_STOP=new Set("i me my we our us you your a an the this that these those is are am be been being to for of on in at by with from into and or but if then than as it its do does did can could would should please help need want find give show make create use using get tool tools useful something thing online today right now".split(/\s+/));
 const QUERY_MODIFIERS=new Set(["best","easy","easiest","simple","quick","fast","good","great","ai","free"]);
+/* ATLAS-INTENT-V31 — precision reranking over V3 */
+const INTENT_PREFERRED={
+ "image-generator":["qwen image","reve image","chatgpt image","google imagen","adobe firefly","midjourney","ideogram","leonardo"],
+ "short-video":["pika","runway","capcut","opus clip","clipchamp","descript","synthesia","heygen"],
+ logo:["wix logo maker","brandmark","tailor brands","designevo","looka","placeit","canva"],
+ resume:["kickresume","flowcv","resume.io","teal","rezi","enhancv"],
+ pdf:["ilovepdf","pdfescape","simplepdf","smallpdf","adobe acrobat","pdfgear"],
+ "research-summary":["elicit","consensus","scholarcy","scispace","humata","semantic scholar","paperme"],
+ citation:["cite this for me","zotero","mybib","scribbr","citation machine"],
+ "python-learning":["freecodecamp","kaggle learn","codecademy","microsoft learn","real python","python.org"],
+ calculator:["omni calculator","wolfram","symbolab","mathway","desmos"],
+ "qr-code":["qrcode monkey","qr code monkey","qr code generator","qrstuff","goqr","canva qr"],
+ "weather-map":["zoom earth","windy","ventusky","weather underground","weather.com","meteoblue","rainviewer"],
+ "background-removal":["remove.bg","adobe express","iloveimg","unscreen","bg bye","pfpmaker"],
+ transcription:["otter","descript","turboscribe","notta","happy scribe","whisper","sonix","trint"],
+ "voice-generator":["elevenlabs","speechify","murf","play.ht","tts online","kokoro tts","fish audio"],
+ "website-builder":["wix","framer","webflow","squarespace","carrd","wordpress.com","bubble","weebly","dorik"],
+ presentation:["gamma","beautiful.ai","decktopus","pitch","canva","slidesgo","slidescarnival"],
+ grammar:["grammarly","languagetool","prowritingaid","hemingway","quillbot"],
+ translation:["deepl","google translate","reverso","linguee","microsoft translator"],
+ "stock-photos":["pexels","unsplash","pixabay","stocksnap","gratisography","freeimages","burst"],
+ spreadsheet:["google sheets","microsoft excel","airtable","rows"],
+ ocr:["online ocr","ocr.space","adobe scan","google lens"],
+ diagram:["lucidchart","draw.io","diagrams.net","whimsical","miro"],
+ automation:["zapier","make","n8n","ifttt"],
+ coding:["github copilot","cursor","replit","claude code","codex"],
+ "image-editing":["photopea","pixlr","adobe express","canva","gimp"]
+};
+const INTENT_AVOID={
+ "qr-code":["papers with code","claude code","codecademy","codepen","100-days-of-ml-code"],
+ "website-builder":["3 websites for","work from home websites","mdn web docs","the useless web","animal diversity web"],
+ transcription:["tabletop audio","voice models","mmaudio","voicemod tuna"],
+ "weather-map":["pantone","wgsn","minecraft"],
+ translation:["cdromance","learnalanguage"],
+ calculator:["damage calculator"],
+ "stock-photos":["getty images","shutterstock","istock","adobe stock"]
+};
 const INTENT_RULES=[
  {id:"image-generator",route:"design",patterns:["image generator","ai image","generate image","generate images","text to image","make an image","create image"],anchors:["image generator","text to image","image","art"],terms:["generator","photo","picture","design"]},
  {id:"short-video",route:"video",patterns:["short video","social media video","make a video","create a video","video for social","reel","shorts"],anchors:["video","reel","clip"],terms:["editor","generator","social media","media"]},
@@ -360,10 +397,10 @@ const INTENT_RULES=[
  {id:"calculator",route:"research",patterns:["calculator","calculate","math problem","equation solver"],anchors:["calculator","calculate"],terms:["math","equation","solver","formula"]},
  {id:"qr-code",route:"automation",patterns:["qr code","make a qr","create a qr","qr generator"],anchors:["qr","qr code"],terms:["generator","barcode","code"]},
  {id:"weather-map",route:"maps",patterns:["weather","forecast","weather map","weather or map","radar map"],anchors:["weather","forecast","radar"],terms:["map","earth","geo","gis"]},
- {id:"background-removal",route:"design",patterns:["remove the background","remove background","background remover","transparent background"],anchors:["background","background remover","remove background"],terms:["image","photo","transparent","cutout"]},
+ {id:"background-removal",route:"design",patterns:["remove the background","remove background","background remover","transparent background","erase background","erase image background","image background","photo background","background transparent"],anchors:["background","background remover","remove background"],terms:["image","photo","transparent","cutout"]},
  {id:"transcription",route:"video",patterns:["transcribe","transcription","audio to text","speech to text","voice recording to text"],anchors:["transcribe","transcription","speech to text"],terms:["audio","voice","recording","text"]},
- {id:"voice-generator",route:"video",patterns:["voice generator","ai voice","text to speech","tts","generate voice"],anchors:["voice","text to speech","tts"],terms:["speech","audio","generator","narration"]},
- {id:"website-builder",route:"automation",patterns:["build a website","website builder","make a website","create a website","without coding","no code website","nocode website"],anchors:["website","website builder","site builder","no code"],terms:["web","builder","site","design","hosting"]},
+ {id:"voice-generator",route:"video",patterns:["voice generator","ai voice","text to speech","tts","generate voice","voiceover","voice over","voiceover generator"],anchors:["voice","text to speech","tts"],terms:["speech","audio","generator","narration"]},
+ {id:"website-builder",route:"automation",patterns:["build a website","website builder","make a website","create a website","without coding","no code website","nocode website","build a web page","web page visually","visual website builder"],anchors:["website","website builder","site builder","no code"],terms:["web","builder","site","design","hosting"]},
  {id:"presentation",route:"design",patterns:["presentation","slideshow","slide deck","powerpoint","create slides","make slides"],anchors:["presentation","slides","slideshow","powerpoint","deck"],terms:["design","pitch"]},
  {id:"grammar",route:"research",patterns:["grammar","check my writing","grammar checker","proofread","spell check"],anchors:["grammar","proofread","spell"],terms:["writing","editor","rewrite"]},
  {id:"translation",route:"research",patterns:["translate","translation","translator","another language"],anchors:["translate","translation","translator"],terms:["language","text"]},
@@ -404,10 +441,11 @@ function scoreTool(t,q){
  if(p.intent){for(const a of p.anchors){const ps=phraseScore(idx,a);if(ps>0)anchorHit++;s+=ps}for(const e of p.extras)s+=phraseScore(idx,e)*0.32}
  for(const tok of p.rawTokens)s+=tokenScore(idx,tok)*1.35;
  for(const tok of p.tokens)s+=tokenScore(idx,tok)*0.45;
- if(p.intent&&anchorHit===0)s*=0.16;
- if(p.wantsFree){if(idx.pricing.includes("free"))s+=26;else if(idx.pricing.includes("paid"))s-=8}
- if(p.explicitNoLogin){if(idx.access.includes("no login")||idx.access.includes("optional login"))s+=70;else s-=12}
- if(t.verification==="Live verified")s+=4;if(t.priority==="High")s+=2;
+ if(p.intent&&anchorHit===0)s*=0.08;
+ if(p.intent){const pref=INTENT_PREFERRED[p.intent.id]||[];for(let i=0;i<pref.length;i++){const n=normalizeText(pref[i]);if(idx.name===n)s+=260-i*5;else if(idx.name.includes(n)||n.includes(idx.name))s+=175-i*3;else if(idx.desc.includes(n))s+=55-i}const avoid=INTENT_AVOID[p.intent.id]||[];for(const n0 of avoid){const n=normalizeText(n0);if(idx.name.includes(n))s-=180}}
+ if(p.wantsFree){if(idx.pricing.includes("free"))s+=34;else if(idx.pricing.includes("paid"))s-=18;if(/getty|shutterstock|istock|adobe stock/.test(idx.name))s-=160}
+ if(p.explicitNoLogin){if(idx.access.includes("no login")||idx.access.includes("optional login"))s+=90;else s-=18}
+ if(t.verification==="Live verified")s+=5;if(t.priority==="High")s+=2;
  if(/^(Dead \/ unavailable|Parked \/ for sale)$/.test(t.verification||""))s-=60;
  return s;
 }
@@ -496,7 +534,7 @@ function routeCommand(){
  const genericNoLogin=p.explicitNoLogin&&!p.intent;
  let html="";
  if(genericNoLogin)html+='<button class="suggestion" data-route="no-login" style="text-align:left;cursor:pointer"><b>Free • No Login</b><span>Only explicitly audited no-account tools →</span></button>';
- else html+=`<button class="suggestion" data-smart-query="${esc(raw)}" style="text-align:left;cursor:pointer"><b>Best matches for this task</b><span>Rank all 1,834 tools by task relevance →</span></button>`;
+ else html+=`<button class="suggestion" data-smart-query="${esc(raw)}" style="text-align:left;cursor:pointer"><b>Best matches for this task</b><span>Rank the strongest task matches across all 1,834 tools →</span></button>`;
  const route=p.intent?.route;
  if(route&&route!=="no-login")html+=`<button class="suggestion" data-route="${route}" style="text-align:left;cursor:pointer"><b>${esc(ROUTES[route].label)}</b><span>Browse the broader category →</span></button>`;
  if(p.explicitNoLogin&&!genericNoLogin)html+='<button class="suggestion" data-route="no-login" style="text-align:left;cursor:pointer"><b>Strict no-login collection</b><span>Only explicitly audited no-account tools →</span></button>';
@@ -534,9 +572,9 @@ function getFiltered(){
   if(state.verification&&state.verification!=="Live verified"&&state.verification!=="not-live"&&t.verification!==state.verification)return false;
   if(state.priority&&t.priority!==state.priority)return false;
   if(state.favoritesOnly&&!favorites.has(t.id))return false;
-  if(hasQuery&&scoreTool(t,parsed)<=3)return false;
   return true;
  });
+ if(hasQuery&&arr.length){const scored=arr.map(t=>[t,scoreTool(t,parsed)]);const max=Math.max(...scored.map(x=>x[1]));let floor=parsed.intent?Math.max(14,max*0.16):5;let kept=scored.filter(x=>x[1]>=floor);if(kept.length<5)kept=scored.sort((a,b)=>b[1]-a[1]).slice(0,Math.min(20,scored.length)).filter(x=>x[1]>3);arr=kept.map(x=>x[0])}
  if(state.sort==="az")arr.sort((a,b)=>a.name.localeCompare(b.name));
  else if(state.sort==="verified")arr.sort((a,b)=>(b.verification==="Live verified")-(a.verification==="Live verified")||a.name.localeCompare(b.name));
  else if(state.sort==="priority"){const p={High:3,Medium:2,Low:1};arr.sort((a,b)=>(p[b.priority]||0)-(p[a.priority]||0)||a.name.localeCompare(b.name))}

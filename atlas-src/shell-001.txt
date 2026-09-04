@@ -1,19 +1,4 @@
-bel>
-   <div class="commandbox"><input id="commandInput" placeholder="Example: make a short video from five photos" autocomplete="off"><button class="btn blue" id="routeBtn">Show matching tools</button></div>
-   <div class="suggestions" id="routeSuggestions" aria-live="polite"></div>
-  </div>
- </div>
- <div class="section discovery-first">
-  <div class="sectionhead"><div><h2>Start with what you want to do</h2><p>Not sure what to search? Pick an outcome and explore matching tools.</p></div></div>
-  <div class="grid" id="goalGrid"></div>
- </div>
- <div class="section">
-  <div class="sectionhead"><div><h2>What is the Digital Atlas?</h2><p>Think of it as a well-organized digital toolbox.</p></div></div>
-  <div class="callout"><b>The simple rule:</b> describe the outcome first. Choose the tool second. Instead of searching for hours or memorizing hundreds of names, begin with the result you want.</div>
- </div>
- <div class="section">
-  <div class="sectionhead"><div><h2>How it works</h2></div></div>
-  <div class="steps"><div class="step"><div class="num">1</div><h3>Describe your goal</h3><p>Say what you want to make, learn, research, fix, compare or organize.</p></div><div class="step"><div class="num">2</div><h3>Choose a route</h3><p>Use the beginner guide, pick a category, or search the full library.</p></div><div class="step"><div class="num">3</div><h3>Open the tool</h3><p>Launch the specialist website directly. External links open in a separate tab.</p></div></div>
+e beginner guide, pick a category, or search the full library.</p></div><div class="step"><div class="num">3</div><h3>Open the tool</h3><p>Launch the specialist website directly. External links open in a separate tab.</p></div></div>
  </div>
  <div class="section">
   <div class="sectionhead"><div><h2>Pick the experience that fits you</h2></div></div>
@@ -48,7 +33,7 @@ bel>
 </section>
 
 <section class="view" id="view-library">
- <div class="libraryHero"><div class="eyebrow" style="color:#175cd3">Master Library</div><h1>Search every indexed tool.</h1><p>Search naturally by task. Atlas weights exact capability matches above broad categories, with typo tolerance, synonyms and transparent filters.</p></div>
+ <div class="libraryHero"><div class="eyebrow" style="color:#175cd3">Master Library</div><h1>Search every indexed tool.</h1><p>Search naturally by task. Atlas prioritizes exact capability matches, trusted task-specific candidates and modifiers like free/no-login before broad categories.</p></div>
  <div class="searchbar">
   <div class="searchrow">
    <input class="control query" id="searchInput" placeholder="Search tools, tasks or websites…" aria-label="Search library" autocomplete="off">
@@ -174,6 +159,43 @@ const SEARCH_ALIASES={
 };
 const QUERY_STOP=new Set("i me my we our us you your a an the this that these those is are am be been being to for of on in at by with from into and or but if then than as it its do does did can could would should please help need want find give show make create use using get tool tools useful something thing online today right now".split(/\s+/));
 const QUERY_MODIFIERS=new Set(["best","easy","easiest","simple","quick","fast","good","great","ai","free"]);
+/* ATLAS-INTENT-V31 — precision reranking over V3 */
+const INTENT_PREFERRED={
+ "image-generator":["qwen image","reve image","chatgpt image","google imagen","adobe firefly","midjourney","ideogram","leonardo"],
+ "short-video":["pika","runway","capcut","opus clip","clipchamp","descript","synthesia","heygen"],
+ logo:["wix logo maker","brandmark","tailor brands","designevo","looka","placeit","canva"],
+ resume:["kickresume","flowcv","resume.io","teal","rezi","enhancv"],
+ pdf:["ilovepdf","pdfescape","simplepdf","smallpdf","adobe acrobat","pdfgear"],
+ "research-summary":["elicit","consensus","scholarcy","scispace","humata","semantic scholar","paperme"],
+ citation:["cite this for me","zotero","mybib","scribbr","citation machine"],
+ "python-learning":["freecodecamp","kaggle learn","codecademy","microsoft learn","real python","python.org"],
+ calculator:["omni calculator","wolfram","symbolab","mathway","desmos"],
+ "qr-code":["qrcode monkey","qr code monkey","qr code generator","qrstuff","goqr","canva qr"],
+ "weather-map":["zoom earth","windy","ventusky","weather underground","weather.com","meteoblue","rainviewer"],
+ "background-removal":["remove.bg","adobe express","iloveimg","unscreen","bg bye","pfpmaker"],
+ transcription:["otter","descript","turboscribe","notta","happy scribe","whisper","sonix","trint"],
+ "voice-generator":["elevenlabs","speechify","murf","play.ht","tts online","kokoro tts","fish audio"],
+ "website-builder":["wix","framer","webflow","squarespace","carrd","wordpress.com","bubble","weebly","dorik"],
+ presentation:["gamma","beautiful.ai","decktopus","pitch","canva","slidesgo","slidescarnival"],
+ grammar:["grammarly","languagetool","prowritingaid","hemingway","quillbot"],
+ translation:["deepl","google translate","reverso","linguee","microsoft translator"],
+ "stock-photos":["pexels","unsplash","pixabay","stocksnap","gratisography","freeimages","burst"],
+ spreadsheet:["google sheets","microsoft excel","airtable","rows"],
+ ocr:["online ocr","ocr.space","adobe scan","google lens"],
+ diagram:["lucidchart","draw.io","diagrams.net","whimsical","miro"],
+ automation:["zapier","make","n8n","ifttt"],
+ coding:["github copilot","cursor","replit","claude code","codex"],
+ "image-editing":["photopea","pixlr","adobe express","canva","gimp"]
+};
+const INTENT_AVOID={
+ "qr-code":["papers with code","claude code","codecademy","codepen","100-days-of-ml-code"],
+ "website-builder":["3 websites for","work from home websites","mdn web docs","the useless web","animal diversity web"],
+ transcription:["tabletop audio","voice models","mmaudio","voicemod tuna"],
+ "weather-map":["pantone","wgsn","minecraft"],
+ translation:["cdromance","learnalanguage"],
+ calculator:["damage calculator"],
+ "stock-photos":["getty images","shutterstock","istock","adobe stock"]
+};
 const INTENT_RULES=[
  {id:"image-generator",route:"design",patterns:["image generator","ai image","generate image","generate images","text to image","make an image","create image"],anchors:["image generator","text to image","image","art"],terms:["generator","photo","picture","design"]},
  {id:"short-video",route:"video",patterns:["short video","social media video","make a video","create a video","video for social","reel","shorts"],anchors:["video","reel","clip"],terms:["editor","generator","social media","media"]},
@@ -186,10 +208,10 @@ const INTENT_RULES=[
  {id:"calculator",route:"research",patterns:["calculator","calculate","math problem","equation solver"],anchors:["calculator","calculate"],terms:["math","equation","solver","formula"]},
  {id:"qr-code",route:"automation",patterns:["qr code","make a qr","create a qr","qr generator"],anchors:["qr","qr code"],terms:["generator","barcode","code"]},
  {id:"weather-map",route:"maps",patterns:["weather","forecast","weather map","weather or map","radar map"],anchors:["weather","forecast","radar"],terms:["map","earth","geo","gis"]},
- {id:"background-removal",route:"design",patterns:["remove the background","remove background","background remover","transparent background"],anchors:["background","background remover","remove background"],terms:["image","photo","transparent","cutout"]},
+ {id:"background-removal",route:"design",patterns:["remove the background","remove background","background remover","transparent background","erase background","erase image background","image background","photo background","background transparent"],anchors:["background","background remover","remove background"],terms:["image","photo","transparent","cutout"]},
  {id:"transcription",route:"video",patterns:["transcribe","transcription","audio to text","speech to text","voice recording to text"],anchors:["transcribe","transcription","speech to text"],terms:["audio","voice","recording","text"]},
- {id:"voice-generator",route:"video",patterns:["voice generator","ai voice","text to speech","tts","generate voice"],anchors:["voice","text to speech","tts"],terms:["speech","audio","generator","narration"]},
- {id:"website-builder",route:"automation",patterns:["build a website","website builder","make a website","create a website","without coding","no code website","nocode website"],anchors:["website","website builder","site builder","no code"],terms:["web","builder","site","design","hosting"]},
+ {id:"voice-generator",route:"video",patterns:["voice generator","ai voice","text to speech","tts","generate voice","voiceover","voice over","voiceover generator"],anchors:["voice","text to speech","tts"],terms:["speech","audio","generator","narration"]},
+ {id:"website-builder",route:"automation",patterns:["build a website","website builder","make a website","create a website","without coding","no code website","nocode website","build a web page","web page visually","visual website builder"],anchors:["website","website builder","site builder","no code"],terms:["web","builder","site","design","hosting"]},
  {id:"presentation",route:"design",patterns:["presentation","slideshow","slide deck","powerpoint","create slides","make slides"],anchors:["presentation","slides","slideshow","powerpoint","deck"],terms:["design","pitch"]},
  {id:"grammar",route:"research",patterns:["grammar","check my writing","grammar checker","proofread","spell check"],anchors:["grammar","proofread","spell"],terms:["writing","editor","rewrite"]},
  {id:"translation",route:"research",patterns:["translate","translation","translator","another language"],anchors:["translate","translation","translator"],terms:["language","text"]},
@@ -197,7 +219,4 @@ const INTENT_RULES=[
  {id:"spreadsheet",route:"business",patterns:["spreadsheet","excel","google sheets"],anchors:["spreadsheet","excel","sheets"],terms:["data","table","csv"]},
  {id:"ocr",route:"research",patterns:["ocr","image to text","scan text","extract text from image"],anchors:["ocr","image to text"],terms:["scan","text","document"]},
  {id:"diagram",route:"design",patterns:["diagram","flowchart","mind map","mindmap"],anchors:["diagram","flowchart","mind map"],terms:["visual","chart"]},
- {id:"automation",route:"automation",patterns:["automate","automation","workflow","agent"],anchors:["automation","workflow","agent"],terms:["ai","assistant"]},
- {id:"coding",route:"automation",patterns:["coding","programming","write code","developer"],anchors:["code","coding","programming","developer"],terms:["ai","assistant"]},
- {id:"image-editing",route:"design",patterns:["edit image","edit photo","photo editor","image editor"],anchors:["image","photo"],terms:["editor","edit","design"]},
- {id:"video",route:"video",patterns:["video"],anchors:["video"],terms:["e
+ {id:"automation",route:"automation",patterns:["autom
