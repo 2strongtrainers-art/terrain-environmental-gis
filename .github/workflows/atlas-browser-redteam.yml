@@ -1,0 +1,73 @@
+name: Atlas Browser Red-Team Audit
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/atlas-browser-redteam.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  redteam:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install browser audit tools
+        run: npm init -y >/dev/null 2>&1 && npm install --no-save playwright@1.55.0 @axe-core/playwright@4.10.2
+      - name: Audit live desktop and mobile
+        env:
+          URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+        run: |
+          mkdir -p browser-redteam
+          cat > browser-redteam/run.js <<'JS'
+          const {chromium}=require('playwright');
+          const AxeBuilder=require('@axe-core/playwright').default;
+          const fs=require('fs');
+          (async()=>{
+            const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/google-chrome',args:['--no-sandbox']});
+            const report={};
+            for(const [name,viewport] of Object.entries({desktop:{width:1440,height:1000},mobile:{width:390,height:844}})){
+              const context=await browser.newContext({viewport});
+              const page=await context.newPage();
+              const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+              let r=await page.goto(process.env.URL,{waitUntil:'networkidle',timeout:60000});
+              const x={http:r?.status(),errors,title:await page.title(),h1:await page.locator('h1').first().innerText(),heroButtons:await page.locator('#view-home .hero .btn').allInnerTexts()};
+              x.canonical=await page.locator('link[rel="canonical"]').count();
+              x.ogTitle=await page.locator('meta[property="og:title"]').count();
+              x.structuredData=await page.locator('script[type="application/ld+json"]').count();
+              x.analytics=await page.locator('script[src*="googletagmanager"],script[src*="plausible"],script[src*="fathom"],script[src*="posthog"]').count();
+              x.homeHeight=await page.locator('#view-home').evaluate(el=>Math.round(el.getBoundingClientRect().height));
+              x.goalTop=await page.locator('#goalGrid').evaluate(el=>Math.round(el.getBoundingClientRect().top));
+              x.goalCardSemantics=await page.locator('#goalGrid [data-goal]').evaluateAll(els=>els.map(el=>({tag:el.tagName,role:el.getAttribute('role'),tabindex:el.getAttribute('tabindex')})));
+              x.experienceCardSemantics=await page.locator('#friendMode,[data-view="categories"].card,[data-view="archive"].card,[data-view="library"].card').evaluateAll(els=>els.map(el=>({tag:el.tagName,id:el.id,role:el.getAttribute('role'),tabindex:el.getAttribute('tabindex')})));
+              x.smallTargets=await page.locator('button,a').evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {text:(el.innerText||el.getAttribute('aria-label')||'').trim().slice(0,80),w:Math.round(r.width),h:Math.round(r.height),visible:!!(r.width&&r.height)}}).filter(v=>v.visible&&(v.w<44||v.h<44)).slice(0,100));
+              const axe=await new AxeBuilder({page}).analyze();
+              x.axe=axe.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.length,help:v.help}));
+              await page.goto(process.env.URL+'#library',{waitUntil:'networkidle',timeout:60000});
+              await page.waitForSelector('#view-library.active');
+              await page.locator('#searchInput').fill('zzzz-no-match-987654');
+              await page.waitForTimeout(120);
+              x.zeroResultText=await page.locator('#toolGrid').innerText();
+              x.resultCountAriaLive=await page.locator('#resultCount').getAttribute('aria-live');
+              report[name]=x;
+              await context.close();
+            }
+            fs.writeFileSync('browser-redteam/report.json',JSON.stringify(report,null,2));
+            console.log('REDTEAM '+JSON.stringify(report));
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node browser-redteam/run.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: atlas-browser-redteam
+          path: browser-redteam/
+          retention-days: 14
