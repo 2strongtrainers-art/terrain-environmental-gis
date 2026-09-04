@@ -1,0 +1,43 @@
+{
+  "version": "1.0",
+  "as_of": "2026-09-04",
+  "source": "PostHog production events",
+  "observed_last_30_days": {
+    "atlas_search": 14,
+    "atlas_intent_search": 1,
+    "atlas_goal_select": 2,
+    "atlas_command_submit": 1,
+    "atlas_zero_result": 10,
+    "atlas_watch_browse": 1
+  },
+  "current_event_limitations": [
+    "atlas_search does not yet contain canonical task family or candidate tool identifiers",
+    "existing volume is too small to justify behavior-derived reranking",
+    "new result-position and tool-attribution events must accumulate before priors are generated"
+  ],
+  "ranking_policy": {
+    "behavior_ranking_active": false,
+    "minimum_searches_per_intent": 25,
+    "minimum_result_opens_per_candidate": 5,
+    "minimum_distinct_sessions_per_intent": 10,
+    "maximum_behavior_rank_bonus": 8,
+    "behavior_can_override_verification": false,
+    "behavior_can_override_access_audit": false,
+    "behavior_can_override_dead_or_parked_guards": false,
+    "behavior_can_override_explicit_task_mismatch": false,
+    "organic_ranking_can_be_purchased": false
+  },
+  "new_attribution_events": [
+    "atlas_discovery_search",
+    "atlas_result_opened",
+    "atlas_outbound_click",
+    "atlas_saved",
+    "atlas_stack_opened",
+    "atlas_playbook_opened",
+    "atlas_playbook_copied",
+    "atlas_surprise_used",
+    "atlas_feedback",
+    "atlas_unmet_request"
+  ],
+  "activation_rule": "Generate offline behavior priors only after thresholds are met using attributable production events. Keep the bonus capped and subordinate to task relevance, verification, access and safety rules."
+}
