@@ -5,7 +5,9 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "atlas-bundle.html"
+      - "atlas/**"
+      - "atlas-src/**"
+      - "atlas-upgrade.js"
       - "atlas-build-report.json"
       - ".github/workflows/atlas-publish.yml"
   workflow_dispatch:
@@ -29,11 +31,14 @@ jobs:
           ref: gh-pages
           path: public
 
-      - name: Install verified Atlas into gh-pages
+      - name: Install Atlas into gh-pages
         shell: bash
         run: |
+          rm -rf public/atlas public/atlas-src
           mkdir -p public/atlas
-          cp source/atlas-bundle.html public/atlas/index.html
+          cp source/atlas/index.html public/atlas/index.html
+          cp -R source/atlas-src public/atlas-src
+          cp source/atlas-upgrade.js public/atlas-upgrade.js
           cp source/atlas-build-report.json public/atlas/build-report.json
           touch public/.nojekyll
 
@@ -43,10 +48,10 @@ jobs:
           cd public
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add atlas/index.html atlas/build-report.json .nojekyll
+          git add atlas/index.html atlas-src atlas-upgrade.js atlas/build-report.json .nojekyll
           if git diff --cached --quiet; then
             echo "Atlas already published"
           else
-            git commit -m "Publish verified Nick's Digital Atlas"
+            git commit -m "Publish Atlas workflow discovery upgrade"
             git push origin HEAD:gh-pages
           fi
