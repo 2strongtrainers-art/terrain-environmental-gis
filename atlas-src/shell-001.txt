@@ -1,4 +1,4 @@
-e beginner guide, pick a category, or search the full library.</p></div><div class="step"><div class="num">3</div><h3>Open the tool</h3><p>Launch the specialist website directly. External links open in a separate tab.</p></div></div>
+</h3><p>Launch the specialist website directly. External links open in a separate tab.</p></div></div>
  </div>
  <div class="section">
   <div class="sectionhead"><div><h2>Pick the experience that fits you</h2></div></div>
@@ -131,7 +131,7 @@ async function decodeAtlasData(){
 (async()=>{
  const RAW=JSON.parse(await decodeAtlasData());
  const TOOLS=RAW.map(x=>({id:x[0],name:x[1],url:x[2],description:x[3],pricing:x[4],sourceCategory:x[5],sourceCategories:[x[5]],section:x[6],subsection:x[7],curatedCategory:x[8],priority:x[9],verification:x[10],accessType:x[11],functionQA:x[12]}));
-const META={"sourceEntries":1802,"indexedTools":1834,"liveVerified":1529,"explicitAccessAudits":4,"auditBreakdown":{"blocked":207,"dead":32,"parked":1,"error":28,"timeout":22,"uncertain":10,"serverError":5},"sourceStats":{"AI":270,"Design & Creative":366,"Gaming":388,"Education & Learning":778},"lastAudit":"2026-09-03","built":"2026-09-03"};
+const META={"sourceEntries":1802,"indexedTools":1838,"liveVerified":1529,"explicitAccessAudits":4,"auditBreakdown":{"blocked":207,"dead":32,"parked":1,"error":28,"timeout":22,"uncertain":10,"serverError":5},"sourceStats":{"AI":270,"Design & Creative":366,"Gaming":388,"Education & Learning":778},"lastAudit":"2026-09-03","built":"2026-09-03"};
 const SOURCE_LINKS={"AI":"https://docs.google.com/spreadsheets/d/1ryROQ0UO904kM7jY16wP0mjMTmrFsiZj4P07rLxwoss/edit","Design & Creative":"https://docs.google.com/spreadsheets/d/17zjPsKp8ZOXumyn-JH5Mzi_SA3BXYDPJAK51jzcktNg/edit","Gaming":"https://docs.google.com/spreadsheets/d/1nnlkuhRFf5g2xl3IXOc3Ftj3rh361qf-mgQ0Shl8JQ0/edit","Education & Learning":"https://docs.google.com/spreadsheets/d/1Mn2IozwzNX0S6spUZ0_6onjHZ06L4ZHOt6k3A6QNCVM/edit"};
 const PAGE_SIZE=60;
 let state={view:"home",query:"",source:"",pricing:"",verification:"",priority:"",sort:"relevance",page:1,favoritesOnly:false};
@@ -189,27 +189,27 @@ const INTENT_PREFERRED={
 };
 const INTENT_AVOID={
  "qr-code":["papers with code","claude code","codecademy","codepen","100-days-of-ml-code"],
- "website-builder":["3 websites for","work from home websites","mdn web docs","the useless web","animal diversity web"],
- transcription:["tabletop audio","voice models","mmaudio","voicemod tuna"],
+ "website-builder":["3 websites for","work from home websites","mdn web docs","the useless web","animal diversity web","wix logo maker"],
+ transcription:["tabletop audio","voice models","mmaudio","voicemod tuna","complex function plotter","surface plotter","direction field plotter","musicfx"],
  "weather-map":["pantone","wgsn","minecraft"],
- translation:["cdromance","learnalanguage"],
+ translation:["cdromance","learnalanguage","deeplearning ai","languagetool","textcraft","chemlibretexts"],
  calculator:["damage calculator"],
  "stock-photos":["getty images","shutterstock","istock","adobe stock"]
 };
 const INTENT_RULES=[
- {id:"image-generator",route:"design",patterns:["image generator","ai image","generate image","generate images","text to image","make an image","create image"],anchors:["image generator","text to image","image","art"],terms:["generator","photo","picture","design"]},
- {id:"short-video",route:"video",patterns:["short video","social media video","make a video","create a video","video for social","reel","shorts"],anchors:["video","reel","clip"],terms:["editor","generator","social media","media"]},
+ {id:"image-generator",route:"design",patterns:["image generator","ai image","generate image","generate images","generate an image","image maker","text to image","make an image","create image"],anchors:["image generator","text to image","image","art"],terms:["generator","photo","picture","design"]},
+ {id:"short-video",route:"video",patterns:["short video","social media video","make a video","create a video","video for social","tiktok video","instagram video","video for instagram","reel","shorts"],anchors:["video","reel","clip"],terms:["editor","generator","social media","media"]},
  {id:"logo",route:"design",patterns:["design a logo","make a logo","create a logo","logo"],anchors:["logo","branding","brand"],terms:["design","graphic"]},
  {id:"resume",route:"business",patterns:["resume","cv","curriculum vitae"],anchors:["resume","cv"],terms:["career","job","application","builder"]},
  {id:"pdf",route:"research",patterns:["pdf","edit pdf","work with a pdf","pdf editor","pdf converter"],anchors:["pdf"],terms:["document","editor","edit","convert","merge","compress","annotate"]},
  {id:"research-summary",route:"research",patterns:["summarize a research paper","summarize research","research paper","academic paper","paper summary"],anchors:["research","paper","academic","scholar"],terms:["summary","summarize","study","science"]},
- {id:"citation",route:"research",patterns:["citation","citation generator","bibliography","cite source","apa citation","mla citation"],anchors:["citation","bibliography","cite"],terms:["reference","apa","mla","academic"]},
+ {id:"citation",route:"research",patterns:["citation","citation generator","bibliography","cite source","cite my source","cite my sources","apa citation","mla citation"],anchors:["citation","bibliography","cite"],terms:["reference","apa","mla","academic"]},
  {id:"python-learning",route:"research",patterns:["learn python","python course","python tutorial","python programming"],anchors:["python"],terms:["learn","course","tutorial","programming","coding"]},
- {id:"calculator",route:"research",patterns:["calculator","calculate","math problem","equation solver"],anchors:["calculator","calculate"],terms:["math","equation","solver","formula"]},
+ {id:"calculator",route:"research",patterns:["calculator","calculate","math problem","equation solver","math equation","solve an equation","solve a math equation","solve math equation"],anchors:["calculator","calculate"],terms:["math","equation","solver","formula"]},
  {id:"qr-code",route:"automation",patterns:["qr code","make a qr","create a qr","qr generator"],anchors:["qr","qr code"],terms:["generator","barcode","code"]},
  {id:"weather-map",route:"maps",patterns:["weather","forecast","weather map","weather or map","radar map"],anchors:["weather","forecast","radar"],terms:["map","earth","geo","gis"]},
  {id:"background-removal",route:"design",patterns:["remove the background","remove background","background remover","transparent background","erase background","erase image background","image background","photo background","background transparent"],anchors:["background","background remover","remove background"],terms:["image","photo","transparent","cutout"]},
- {id:"transcription",route:"video",patterns:["transcribe","transcription","audio to text","speech to text","voice recording to text"],anchors:["transcribe","transcription","speech to text"],terms:["audio","voice","recording","text"]},
+ {id:"transcription",route:"video",patterns:["transcribe","transcription","audio transcription","audio to text","speech to text","speech to text tool","voice recording to text","voice recording into text","turn voice recording into text"],anchors:["transcribe","transcription","speech to text"],terms:["audio","voice","recording","text"]},
  {id:"voice-generator",route:"video",patterns:["voice generator","ai voice","text to speech","tts","generate voice","voiceover","voice over","voiceover generator"],anchors:["voice","text to speech","tts"],terms:["speech","audio","generator","narration"]},
  {id:"website-builder",route:"automation",patterns:["build a website","website builder","make a website","create a website","without coding","no code website","nocode website","build a web page","web page visually","visual website builder"],anchors:["website","website builder","site builder","no code"],terms:["web","builder","site","design","hosting"]},
  {id:"presentation",route:"design",patterns:["presentation","slideshow","slide deck","powerpoint","create slides","make slides"],anchors:["presentation","slides","slideshow","powerpoint","deck"],terms:["design","pitch"]},
@@ -218,5 +218,4 @@ const INTENT_RULES=[
  {id:"stock-photos",route:"design",patterns:["stock photos","stock photo","free photos","royalty free photos","stock images"],anchors:["stock photo","stock image","photo","image"],terms:["royalty free","pictures"]},
  {id:"spreadsheet",route:"business",patterns:["spreadsheet","excel","google sheets"],anchors:["spreadsheet","excel","sheets"],terms:["data","table","csv"]},
  {id:"ocr",route:"research",patterns:["ocr","image to text","scan text","extract text from image"],anchors:["ocr","image to text"],terms:["scan","text","document"]},
- {id:"diagram",route:"design",patterns:["diagram","flowchart","mind map","mindmap"],anchors:["diagram","flowchart","mind map"],terms:["visual","chart"]},
- {id:"automation",route:"automation",patterns:["autom
+ {id:"diagram",route:"design",patterns:["diagram","flowchart","mind map",

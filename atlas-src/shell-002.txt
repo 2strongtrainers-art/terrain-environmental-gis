@@ -1,4 +1,5 @@
-ate","automation","workflow","agent"],anchors:["automation","workflow","agent"],terms:["ai","assistant"]},
+"mindmap"],anchors:["diagram","flowchart","mind map"],terms:["visual","chart"]},
+ {id:"automation",route:"automation",patterns:["automate","automation","workflow","agent"],anchors:["automation","workflow","agent"],terms:["ai","assistant"]},
  {id:"coding",route:"automation",patterns:["coding","programming","write code","developer"],anchors:["code","coding","programming","developer"],terms:["ai","assistant"]},
  {id:"image-editing",route:"design",patterns:["edit image","edit photo","photo editor","image editor"],anchors:["image","photo"],terms:["editor","edit","design"]},
  {id:"video",route:"video",patterns:["video"],anchors:["video"],terms:["editor","generator","media"]},
@@ -32,7 +33,7 @@ function scoreTool(t,q){
  for(const tok of p.rawTokens)s+=tokenScore(idx,tok)*1.35;
  for(const tok of p.tokens)s+=tokenScore(idx,tok)*0.45;
  if(p.intent&&anchorHit===0)s*=0.08;
- if(p.intent){const pref=INTENT_PREFERRED[p.intent.id]||[];for(let i=0;i<pref.length;i++){const n=normalizeText(pref[i]);if(idx.name===n)s+=260-i*5;else if(idx.name.includes(n)||n.includes(idx.name))s+=175-i*3;else if(idx.desc.includes(n))s+=55-i}const avoid=INTENT_AVOID[p.intent.id]||[];for(const n0 of avoid){const n=normalizeText(n0);if(idx.name.includes(n))s-=180}}
+ if(p.intent){const pref=INTENT_PREFERRED[p.intent.id]||[];for(let i=0;i<pref.length;i++){const n=normalizeText(pref[i]);if(idx.name===n)s+=260-i*5;else if(idx.name.includes(n)||n.includes(idx.name))s+=175-i*3;else if(idx.desc.includes(n))s+=55-i}const avoid=INTENT_AVOID[p.intent.id]||[];for(const n0 of avoid){const n=normalizeText(n0);if(idx.name.includes(n))return -999}}
  if(p.wantsFree){if(idx.pricing.includes("free"))s+=34;else if(idx.pricing.includes("paid"))s-=18;if(/getty|shutterstock|istock|adobe stock/.test(idx.name))s-=160}
  if(p.explicitNoLogin){if(idx.access.includes("no login")||idx.access.includes("optional login"))s+=90;else s-=18}
  if(t.verification==="Live verified")s+=5;if(t.priority==="High")s+=2;
@@ -59,7 +60,7 @@ $$("[data-view]").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.v
 $("#menuBtn").onclick=()=>{let o=$("#mobileNav").classList.toggle("open");$("#menuBtn").setAttribute("aria-expanded",String(o))};
 
 async function shareAtlas(){
- const data={title:"Nick’s Digital Atlas",text:"Browse 1,834 AI tools and useful websites.",url:location.origin+location.pathname};
+ const data={title:"Nick’s Digital Atlas",text:"Browse 1,838 AI tools and useful websites.",url:location.origin+location.pathname};
  try{if(navigator.share)await navigator.share(data);else{await navigator.clipboard.writeText(data.url);alert("Atlas link copied.")}trackAtlas("atlas_share",{method:navigator.share?"native":"clipboard"})}catch(e){}
 }
 $("#shareAtlas").addEventListener("click",shareAtlas);
@@ -124,7 +125,7 @@ function routeCommand(){
  const genericNoLogin=p.explicitNoLogin&&!p.intent;
  let html="";
  if(genericNoLogin)html+='<button class="suggestion" data-route="no-login" style="text-align:left;cursor:pointer"><b>Free • No Login</b><span>Only explicitly audited no-account tools →</span></button>';
- else html+=`<button class="suggestion" data-smart-query="${esc(raw)}" style="text-align:left;cursor:pointer"><b>Best matches for this task</b><span>Rank the strongest task matches across all 1,834 tools →</span></button>`;
+ else html+=`<button class="suggestion" data-smart-query="${esc(raw)}" style="text-align:left;cursor:pointer"><b>Best matches for this task</b><span>Rank the strongest task matches across all 1,838 tools →</span></button>`;
  const route=p.intent?.route;
  if(route&&route!=="no-login")html+=`<button class="suggestion" data-route="${route}" style="text-align:left;cursor:pointer"><b>${esc(ROUTES[route].label)}</b><span>Browse the broader category →</span></button>`;
  if(p.explicitNoLogin&&!genericNoLogin)html+='<button class="suggestion" data-route="no-login" style="text-align:left;cursor:pointer"><b>Strict no-login collection</b><span>Only explicitly audited no-account tools →</span></button>';
@@ -164,7 +165,7 @@ function getFiltered(){
   if(state.favoritesOnly&&!favorites.has(t.id))return false;
   return true;
  });
- if(hasQuery&&arr.length){const scored=arr.map(t=>[t,scoreTool(t,parsed)]);const max=Math.max(...scored.map(x=>x[1]));let floor=parsed.intent?Math.max(14,max*0.16):5;let kept=scored.filter(x=>x[1]>=floor);if(kept.length<5)kept=scored.sort((a,b)=>b[1]-a[1]).slice(0,Math.min(20,scored.length)).filter(x=>x[1]>3);arr=kept.map(x=>x[0])}
+ if(hasQuery&&arr.length){const scored=arr.map(t=>[t,scoreTool(t,parsed)]);const max=Math.max(...scored.map(x=>x[1]));let floor=parsed.intent?Math.max(14,max*0.16):5;let kept=scored.filter(x=>x[1]>=floor);if(kept.length<5)kept=scored.sort((a,b)=>b[1]-a[1]).slice(0,Math.min(20,scored.length)).filter(x=>x[1]>3);kept.sort((a,b)=>b[1]-a[1]);if(parsed.intent)kept=kept.slice(0,30);arr=kept.map(x=>x[0])}
  if(state.sort==="az")arr.sort((a,b)=>a.name.localeCompare(b.name));
  else if(state.sort==="verified")arr.sort((a,b)=>(b.verification==="Live verified")-(a.verification==="Live verified")||a.name.localeCompare(b.name));
  else if(state.sort==="priority"){const p={High:3,Medium:2,Low:1};arr.sort((a,b)=>(p[b.priority]||0)-(p[a.priority]||0)||a.name.localeCompare(b.name))}

@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071b1d">
-<title>Nick’s Digital Atlas — 1,834 AI Tools & Useful Websites</title>
-<meta name="description" content="Browse 1,834 AI tools and useful websites by goal, category, price and verification status. 1,529 destinations were live-checked on September 3, 2026.">
+<title>Nick’s Digital Atlas — 1,838 AI Tools & Useful Websites</title>
+<meta name="description" content="Browse 1,838 AI tools and useful websites by goal, category, price and verification status. 1,529 destinations were live-checked on September 3, 2026.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect rx='16' width='64' height='64' fill='%23087f80'/%3E%3Cpath d='M32 10l9 22-9 22-9-22z' fill='white'/%3E%3C/svg%3E">
 <link rel="canonical" href="https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/">
 <link rel="sitemap" type="application/xml" href="https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/sitemap.xml">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Nick’s Digital Atlas — 1,834 AI Tools & Useful Websites">
+<meta property="og:title" content="Nick’s Digital Atlas — 1,838 AI Tools & Useful Websites">
 <meta property="og:description" content="Find the right tool or useful website by goal, category, price or verification status.">
 <meta property="og:url" content="https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Nick’s Digital Atlas — 1,834 AI Tools & Useful Websites">
+<meta name="twitter:title" content="Nick’s Digital Atlas — 1,838 AI Tools & Useful Websites">
 <meta name="twitter:description" content="Find the right tool or useful website by goal, category, price or verification status.">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Nick’s Digital Atlas","url":"https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/","description":"A searchable directory of AI tools and useful websites organized by goal, category, price and verification status.","potentialAction":{"@type":"SearchAction","target":"https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/#library","query-input":"required name=search_term_string"}}</script>
 <style>
@@ -132,6 +132,7 @@ button.card,button.category{appearance:none;-webkit-appearance:none}
 .note{color:#53696b}
 
 /* ATLAS-INTENT-V3 */
+/* ATLAS-INTENT-V32 — high-demand coverage + false-positive suppression */
 .suggestion[data-smart-query]{border-color:#8ddbd5;background:#f2fbfa}.suggestion[data-smart-query] b{color:#0a6667}
 </style>
 </head>
@@ -157,10 +158,10 @@ button.card,button.category{appearance:none;-webkit-appearance:none}
 <main class="wrap" id="main">
 <section class="view active" id="view-home">
  <div class="hero">
-  <div class="eyebrow">1,834 tools & useful websites • 1,529 live verified</div>
+  <div class="eyebrow">1,838 tools & useful websites • 1,529 live verified</div>
   <h1>Find the right tool or useful website for what you want to do.</h1>
-  <p>Browse 1,834 resources by goal, category, price or verification status. 1,529 destinations were live-checked on September 3, 2026.</p>
-  <div class="actions"><button class="btn primary" data-view="library" id="heroBrowse">Browse all 1,834 tools</button><button class="btn ghost" id="jumpCommand">Help me choose</button></div>
+  <p>Browse 1,838 resources by goal, category, price or verification status. 1,529 destinations were live-checked on September 3, 2026.</p>
+  <div class="actions"><button class="btn primary" data-view="library" id="heroBrowse">Browse all 1,838 tools</button><button class="btn ghost" id="jumpCommand">Help me choose</button></div>
  </div>
  <div class="stats">
    <div class="stat"><b id="statIndexed"></b><span>unique launchable tools/sites</span></div>
@@ -170,7 +171,7 @@ button.card,button.category{appearance:none;-webkit-appearance:none}
  </div>
  <div class="callout green" id="newHere">
   <strong>🧭 New here? Start here.</strong>
-  <p>Describe the outcome—not the software. The Atlas ranks all 1,834 tools for your task, then offers broader categories when useful.</p>
+  <p>Describe the outcome—not the software. Atlas ranks the strongest task matches first, then offers broader categories when useful.</p>
   <div class="command">
    <label for="commandInput"><b>Tell the Atlas what you want to do</b></label>
    <div class="commandbox"><input id="commandInput" placeholder="Example: make a short video from five photos" autocomplete="off"><button class="btn blue" id="routeBtn">Show matching tools</button></div>
@@ -187,4 +188,4 @@ button.card,button.category{appearance:none;-webkit-appearance:none}
  </div>
  <div class="section">
   <div class="sectionhead"><div><h2>How it works</h2></div></div>
-  <div class="steps"><div class="step"><div class="num">1</div><h3>Describe your goal</h3><p>Say what you want to make, learn, research, fix, compare or organize.</p></div><div class="step"><div class="num">2</div><h3>Choose a route</h3><p>Use th
+  <div class="steps"><div class="step"><div class="num">1</div><h3>Describe your goal</h3><p>Say what you want to make, learn, research, fix, compare or organize.</p></div><div class="step"><div class="num">2</div><h3>Choose a route</h3><p>Use the beginner guide, pick a category, or search the full library.</p></div><div class="step"><div class="num">3</div><h3>Open the tool

@@ -1,10 +1,10 @@
 {
-  "tool_count": 1834,
+  "tool_count": 1838,
   "live_verified": 1529,
   "source_entries": 1802,
-  "bundle_bytes": 199123,
-  "data_b64_bytes": 120544,
-  "sha256": "ccc3eaa7ca26e22d892bc24aa792fcfb2e35f56b94bdf30ba74c22ca566fc929",
+  "bundle_bytes": 200758,
+  "data_b64_bytes": 121560,
+  "sha256": "70713d0a7835b03c3267749a99892d977c173346d48b512e6c356cf3008d734c",
   "visual_theme": "Atlas Brand V2 + CRO V2.1",
   "cro_v2": {
     "clarity": true,
@@ -41,5 +41,18 @@
     "dynamic_relevance_floor": true,
     "free_paid_penalty": true,
     "voiceover_background_webpage_expansion": true
+  },
+  "intent_v32": {
+    "high_demand_gap_fill": [
+      "QRCode Monkey",
+      "Otter.ai",
+      "DeepL Translator",
+      "Wix Website Builder"
+    ],
+    "total_tools": 1838,
+    "phrase_coverage_expanded": true,
+    "hard_false_positive_exclusion": true,
+    "task_results_capped": 30,
+    "strict_free_vs_no_login_preserved": true
   }
 }

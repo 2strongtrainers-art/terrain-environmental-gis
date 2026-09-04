@@ -45,7 +45,7 @@ async function goHome(page){
     page.on('pageerror',e=>jsErrors.push(String(e)));
     const r=await page.goto(URL,{waitUntil:'networkidle',timeout:60000});
     if(!r || r.status()!==200) throw new Error('Atlas HTTP status '+(r&&r.status()));
-    await page.waitForFunction(()=>document.querySelector('#statIndexed')?.textContent?.includes('1,834'),null,{timeout:30000});
+    await page.waitForFunction(()=>document.querySelector('#statIndexed')?.textContent?.includes('1,838'),null,{timeout:30000});
 
     for(let i=0;i<intents.length;i++){
       const intent=intents[i];
