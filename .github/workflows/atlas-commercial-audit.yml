@@ -1,0 +1,111 @@
+name: Atlas Commercial UX Performance Audit
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/atlas-commercial-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install audit tooling
+        shell: bash
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save lighthouse@12.8.2 playwright@1.55.0 @axe-core/playwright@4.10.2
+
+      - name: Run Lighthouse mobile and desktop
+        shell: bash
+        env:
+          URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+        run: |
+          mkdir -p commercial-audit
+          npx lighthouse "$URL" --quiet --chrome-flags="--headless=new --no-sandbox" --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=commercial-audit/lighthouse-mobile.json
+          npx lighthouse "$URL" --quiet --preset=desktop --chrome-flags="--headless=new --no-sandbox" --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=commercial-audit/lighthouse-desktop.json
+          node - <<'JS'
+          const fs=require('fs');
+          for(const mode of ['mobile','desktop']){
+            const j=JSON.parse(fs.readFileSync(`commercial-audit/lighthouse-${mode}.json`,'utf8'));
+            const c=j.categories;
+            const a=j.audits;
+            const out={
+              mode,
+              performance:Math.round(c.performance.score*100),
+              accessibility:Math.round(c.accessibility.score*100),
+              bestPractices:Math.round(c['best-practices'].score*100),
+              seo:Math.round(c.seo.score*100),
+              FCP:a['first-contentful-paint']?.displayValue,
+              LCP:a['largest-contentful-paint']?.displayValue,
+              TBT:a['total-blocking-time']?.displayValue,
+              CLS:a['cumulative-layout-shift']?.displayValue,
+              SI:a['speed-index']?.displayValue
+            };
+            console.log('LIGHTHOUSE '+JSON.stringify(out));
+          }
+          JS
+
+      - name: Browser, metadata and accessibility red-team
+        shell: bash
+        env:
+          URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+        run: |
+          cat > commercial-audit/redteam.js <<'JS'
+          const {chromium}=require('playwright');
+          const AxeBuilder=require('@axe-core/playwright').default;
+          (async()=>{
+            const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/google-chrome',args:['--no-sandbox']});
+            const report={};
+            for(const [name,viewport] of Object.entries({desktop:{width:1440,height:1000},mobile:{width:390,height:844}})){
+              const page=await browser.newPage({viewport});
+              const errors=[]; page.on('pageerror',e=>errors.push(String(e)));
+              const r=await page.goto(process.env.URL,{waitUntil:'networkidle',timeout:60000});
+              report[name]={http:r?.status(),errors};
+              report[name].title=await page.title();
+              report[name].h1=await page.locator('h1').first().innerText();
+              report[name].heroButtons=await page.locator('#view-home .hero .btn').allInnerTexts();
+              report[name].canonical=await page.locator('link[rel="canonical"]').count();
+              report[name].ogTitle=await page.locator('meta[property="og:title"]').count();
+              report[name].structuredData=await page.locator('script[type="application/ld+json"]').count();
+              report[name].analytics=await page.locator('script[src*="googletagmanager"],script[src*="plausible"],script[src*="fathom"],script[src*="posthog"]').count();
+              report[name].headings=await page.locator('h1,h2,h3').allInnerTexts();
+              report[name].homeHeight=await page.locator('#view-home').evaluate(el=>Math.round(el.getBoundingClientRect().height));
+              report[name].goalTop=await page.locator('#goalGrid').evaluate(el=>Math.round(el.getBoundingClientRect().top));
+              const tiny=await page.locator('button,a').evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {text:(el.innerText||el.getAttribute('aria-label')||'').trim().slice(0,80),w:Math.round(r.width),h:Math.round(r.height),visible:!!(r.width&&r.height)}}).filter(x=>x.visible&&(x.w<44||x.h<44)).slice(0,50));
+              report[name].smallTargets=tiny;
+              const axe=await new AxeBuilder({page}).analyze();
+              report[name].axe={violations:axe.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.length,help:v.help}))};
+              await page.locator('[data-view="library"]').first().click();
+              await page.waitForTimeout(150);
+              await page.locator('#searchInput').fill('zzzz-no-match-987654');
+              await page.waitForTimeout(150);
+              report[name].zeroResultText=await page.locator('#toolGrid').innerText();
+              await page.close();
+            }
+            fs=require('fs');fs.writeFileSync('commercial-audit/browser-redteam.json',JSON.stringify(report,null,2));
+            console.log('BROWSER_REDTEAM '+JSON.stringify(report));
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node commercial-audit/redteam.js
+
+      - name: Upload audit artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-commercial-audit
+          path: commercial-audit/
+          retention-days: 14
