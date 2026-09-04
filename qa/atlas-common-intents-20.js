@@ -27,12 +27,18 @@ const intents = [
 
 function num(text=''){ const m=text.match(/[\d,]+/); return m?Number(m[0].replace(/,/g,'')):0; }
 function norm(s=''){ return s.toLowerCase(); }
+async function goHome(page){
+  if(await page.locator('#view-home').evaluate(el=>el.classList.contains('active'))) return;
+  await page.locator('#menuBtn').click();
+  await page.locator('#mobileNav button[data-view="home"]').click();
+  await page.waitForTimeout(100);
+}
 
 (async()=>{
   const report={url:URL,started_at:new Date().toISOString(),tests:[],summary:{}};
   const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/usr/bin/google-chrome',args:['--no-sandbox']});
   try{
-    const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true});
+    const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
     const page=await context.newPage();
     const jsErrors=[];
     page.on('pageerror',e=>jsErrors.push(String(e)));
@@ -42,8 +48,7 @@ function norm(s=''){ return s.toLowerCase(); }
 
     for(let i=0;i<intents.length;i++){
       const intent=intents[i];
-      await page.evaluate(()=>{ location.hash='home'; });
-      await page.waitForTimeout(100);
+      await goHome(page);
       const input=page.locator('#commandInput');
       await input.fill(intent.q);
       await page.locator('#routeBtn').click();
