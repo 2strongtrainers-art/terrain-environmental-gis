@@ -14,14 +14,13 @@ html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#
 <script>
 (async()=>{
  const root="../atlas-src/";
- const shellNames=["shell-fixed-000.txt","shell-001.txt","shell-002.txt"];
- const dataNames=["data-000.txt","data-001.txt","data-002.txt","data-003.txt","tail-000.txt","tail-001.txt","tail-002.txt","tail-003.txt","tail-004.txt","tail-005.txt"];
+ // These names intentionally mirror the authoritative generator scripts.
+ const shellNames=["shell-000.txt","shell-001.txt","shell-002.txt"];
+ const dataNames=["data-000.txt","data-001.txt","data-002.txt","data-003.txt","data-004.txt","data-005.txt","data-006.txt","data-007.txt","data-008.txt"];
  async function load(names){return Promise.all(names.map(async n=>{const r=await fetch(root+n,{cache:"no-store"});if(!r.ok)throw new Error(n+" returned HTTP "+r.status);return r.text()}));}
  const [shellParts,dataParts]=await Promise.all([load(shellNames),load(dataNames)]);
  const shell=shellParts.join("");
  const data=dataParts.join("").replace(/\s/g,"");
- // The generated compressed library changes size as search/metadata engines evolve.
- // Validate structure instead of pinning production to a stale byte count.
  if(data.length<100000 || data.length%4!==0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(data))throw new Error("Library integrity check failed: invalid encoded payload ("+data.length+" bytes).");
  if(!shell.includes("__DATA_B64__"))throw new Error("Website shell integrity check failed.");
  let finished=shell.replace("__DATA_B64__",data);
