@@ -53,14 +53,14 @@ async function goHome(page){
       await input.fill(intent.q);
       await page.locator('#routeBtn').click();
       await page.waitForTimeout(180);
-      const buttons=page.locator('#routeSuggestions button[data-route]');
+      const buttons=page.locator('#routeSuggestions button');
       const suggestionCount=await buttons.count();
       const suggestionLabels=suggestionCount?await buttons.allInnerTexts():[];
       let activeView='home', resultCount=0, topCards=[], routeClicked='';
       if(suggestionCount){
         routeClicked=suggestionLabels[0]||'';
         await buttons.first().click();
-        await page.waitForTimeout(180);
+        await page.waitForTimeout(220);
         activeView=await page.locator('.view.active').getAttribute('id')||'';
         if(activeView==='view-library'){
           resultCount=num(await page.locator('#resultCount').innerText());
