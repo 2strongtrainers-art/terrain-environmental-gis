@@ -2,10 +2,10 @@
   "tool_count": 1834,
   "live_verified": 1529,
   "source_entries": 1802,
-  "bundle_bytes": 184270,
+  "bundle_bytes": 184672,
   "data_b64_bytes": 120544,
-  "sha256": "de4f15e93c7d438b2d36f40bc0bc64e392806a47c0a5d2de0c2868664f1d0114",
-  "visual_theme": "Atlas Brand V2 + CRO V2",
+  "sha256": "7903926d80a38af8dbf7aa154943141f74193b708a2db4796bd3c2a060eb411f",
+  "visual_theme": "Atlas Brand V2 + CRO V2.1",
   "cro_v2": {
     "clarity": true,
     "discovery_first": true,
@@ -22,6 +22,8 @@
     "canonical_social_schema": true,
     "crawlable_collection_pages": 6,
     "sitemap": true,
-    "hidden_home_library_render_removed": true
+    "hidden_home_library_render_removed": true,
+    "wcag_aa_contrast_repair": true,
+    "inline_favicon": true
   }
 }
