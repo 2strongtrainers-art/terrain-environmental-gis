@@ -2,9 +2,9 @@
   "tool_count": 1846,
   "live_verified": 1529,
   "source_entries": 1802,
-  "bundle_bytes": 212503,
+  "bundle_bytes": 212603,
   "data_b64_bytes": 122548,
-  "sha256": "ec0eaf54dd07bf27235d35cb91c2b47e3861dfe668723121ecadfd4d288e088f",
+  "sha256": "c5820a825748845b01b3d98fd1cdbd0fc444960ea6cc31c3e0ab001081a5b4b1",
   "visual_theme": "Atlas Brand V2 + CRO V2.1",
   "cro_v2": {
     "clarity": true,
