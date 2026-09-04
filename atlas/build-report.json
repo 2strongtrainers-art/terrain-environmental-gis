@@ -2,9 +2,9 @@
   "tool_count": 1834,
   "live_verified": 1529,
   "source_entries": 1802,
-  "bundle_bytes": 184672,
+  "bundle_bytes": 195370,
   "data_b64_bytes": 120544,
-  "sha256": "7903926d80a38af8dbf7aa154943141f74193b708a2db4796bd3c2a060eb411f",
+  "sha256": "a3c9227111804df0b81ee76abb47c9203e0798bd1d864aa39b85fca25e3d01ad",
   "visual_theme": "Atlas Brand V2 + CRO V2.1",
   "cro_v2": {
     "clarity": true,
@@ -25,5 +25,13 @@
     "hidden_home_library_render_removed": true,
     "wcag_aa_contrast_repair": true,
     "inline_favicon": true
+  },
+  "intent_v3": {
+    "task_first_router": true,
+    "weighted_field_ranking": true,
+    "intent_taxonomy": 29,
+    "free_vs_no_login_separated": true,
+    "query_preserved_after_route": true,
+    "fuzzy_synonyms": true
   }
 }
