@@ -6,6 +6,7 @@ on:
     paths:
       - scripts/apply_atlas_intent_v3.py
       - scripts/apply_atlas_intent_v31.py
+      - scripts/apply_atlas_intent_v32.py
       - qa/atlas-common-intents-20.js
       - qa/atlas-intent-stress-60.js
       - .github/workflows/atlas-intent-v3.yml
@@ -25,21 +26,22 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Apply intent engines V3 and V3.1
+      - name: Apply intent engines V3 through V3.2
         run: |
           python scripts/apply_atlas_intent_v3.py
           python scripts/apply_atlas_intent_v31.py
+          python scripts/apply_atlas_intent_v32.py
 
-      - name: Commit production source
+      - name: Commit production source and synchronized QA
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add atlas-src/shell-*.txt atlas-bundle.html atlas-build-report.json
+          git add atlas-src/shell-*.txt atlas-src/data-*.txt atlas-bundle.html atlas-build-report.json qa/atlas-live-qa.js qa/atlas-common-intents-20.js qa/atlas-intent-stress-60.js
           if git diff --cached --quiet; then
             echo "Intent source already current"
           else
-            git commit -m "Ship Atlas precision intent engine V3.1"
+            git commit -m "Ship Atlas intent engine V3.2 with essential task coverage"
             git push origin HEAD:main
           fi
 
@@ -50,7 +52,7 @@ jobs:
           path: public
           fetch-depth: 0
 
-      - name: Publish Atlas V3.1
+      - name: Publish Atlas V3.2
         shell: bash
         run: |
           mkdir -p public/atlas
@@ -63,7 +65,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "Published Atlas already current"
           else
-            git commit -m "Publish Atlas intent engine V3.1"
+            git commit -m "Publish Atlas intent engine V3.2"
             git push origin HEAD:gh-pages
           fi
 
@@ -75,7 +77,7 @@ jobs:
       - name: Install browser driver
         run: npm install --no-save playwright@1.55.0
 
-      - name: Wait for production V3.1
+      - name: Wait for production V3.2
         env:
           URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
         run: |
@@ -84,16 +86,16 @@ jobs:
           u=os.environ['URL']
           for i in range(72):
               try:
-                  req=urllib.request.Request(u,headers={'Cache-Control':'no-cache','User-Agent':'Atlas-Intent-V31-QA'})
+                  req=urllib.request.Request(u,headers={'Cache-Control':'no-cache','User-Agent':'Atlas-Intent-V32-QA'})
                   h=urllib.request.urlopen(req,timeout=15).read().decode('utf-8','replace')
-                  if 'ATLAS-INTENT-V31' in h and 'Rank the strongest task matches across all 1,834 tools' in h:
-                      print('V3.1 live after',i*5,'seconds');break
+                  if 'ATLAS-INTENT-V32' in h and 'QRCode Monkey' in h:
+                      print('V3.2 live after',i*5,'seconds');break
               except Exception as e: print('wait',e)
               time.sleep(5)
-          else: raise SystemExit('V3.1 production marker not found')
+          else: raise SystemExit('V3.2 production marker not found')
           PY
 
-      - name: Run 20 common-intent benchmark
+      - name: Run strict 20 common-intent benchmark
         env:
           ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
           CHROME_PATH: /usr/bin/google-chrome
@@ -115,7 +117,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: atlas-intent-v31-evidence
+          name: atlas-intent-v32-evidence
           path: |
             intent-qa/
             qa-artifacts/
