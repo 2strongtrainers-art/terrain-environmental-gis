@@ -4,9 +4,8 @@ on:
   push:
     branches: [main]
     paths:
-      - atlas/index.html
       - atlas-upgrade.js
-      - atlas-src/**
+      - atlas-bundle.html
       - analytics/atlas-behavior-ranking-policy.json
       - scripts/apply_atlas_intent_v32.py
       - scripts/apply_atlas_multimedia_v4.py
@@ -37,24 +36,15 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Apply current Atlas core engines idempotently
+      - name: Build current Atlas core in working tree
         run: |
           python scripts/apply_atlas_intent_v32.py
           python scripts/apply_atlas_multimedia_v4.py
           python scripts/apply_atlas_multimedia_v41.py
-
-      - name: Commit synchronized core if generators changed it
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add atlas-src/shell-*.txt atlas-src/data-*.txt atlas-bundle.html atlas-build-report.json qa/atlas-live-qa.js qa/atlas-common-intents-20.js qa/atlas-intent-stress-60.js qa/atlas-watch-multimedia.js
-          if git diff --cached --quiet; then
-            echo "Atlas core already current"
-          else
-            git commit -m "Synchronize Atlas V5 core engines"
-            git push origin HEAD:main
-          fi
+          test -s atlas-bundle.html
+          grep -q 'ATLAS-INTENT-V32' atlas-bundle.html
+          grep -q 'ATLAS-MULTIMEDIA-V41' atlas-bundle.html
+          grep -q '1,846' atlas-bundle.html
 
       - name: Checkout gh-pages
         uses: actions/checkout@v4
@@ -63,24 +53,33 @@ jobs:
           path: public
           fetch-depth: 0
 
-      - name: Publish modular Atlas V5 production candidate
+      - name: Publish monolithic Atlas core plus V5 discovery layer
         shell: bash
         run: |
           rm -rf public/atlas public/atlas-src
           mkdir -p public/atlas
-          cp atlas/index.html public/atlas/index.html
-          cp -R atlas-src public/atlas-src
+          python - <<'PY'
+          from pathlib import Path
+          core=Path('atlas-bundle.html').read_text()
+          tag='<script src="../atlas-upgrade.js?v=20260904-v5" defer></script>'
+          if tag not in core:
+              if '</body>' not in core: raise SystemExit('Atlas bundle has no closing body tag')
+              core=core.replace('</body>',tag+'</body>',1)
+          Path('public/atlas/index.html').write_text(core)
+          PY
           cp atlas-upgrade.js public/atlas-upgrade.js
           cp atlas-build-report.json public/atlas/build-report.json
           touch public/.nojekyll
           cd public
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add atlas/index.html atlas-src atlas-upgrade.js atlas/build-report.json .nojekyll
+          git add -A atlas atlas-upgrade.js .nojekyll
           if git diff --cached --quiet; then
             echo "Published Atlas candidate already current"
           else
             git commit -m "Publish Atlas Discovery V5 candidate"
+            git fetch origin gh-pages
+            git rebase origin/gh-pages
             git push origin HEAD:gh-pages
           fi
 
@@ -92,25 +91,24 @@ jobs:
       - name: Install browser driver
         run: npm install --no-save playwright@1.55.0
 
-      - name: Wait for modular production V5
+      - name: Wait for production V5
         env:
           URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
           UPGRADE: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas-upgrade.js?v=20260904-v5
         run: |
           python - <<'PY'
           import os,time,urllib.request
-          urls=[os.environ['URL'],os.environ['UPGRADE']]
           for i in range(72):
               try:
-                  docs=[]
-                  for u in urls:
+                  def get(u):
                       req=urllib.request.Request(u,headers={'Cache-Control':'no-cache','User-Agent':'Atlas-V5-QA'})
-                      docs.append(urllib.request.urlopen(req,timeout=15).read().decode('utf-8','replace'))
-                  if '20260904-v5' in docs[0] and "atlas_discovery_version:'5.0'" in docs[1] and 'PLAYBOOKS' in docs[1]:
-                      print('Atlas V5 assets live after',i*5,'seconds');break
+                      return urllib.request.urlopen(req,timeout=15).read().decode('utf-8','replace')
+                  page=get(os.environ['URL']); upgrade=get(os.environ['UPGRADE'])
+                  if '1,846' in page and 'ATLAS-MULTIMEDIA-V41' in page and '20260904-v5' in page and "atlas_discovery_version:'5.0'" in upgrade and 'PLAYBOOKS' in upgrade:
+                      print('Atlas V5 live after',i*5,'seconds');break
               except Exception as e: print('wait',e)
               time.sleep(5)
-          else: raise SystemExit('Atlas V5 production assets not found')
+          else: raise SystemExit('Atlas V5 production candidate not found')
           PY
 
       - name: Run strict 20 core-intent benchmark
@@ -152,9 +150,7 @@ jobs:
           expanded=json.load(open('expanded-qa/atlas-expanded-benchmark-220.json'))
           watch=json.load(open('watch-qa/atlas-watch-report.json'))
           live=json.load(open('qa-artifacts/atlas-live-qa-report.json'))
-          c=core.get('summary',{})
-          s=stress.get('summary',{})
-          e=expanded.get('summary',{})
+          c=core.get('summary',{}); s=stress.get('summary',{}); e=expanded.get('summary',{})
           if c.get('structuralPassed')!=20 or c.get('relevancePassed')!=20 or c.get('jsErrors'):
               raise SystemExit(f"Core benchmark not certified: {c}")
           if s.get('structural')!=60 or s.get('relevant')!=60 or s.get('jsErrors')!=0:
