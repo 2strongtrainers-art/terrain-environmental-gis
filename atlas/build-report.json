@@ -1,10 +1,10 @@
 {
-  "tool_count": 1846,
+  "tool_count": 1850,
   "live_verified": 1529,
   "source_entries": 1802,
-  "bundle_bytes": 215274,
-  "data_b64_bytes": 122548,
-  "sha256": "fbf74f012e2220f89aacd264c5ac9bb54c7f09cc8d33ac0ed6cc6389895a18fc",
+  "bundle_bytes": 215893,
+  "data_b64_bytes": 122712,
+  "sha256": "d617e6ad18af7764d7e305fc59387a2dce86aa5aae897ed0347beeced8bbfa2c",
   "visual_theme": "Atlas Brand V2 + CRO V2.1",
   "cro_v2": {
     "clarity": true,
@@ -81,5 +81,19 @@
     ],
     "preserves_free_vs_no_login": true,
     "behavior_ranking_active": false
+  },
+  "discovery_v51": {
+    "grant_intent_precedence_repair": true,
+    "official_grant_destinations": 4,
+    "new_records": [
+      "Grants.gov",
+      "SAM.gov Assistance Listings",
+      "California Grants Portal",
+      "FEMA Grants"
+    ],
+    "new_records_verification": "Needs review",
+    "new_records_access": "Unknown",
+    "total_tools": 1850,
+    "preserves_free_vs_no_login": true
   }
 }
