@@ -222,4 +222,4 @@ button.card,button.category{appearance:none;-webkit-appearance:none}
    <div class="callout" style="margin-top:14px"><b>Example:</b> “I want to turn five vacation photos into a short video on my phone. Find the easiest free option and explain exactly what to do.”</div>
  </div>
  <div class="section faq">
-   <div class="sectionhea
+   <div class="sectionhead"><div><h2>Commo
