@@ -1,0 +1,238 @@
+d"><div><h2>Common questions</h2></div></div>
+   <details><summary>Do I need to understand AI?</summary><p>No. Describe what you want in normal language. The goal comes first; the tool comes second.</p></details>
+   <details><summary>Does every tool cost money?</summary><p>No. The source collection includes free, free/paid, paid and not-yet-audited records. Pricing shown here comes from the source material or curated audit.</p></details>
+   <details><summary>Does “no login” mean every free tool needs no account?</summary><p>No. Only tools explicitly audited as no-login or optional-login are shown in the dedicated no-login collection. Unknown access is left unknown.</p></details>
+   <details><summary>Can ChatGPT operate every website for me?</summary><p>No. Some tasks can be completed directly in ChatGPT or through connected capabilities; other tasks require opening the specialist site.</p></details>
+   <details><summary>Can I browse everything myself?</summary><p>Yes. Use the Master Library for the cleaned index or Power User Mode for the four original source libraries.</p></details>
+ </div>
+ <div class="callout gray"><strong>🔒 A quick privacy note</strong><p>Do not paste passwords, payment details, private client records, or highly sensitive information into an unfamiliar website. Review privacy terms before uploading sensitive files. For important medical, legal or financial decisions, verify information with a qualified professional.</p></div>
+</section>
+
+
+<section class="view" id="view-watch">
+ <div class="watchHero">
+  <div class="eyebrow">Watch & Multimedia</div>
+  <h1>Watch something free.</h1>
+  <p>Legal, official streaming destinations for movies, TV, documentaries, live channels, nature cams, science and library-supported viewing.</p>
+  <div class="actions"><button type="button" class="btn primary" data-watch-query="free movies and tv">Find free movies & TV</button><button type="button" class="btn ghost" data-watch-query="show me something interesting to watch for free">Surprise me</button></div>
+ </div>
+ <div class="callout green watch-note"><strong>Free does not always mean no account.</strong><p>Some services are ad-supported, some have optional paid tiers, and Hoopla/Kanopy require participating library access. Use the separate Free • No Login collection when account-free access is mandatory.</p></div>
+ <div class="section">
+  <div class="sectionhead"><div><h2>Start watching</h2><p>Official services with free viewing options. Catalogs and regional availability change over time.</p></div></div>
+  <div class="grid watch-services">
+   <a class="card click watch-card" data-watch-link="Tubi" href="https://tubitv.com/" target="_blank" rel="noopener noreferrer"><div class="icon">🍿</div><h3>Tubi</h3><p>Free, legal movies and TV with ads.</p><span class="watch-tag">Free • ad-supported</span></a>
+   <a class="card click watch-card" data-watch-link="Pluto TV" href="https://pluto.tv/" target="_blank" rel="noopener noreferrer"><div class="icon">📺</div><h3>Pluto TV</h3><p>Free live channels plus on-demand movies and shows.</p><span class="watch-tag">Free • live + on-demand</span></a>
+   <a class="card click watch-card" data-watch-link="Plex" href="https://watch.plex.tv/" target="_blank" rel="noopener noreferrer"><div class="icon">▶️</div><h3>Plex</h3><p>Free ad-supported movies, TV and live channels.</p><span class="watch-tag">Free • ad-supported</span></a>
+   <a class="card click watch-card" data-watch-link="The Roku Channel" href="https://therokuchannel.roku.com/" target="_blank" rel="noopener noreferrer"><div class="icon">📡</div><h3>The Roku Channel</h3><p>Free shows, movies, live news and Roku Originals.</p><span class="watch-tag">Free + optional premium</span></a>
+   <a class="card click watch-card" data-watch-link="NASA+" href="https://plus.nasa.gov/" target="_blank" rel="noopener noreferrer"><div class="icon">🚀</div><h3>NASA+</h3><p>Free, ad-free missions, documentaries and science series.</p><span class="watch-tag">Free • ad-free</span></a>
+   <a class="card click watch-card" data-watch-link="PBS" href="https://www.pbs.org/" target="_blank" rel="noopener noreferrer"><div class="icon">🎓</div><h3>PBS</h3><p>News, NOVA, Nature, documentaries and educational programs.</p><span class="watch-tag">Many programs free</span></a>
+   <a class="card click watch-card" data-watch-link="Explore.org" href="https://explore.org/livecams" target="_blank" rel="noopener noreferrer"><div class="icon">🐻</div><h3>Explore.org</h3><p>Live nature cams, wildlife and documentary programming.</p><span class="watch-tag">Free live cams</span></a>
+   <a class="card click watch-card" data-watch-link="Hoopla" href="https://www.hoopladigital.com/movie" target="_blank" rel="noopener noreferrer"><div class="icon">📚</div><h3>Hoopla</h3><p>Movies and media free through participating libraries.</p><span class="watch-tag">Library card required</span></a>
+   <a class="card click watch-card" data-watch-link="Kanopy" href="https://www.kanopy.com/" target="_blank" rel="noopener noreferrer"><div class="icon">🎞️</div><h3>Kanopy</h3><p>Classic cinema, indie films and documentaries via libraries.</p><span class="watch-tag">Participating library required</span></a>
+  </div>
+ </div>
+ <div class="section">
+  <div class="sectionhead"><div><h2>Browse by mood</h2><p>Use Atlas intent ranking instead of hunting through streaming sites one at a time.</p></div></div>
+  <div class="grid watch-moods">
+   <button type="button" class="card click" data-watch-query="free movie"><div class="icon">🎬</div><h3>Movie night</h3><p>Find free movie-streaming options.</p></button>
+   <button type="button" class="card click" data-watch-query="free live tv and news"><div class="icon">📺</div><h3>Live TV & news</h3><p>Browse live channels and current programming.</p></button>
+   <button type="button" class="card click" data-watch-query="free documentary"><div class="icon">🧠</div><h3>Documentaries</h3><p>Science, history, nature and educational viewing.</p></button>
+   <button type="button" class="card click" data-watch-query="live animal nature cams"><div class="icon">🦅</div><h3>Relaxing live cams</h3><p>Wildlife, oceans, bears, birds and nature.</p></button>
+   <button type="button" class="card click" data-watch-query="NASA space documentary live mission"><div class="icon">🛰️</div><h3>Space & science</h3><p>NASA missions, documentaries and science.</p></button>
+   <button type="button" class="card click" data-watch-query="movies with my library card"><div class="icon">🏛️</div><h3>Library streaming</h3><p>Hoopla, Kanopy and library-supported viewing.</p></button>
+   <button type="button" class="card click" data-watch-query="free tv shows"><div class="icon">📼</div><h3>Binge a show</h3><p>Free series and television catalogs.</p></button>
+   <button type="button" class="card click" data-watch-query="show me something interesting to watch for free"><div class="icon">🎲</div><h3>I’m bored</h3><p>Let Atlas surface something worth exploring.</p></button>
+  </div>
+ </div>
+ <div class="callout gray"><strong>Availability note</strong><p>Streaming catalogs, geographic availability and account requirements can change. Atlas treats link verification separately from pricing and login/access verification.</p><div class="actions"><button type="button" class="btn outline" data-view="free">Browse audited Free • No Login</button><button type="button" class="btn outline" data-watch-query="free streaming">Search all free streaming</button></div></div>
+</section>
+
+<section class="view" id="view-library">
+ <div class="libraryHero"><div class="eyebrow" style="color:#175cd3">Master Library</div><h1>Search every indexed tool.</h1><p>Search naturally by task. Atlas prioritizes exact capability matches, trusted task-specific candidates and modifiers like free/no-login before broad categories.</p></div>
+ <div class="searchbar">
+  <div class="searchrow">
+   <input class="control query" id="searchInput" placeholder="Search tools, tasks or websites…" aria-label="Search library" autocomplete="off">
+   <select class="control" id="sourceFilter" aria-label="Source category"><option value="">All sources</option></select>
+   <select class="control" id="pricingFilter" aria-label="Pricing"><option value="">All pricing</option></select>
+   <select class="control" id="verificationFilter" aria-label="Verification"><option value="">All verification</option><option value="Live verified">Live verified</option><option value="not-live">Not live-verified</option><option value="Automation blocked">Automation blocked</option><option value="Dead / unavailable">Dead / unavailable</option><option value="Parked / for sale">Parked / for sale</option><option value="Needs review">Needs review</option><option value="Timed out">Timed out</option><option value="Verification error">Verification error</option><option value="Server error">Server error</option></select>
+   <select class="control" id="priorityFilter" aria-label="Priority"><option value="">All priorities</option><option>High</option><option>Medium</option><option>Low</option></select>
+   <select class="control" id="sortFilter" aria-label="Sort"><option value="relevance">Sort: relevance</option><option value="az">Name A–Z</option><option value="verified">Verified first</option><option value="priority">Priority first</option></select>
+  </div>
+  <div class="quicksearch" aria-label="Suggested searches"><span>Try:</span><button type="button" data-quick-search="video">video</button><button type="button" data-quick-search="research">research</button><button type="button" data-quick-search="website">website</button><button type="button" data-quick-search="mapping">mapping</button><button type="button" data-quick-search="resume">resume</button><button type="button" data-quick-search="image">image</button><button type="button" data-quick-search="free movies">watch free</button></div>
+ </div>
+ <div class="filtermeta"><div><b id="resultCount" aria-live="polite" aria-atomic="true"></b> <span id="filterSummary"></span></div><div class="chiprow"><button class="chip" id="favOnly">★ Favorites only</button><button class="chip" id="clearFilters">Clear filters</button></div></div>
+ <div class="tools" id="toolGrid"></div>
+ <div class="pagination" id="pagination"></div>
+</section>
+
+<section class="view" id="view-categories">
+ <div class="pagehead libraryHero"><div class="eyebrow" style="color:#175cd3">Browse by goal</div><h1>Categories</h1><p>Start broad, then narrow with search and filters.</p></div>
+ <div class="categorygrid" id="categoryGrid"></div>
+</section>
+
+<section class="view" id="view-free">
+ <div class="pagehead libraryHero"><div class="eyebrow" style="color:#067647">Audited access</div><h1>Free • No Login</h1><p>This collection is deliberately strict: it only includes records whose Notion audit explicitly classifies them as usable without creating an account or with optional login.</p></div>
+ <div class="callout green"><b>Why the list is short:</b> access type has only been explicitly audited for a small set of records. The site does not infer “no login” from a “Free” pricing label.</div>
+ <div class="tools" id="freeGrid" style="margin-top:18px"></div>
+</section>
+
+<section class="view" id="view-archive">
+ <div class="pagehead libraryHero"><div class="eyebrow" style="color:#5925dc">Power User Mode</div><h1>Web Surfers source archive</h1><p>The raw source layer behind the cleaned Atlas. Use this when you want deeper coverage or to audit where an entry came from.</p></div>
+ <div class="archivegrid" id="archiveGrid"></div>
+ <div class="section"><div class="callout purple"><b>Curated flow:</b> category → useful result → launch tool. Use the source archive when you need deeper coverage. The four source sheets remain distinct so provenance is preserved.</div></div>
+ <div class="section"><button class="btn blue" id="browseRaw">Review 317 non-live-verified records</button></div>
+</section>
+
+<section class="view" id="view-quality">
+ <div class="pagehead libraryHero"><div class="eyebrow" style="color:#b54708">Trust & transparency</div><h1>Data quality</h1><p>The Atlas separates “present in a source” from “live-verified.” Missing metadata stays unknown rather than being invented.</p></div>
+ <div class="quality">
+   <div class="panel">
+    <h2 style="margin-top:0">What each status means</h2>
+    <p><b>Live verified</b> means Chromium successfully rendered the destination during the September 3, 2026 full-library audit. <b>Automation blocked</b> means the site was reached but prevented automated verification; it does not mean the site is dead. Other statuses identify dead, parked, timed-out, server-error, or review-needed destinations.</p>
+    <p><b>Access type</b> is only shown when the curated Notion database explicitly classified it. A free price does not automatically mean no account is required.</p>
+    <p><b>New task essentials</b> added after the September 3 audit remain marked <b>Needs review</b> until a subsequent link audit verifies them. Official-site capability research is kept separate from Atlas link/access verification.</p>
+    <p><b>Historical Parts 1–749</b> include unresolved placeholders. Those rows are not converted into fake websites here; launchable URLs are indexed, while unresolved placeholders remain a QA issue in the underlying working directory.</p>
+   </div>
+   <div class="panel">
+    <h2 style="margin-top:0">Current build snapshot</h2>
+    <table><tr><td>Unique launchable URLs</td><td id="qIndexed"></td></tr><tr><td>Source-sheet entries</td><td id="qSource"></td></tr><tr><td>Live-verified</td><td id="qVerified"></td></tr><tr><td>Automation-blocked</td><td id="qBlocked"></td></tr><tr><td>Dead / unavailable</td><td id="qDead"></td></tr><tr><td>Parked / for sale</td><td id="qParked"></td></tr><tr><td>Needs review / retry</td><td id="qReview"></td></tr><tr><td>Explicit access audits</td><td id="qAccess"></td></tr><tr><td>Audit date</td><td id="qDate"></td></tr></table>
+   </div>
+ </div>
+
+ <div class="section trust-grid">
+  <div class="callout green"><strong>What “Live verified” means</strong><p>A live-verified destination successfully rendered during the latest automated browser audit. This verifies availability—not every feature, claim, price, privacy policy or security practice of the third-party service.</p></div>
+  <div class="callout gray"><strong>Editorial & commercial policy</strong><p>Verification status cannot be purchased. Sponsorships or affiliate relationships, when present, are labeled and do not change verification status or organic editorial ranking.</p></div>
+ </div>
+ <div class="section"><div class="callout gray"><strong>Anonymous product analytics</strong><p>Atlas uses lightweight PostHog product analytics to measure actions such as searches, filters and outbound tool visits. Search text itself is not sent. Session recording is disabled.</p><div class="actions"><button type="button" class="btn outline" id="analyticsOptOut">Disable analytics on this device</button><span class="note" id="analyticsStatus" aria-live="polite"></span></div></div></div>
+ <div class="section">
+  <div class="callout gray"><b>Build provenance:</b> source libraries were read from the connected AI, Design & Creative, Gaming, and Education & Learning Google Sheets; verification metadata was merged from the saved link-checked master workbook and the curated Notion website database.</div>
+ </div>
+</section>
+
+<footer class="footer"><div><b>Nick’s Digital Atlas</b> · Built from connected source libraries and curated verification data. External websites are third-party services. Data snapshot: <span id="footerDate"></span>.</div><div class="footerlinks"><a href="collections/ai-tools/">AI tools</a><a href="collections/design-tools/">Design tools</a><a href="collections/education-tools/">Education tools</a><a href="collections/gaming-tools/">Gaming tools</a><a href="collections/live-verified-tools/">Live verified</a><a href="collections/free-no-login/">Free • No Login</a><a href="partners/">Partner policy</a><button type="button" class="linkbutton" data-view="watch">Watch & Multimedia</button><button type="button" class="linkbutton" id="shareAtlas">Share Atlas</button></div></footer>
+</main>
+
+<div class="modal" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+ <div class="modalbox"><button class="modalclose" id="modalClose" aria-label="Close">×</button><div id="modalContent"></div></div>
+</div>
+
+
+<script id="atlasAnalytics">
+/* ATLAS-CRO-V2 analytics: custom events only, session replay disabled */
+window.__atlasAnalyticsQueue=[];
+window.trackAtlas=function(name,props){
+  if(localStorage.getItem('atlasAnalyticsOptOut')==='1') return;
+  const payload=Object.assign({atlas_version:'cro-v2',path:location.pathname,view:(location.hash||'#home').slice(1)},props||{});
+  if(window.posthog&&typeof window.posthog.capture==='function') window.posthog.capture(name,payload);
+  else window.__atlasAnalyticsQueue.push([name,payload]);
+};
+(function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split('.');2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement('script')).type='text/javascript',p.crossOrigin='anonymous',p.async=!0,p.src=s.api_host.replace('.i.posthog.com','-assets.i.posthog.com')+'/static/array.js',(r=t.getElementsByTagName('script')[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a='posthog',u.people=u.people||[],o='capture opt_out_capturing has_opted_out_capturing opt_in_capturing'.split(' '),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)})(document,window.posthog||[]);
+function initAtlasAnalytics(){
+ if(localStorage.getItem('atlasAnalyticsOptOut')==='1') return;
+ posthog.init('phc_pBipv2roqvT6HULpBA5Z4H2N63cwaUkRqgYmguFk3Zbm',{api_host:'https://us.i.posthog.com',person_profiles:'identified_only',autocapture:false,capture_pageview:false,capture_pageleave:true,disable_session_recording:true,persistence:'localStorage'});
+ const queued=window.__atlasAnalyticsQueue.splice(0); queued.forEach(x=>posthog.capture(x[0],x[1]));
+ trackAtlas('atlas_page_loaded',{referrer_host:(()=>{try{return new URL(document.referrer).hostname}catch{return ''}})()});
+}
+if('requestIdleCallback' in window)requestIdleCallback(initAtlasAnalytics,{timeout:1800});else setTimeout(initAtlasAnalytics,900);
+</script>
+<script>
+const DATA_B64="__DATA_B64__";
+async function decodeAtlasData(){
+ const bin=atob(DATA_B64), bytes=new Uint8Array(bin.length);
+ for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+ if(!("DecompressionStream" in window))throw new Error("This browser needs gzip DecompressionStream support.");
+ const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+ return await new Response(stream).text();
+}
+(async()=>{
+ const RAW=JSON.parse(await decodeAtlasData());
+ const TOOLS=RAW.map(x=>({id:x[0],name:x[1],url:x[2],description:x[3],pricing:x[4],sourceCategory:x[5],sourceCategories:[x[5]],section:x[6],subsection:x[7],curatedCategory:x[8],priority:x[9],verification:x[10],accessType:x[11],functionQA:x[12]}));
+const META={"sourceEntries":1802,"indexedTools":1846,"liveVerified":1529,"explicitAccessAudits":4,"auditBreakdown":{"blocked":207,"dead":32,"parked":1,"error":28,"timeout":22,"uncertain":10,"serverError":5,"taskEssentialNeedsReview":12},"sourceStats":{"AI":270,"Design & Creative":366,"Gaming":388,"Education & Learning":778},"lastAudit":"2026-09-03","built":"2026-09-03"};
+const SOURCE_LINKS={"AI":"https://docs.google.com/spreadsheets/d/1ryROQ0UO904kM7jY16wP0mjMTmrFsiZj4P07rLxwoss/edit","Design & Creative":"https://docs.google.com/spreadsheets/d/17zjPsKp8ZOXumyn-JH5Mzi_SA3BXYDPJAK51jzcktNg/edit","Gaming":"https://docs.google.com/spreadsheets/d/1nnlkuhRFf5g2xl3IXOc3Ftj3rh361qf-mgQ0Shl8JQ0/edit","Education & Learning":"https://docs.google.com/spreadsheets/d/1Mn2IozwzNX0S6spUZ0_6onjHZ06L4ZHOt6k3A6QNCVM/edit"};
+const PAGE_SIZE=60;
+let state={view:"home",query:"",source:"",pricing:"",verification:"",priority:"",sort:"relevance",page:1,favoritesOnly:false};
+let favorites=new Set(JSON.parse(localStorage.getItem("atlasFavorites")||"[]"));
+const $=(q)=>document.querySelector(q), $$=(q)=>[...document.querySelectorAll(q)];
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+const domain=u=>{try{return new URL(u).hostname.replace(/^www\./,"")}catch{return u}};
+const fmt=n=>new Intl.NumberFormat().format(n);
+
+/* ATLAS-INTENT-V3 — task-first ranking, modifiers, synonyms, fuzzy matching */
+const SEARCH_ALIASES={
+ photo:["image","picture"],photos:["image","picture","stock"],picture:["image","photo"],pictures:["image","photo"],
+ movie:["video"],film:["video"],reel:["video","clip"],reels:["video","clip"],shorts:["video","clip"],
+ website:["site","web"],site:["website","web"],webpage:["website","site"],nocode:["no code","website builder"],
+ automate:["automation","workflow"],automation:["workflow","agent"],study:["research","learn"],researching:["research"],
+ cv:["resume"],mapping:["map","gis"],gis:["map","mapping"],voice:["audio","speech","tts"],audio:["voice","sound"],
+ logo:["branding","design"],slides:["presentation","slideshow","deck"],presentation:["slides","slideshow","deck"],
+ write:["writing","writer"],writer:["writing"],proofread:["grammar","writing"],proofreading:["grammar","writing"],
+ translate:["translation","translator","language"],translator:["translate","translation"],transcribe:["transcription","speech to text"],
+ transcription:["transcribe","speech to text"],citation:["cite","bibliography","reference"],citations:["citation","bibliography","reference"],
+ qr:["qr code"],math:["calculator","calculate"],calculate:["calculator"],python:["programming","coding"],pdf:["document"],
+ background:["remove background","background remover","transparent"],stock:["stock photo","stock image","royalty free"],
+ weather:["forecast","radar"],resume:["cv","career"],grammar:["proofread","writing"],spreadsheet:["excel","sheets"],
+ speech:["voice","audio"],tts:["text to speech","voice"],ocr:["image to text","scan"],diagram:["flowchart","visualize"]
+};
+const QUERY_STOP=new Set("i me my we our us you your a an the this that these those is are am be been being to for of on in at by with from into and or but if then than as it its do does did can could would should please help need want find give show make create use using get tool tools useful something thing online today right now".split(/\s+/));
+const QUERY_MODIFIERS=new Set(["best","easy","easiest","simple","quick","fast","good","great","ai","free"]);
+/* ATLAS-INTENT-V31 — precision reranking over V3 */
+const INTENT_PREFERRED={
+ "image-generator":["qwen image","reve image","chatgpt image","google imagen","adobe firefly","midjourney","ideogram","leonardo"],
+ "short-video":["pika","runway","capcut","opus clip","clipchamp","descript","synthesia","heygen"],
+ logo:["wix logo maker","brandmark","tailor brands","designevo","looka","placeit","canva"],
+ resume:["kickresume","flowcv","resume.io","teal","rezi","enhancv"],
+ pdf:["ilovepdf","pdfescape","simplepdf","smallpdf","adobe acrobat","pdfgear"],
+ "research-summary":["elicit","consensus","scholarcy","scispace","humata","semantic scholar","paperme"],
+ citation:["cite this for me","zotero","mybib","scribbr","citation machine"],
+ "python-learning":["freecodecamp","kaggle learn","codecademy","microsoft learn","real python","python.org"],
+ calculator:["omni calculator","wolfram","symbolab","mathway","desmos"],
+ "qr-code":["qrcode monkey","qr code monkey","qr code generator","qrstuff","goqr","canva qr"],
+ "weather-map":["zoom earth","windy","ventusky","weather underground","weather.com","meteoblue","rainviewer"],
+ "background-removal":["remove.bg","adobe express","iloveimg","unscreen","bg bye","pfpmaker"],
+ transcription:["otter","descript","turboscribe","notta","happy scribe","whisper","sonix","trint"],
+ "voice-generator":["elevenlabs","speechify","murf","play.ht","tts online","kokoro tts","fish audio"],
+ "website-builder":["wix","framer","webflow","squarespace","carrd","wordpress.com","bubble","weebly","dorik"],
+ presentation:["gamma","beautiful.ai","decktopus","pitch","canva","slidesgo","slidescarnival"],
+ grammar:["grammarly","languagetool","prowritingaid","hemingway","quillbot"],
+ translation:["deepl","google translate","reverso","linguee","microsoft translator"],
+ "stock-photos":["pexels","unsplash","pixabay","stocksnap","gratisography","freeimages","burst"],
+ "watch-free":["tubi","pluto tv","plex free movies","the roku channel","nasa+","pbs","explore.org","hoopla","kanopy"],
+ "library-streaming":["hoopla","kanopy"],
+ "nature-livecam":["explore.org"],
+ "space-streaming":["nasa+","pbs"],
+ spreadsheet:["google sheets","microsoft excel","airtable","rows"],
+ ocr:["online ocr","ocr.space","adobe scan","google lens"],
+ diagram:["lucidchart","draw.io","diagrams.net","whimsical","miro"],
+ automation:["zapier","make","n8n","ifttt"],
+ coding:["github copilot","cursor","replit","claude code","codex"],
+ "image-editing":["photopea","pixlr","adobe express","canva","gimp"]
+};
+const INTENT_AVOID={
+ "qr-code":["papers with code","claude code","codecademy","codepen","100-days-of-ml-code"],
+ "website-builder":["3 websites for","work from home websites","mdn web docs","the useless web","animal diversity web","wix logo maker"],
+ transcription:["tabletop audio","voice models","mmaudio","voicemod tuna","complex function plotter","surface plotter","direction field plotter","musicfx"],
+ "weather-map":["pantone","wgsn","minecraft"],
+ translation:["cdromance","learnalanguage","deeplearning ai","languagetool","textcraft","chemlibretexts"],
+ calculator:["damage calculator"],
+ "stock-photos":["getty images","shutterstock","istock","adobe stock"],
+ "watch-free":["pika","runway","topaz video ai","bing video","video-tutor","aifreevideo","1a auto videos","synthesia","heygen"],
+ "library-streaming":["library genesis"],
+ "nature-livecam":["minecraft","map generator"],
+ "space-streaming":["spacehey"]
+};
+const INTENT_RULES=[
+ {id:"image-generator",route:"design",patterns:["image generator","ai image","generate image","generate images","generate an image","image maker","text to image","make an image","create image"],anchors:["image generator","text to image","image","art"],terms:["generator","photo","picture","design"]},
+ {id:"short-video",route:"video",patterns:["short video","social media video","make a video","create a video","video for social","tiktok video","instagram video","video for instagram","video tool for instagram","instagram video tool","reel","shorts"],anchors:["video","reel","clip"],terms:["editor","generator","social media","media"]},
+ {id:"logo",route:"design",patterns:["design a logo","make a logo","create a logo","logo"],anchors:["logo","branding","brand"],terms:["design","graphic"]},
+ {id:"resume",route:"business",patterns:["resume","cv","curriculum vitae"],anchors:["resume","cv"],terms:["career","job","application","builder"]},
+ {id:"pdf",route:"research",patterns:["pdf","edit pdf","work with a pdf","pdf editor","pdf converter"],anchors:["pdf"],terms:["document","editor","edit","convert","merge","compress","annotate"]},
+ {id:"research-summary",route:"research",patterns:["summarize a research paper","summarize research","research paper","academic paper","paper summary"],anchors:["research","paper","academic","scholar"],terms:["summary","summarize","study","science"]},
+ {id:"citation",route:"research",patterns:["citation","citation generator","bibliography","cite source","cite my source","cite my sources","apa citation","mla citation"],anchors:["citation","bibliography","cite"],terms:["reference","apa","mla","academic"]},
+ {id:"python-learning",route:"research",patterns:["learn python","python course","python tutorial","python programming"],anchors:["python"],terms:["learn","course","tutorial","programming","coding"]},
+ {id:"calculator",route:"research",patterns:["calculator","calculate","math problem","equation solver","math equation","solve an equation","solve a math equation","solve math equation"],anchors:["calculator","calculate"],terms:["math","equation","solver","formula"]},
+ {id:"qr-code",route:"automation",patterns:["qr code","make a qr","create a qr","qr generator"],anchors:["qr","qr code"],terms:["generator","barcode","code"]},
+ {id:"weather-map",route:"maps",patterns:["weather","forecast","weather map","weather or map","radar map"],anchors:["weather","forecast","radar"],terms:["map","earth","geo","gis"]},
+ {id:"background-removal",route:"design",patterns:["remove the background","remove background","background remover","transparent background","erase background","erase image background","image background","photo background","background transparent"],anchors:["background","background remover","remove background"],terms:["image","photo","transparent","cutout"]},
+ {id:"transcription",route:"video",patterns:["transcribe","transcription","audio transcription","audio to text","speech to text","speech to text tool","voice recording to text","voice recording into text","turn voice recording into text"],anchors:["transcribe","transcription","speech to text"],terms:["audio","voice","recording","text"]},
+ {id:"voice-generator",route:"video",patterns:["voice generator","ai voice","text to speech","tts","generate voice","voiceover","voice over","voiceover generator"],anchors:["voice","text to speech","tts"],terms:["speech","audio","generator","narration"]},
+ {id:"website-builder",route:"automation",patterns:["build a website","website builder","make a website","create a website","without coding","no code website","nocode website","build a web page","web page visually","visual website builder"],anchors:["website","website builder","site builder","no code"],terms:["web","b

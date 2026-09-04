@@ -1,0 +1,249 @@
+uilder","site","design","hosting"]},
+ {id:"presentation",route:"design",patterns:["presentation","slideshow","slide deck","powerpoint","create slides","make slides"],anchors:["presentation","slides","slideshow","powerpoint","deck"],terms:["design","pitch"]},
+ {id:"grammar",route:"research",patterns:["grammar","check my writing","grammar checker","proofread","spell check"],anchors:["grammar","proofread","spell"],terms:["writing","editor","rewrite"]},
+ {id:"translation",route:"research",patterns:["translate","translation","translator","another language"],anchors:["translate","translation","translator"],terms:["language","text"]},
+ {id:"stock-photos",route:"design",patterns:["stock photos","stock photo","free photos","royalty free photos","stock images"],anchors:["stock photo","stock image","photo","image"],terms:["royalty free","pictures"]},
+ {id:"spreadsheet",route:"business",patterns:["spreadsheet","excel","google sheets"],anchors:["spreadsheet","excel","sheets"],terms:["data","table","csv"]},
+ {id:"ocr",route:"research",patterns:["ocr","image to text","scan text","extract text from image"],anchors:["ocr","image to text"],terms:["scan","text","document"]},
+ {id:"diagram",route:"design",patterns:["diagram","flowchart","mind map","mindmap"],anchors:["diagram","flowchart","mind map"],terms:["visual","chart"]},
+ {id:"automation",route:"automation",patterns:["automate","automation","workflow","agent"],anchors:["automation","workflow","agent"],terms:["ai","assistant"]},
+ {id:"coding",route:"automation",patterns:["coding","programming","write code","developer"],anchors:["code","coding","programming","developer"],terms:["ai","assistant"]},
+ {id:"image-editing",route:"design",patterns:["edit image","edit photo","photo editor","image editor"],anchors:["image","photo"],terms:["editor","edit","design"]},
+ {id:"library-streaming",route:"watch",patterns:["library card movies","movies with my library card","watch with library card","library streaming","hoopla","kanopy"],anchors:["library","library card","movies"],terms:["streaming","hoopla","kanopy","film"]},
+ {id:"nature-livecam",route:"watch",patterns:["live animal cam","live animal cams","live animal nature cams","animal cam","animal cams","nature cam","nature cams","live cam","live cams","live nature cam","live nature cams","wildlife cam","wildlife cams","wildlife webcam","animal webcam","nature webcam","live webcam","live webcams"],anchors:["live cam","nature","wildlife","animal"],terms:["webcam","camera","stream","explore"]},
+ {id:"space-streaming",route:"watch",patterns:["nasa plus","nasa+","space documentary","space documentaries","live mission","nasa mission"],anchors:["nasa","space","mission"],terms:["documentary","science","streaming","live"]},
+ {id:"watch-free",route:"watch",patterns:["watch free","watch for free","watch something free","something to watch","something interesting to watch","show me something to watch","show me something interesting","free movie","free movies","free tv","free tv shows","free shows","free streaming","stream free","streaming free","live tv","free live tv","live news","watch a movie","watch movie","watch tv","free documentary","watch documentary","im bored","i m bored","bored show me"],anchors:["movie","movies","tv","streaming","watch","documentary","live"],terms:["free","shows","channels","on demand","entertainment"]},
+ {id:"video",route:"video",patterns:["video"],anchors:["video"],terms:["editor","generator","media"]},
+ {id:"research",route:"research",patterns:["research","study","science"],anchors:["research","study","science"],terms:["learn","academic"]},
+ {id:"maps",route:"maps",patterns:["map","mapping","gis","terrain"],anchors:["map","mapping","gis","terrain"],terms:["geo","earth"]},
+ {id:"writing",route:"research",patterns:["writing","write","rewrite"],anchors:["writing","writer","rewrite"],terms:["editor","text"]}
+];
+function normalizeText(s){return String(s??"").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
+function oneEditAway(a,b){if(a===b)return true;if(Math.abs(a.length-b.length)>1)return false;let i=0,j=0,e=0;while(i<a.length&&j<b.length){if(a[i]===b[j]){i++;j++;continue}if(++e>1)return false;if(a.length>b.length)i++;else if(b.length>a.length)j++;else{i++;j++;}}return e+(i<a.length||j<b.length?1:0)<=1}
+const SEARCH_INDEX=new Map(TOOLS.map(t=>{const name=normalizeText(t.name),desc=normalizeText(t.description),tax=normalizeText([t.sourceCategory,t.section,t.subsection,t.curatedCategory].join(" ")),pricing=normalizeText(t.pricing),access=normalizeText(t.accessType);return [t.id,{name,desc,tax,pricing,access,all:[name,desc,tax,pricing,access].join(" "),tokens:[...new Set([name,desc,tax].join(" ").split(/\s+/).filter(Boolean))]}]}));
+function parseSmartQuery(q){
+ const norm=normalizeText(q),raw=norm.split(/\s+/).filter(Boolean);
+ const explicitNoLogin=/(no login|no account|without an account|without account|without creating an account|without signing up|without sign up|no signup|no sign up)/.test(norm);
+ const wantsFree=/\bfree\b/.test(norm);
+ let intent=null,best=0;
+ for(const rule of INTENT_RULES){let s=0;for(const p of rule.patterns){if(norm.includes(p))s=Math.max(s,p.split(" ").length*10+p.length/20)}if(s>best){best=s;intent=rule}}
+ const rawTokens=raw.filter(x=>!QUERY_STOP.has(x)&&!QUERY_MODIFIERS.has(x)&&x.length>1);
+ const anchors=intent?intent.anchors:[];
+ const extras=intent?intent.terms:[];
+ const tokenSet=new Set(rawTokens);
+ for(const a of anchors)for(const x of normalizeText(a).split(" "))if(x.length>1)tokenSet.add(x);
+ for(const x of extras)for(const t of normalizeText(x).split(" "))if(t.length>2)tokenSet.add(t);
+ return {norm,rawTokens,tokens:[...tokenSet],intent,anchors,extras,wantsFree,explicitNoLogin};
+}
+function phraseScore(idx,p){p=normalizeText(p);if(!p)return 0;let s=0;if(idx.name===p)s+=130;else if(idx.name.includes(p))s+=80;if(idx.desc.includes(p))s+=34;if(idx.tax.includes(p))s+=10;return s}
+function tokenScore(idx,t){let s=0;if(!t||t.length<2)return 0;if(idx.name.split(" ").includes(t))s+=28;else if(idx.name.includes(t))s+=16;if(idx.desc.split(" ").includes(t))s+=10;else if(idx.desc.includes(t))s+=6;if(idx.tax.split(" ").includes(t))s+=3;const al=SEARCH_ALIASES[t]||[];for(const a of al){const n=normalizeText(a);if(idx.name.includes(n))s+=12;if(idx.desc.includes(n))s+=5;if(idx.tax.includes(n))s+=2}if(t.length>=5&&s===0&&idx.tokens.some(tok=>Math.abs(tok.length-t.length)<=1&&oneEditAway(t,tok)))s+=4;return s}
+function scoreTool(t,q){
+ const p=typeof q==="string"?parseSmartQuery(q):q,idx=SEARCH_INDEX.get(t.id);if(!p.norm)return 1;
+ let s=0,anchorHit=0;
+ if(p.intent){for(const a of p.anchors){const ps=phraseScore(idx,a);if(ps>0)anchorHit++;s+=ps}for(const e of p.extras)s+=phraseScore(idx,e)*0.32}
+ for(const tok of p.rawTokens)s+=tokenScore(idx,tok)*1.35;
+ for(const tok of p.tokens)s+=tokenScore(idx,tok)*0.45;
+ if(p.intent&&anchorHit===0)s*=0.08;
+ if(p.intent){const pref=INTENT_PREFERRED[p.intent.id]||[];for(let i=0;i<pref.length;i++){const n=normalizeText(pref[i]);if(idx.name===n)s+=260-i*5;else if(idx.name.includes(n)||n.includes(idx.name))s+=175-i*3;else if(idx.desc.includes(n))s+=55-i}const avoid=INTENT_AVOID[p.intent.id]||[];for(const n0 of avoid){const n=normalizeText(n0);if(idx.name.includes(n))return -999}}
+ if(p.wantsFree){if(idx.pricing.includes("free"))s+=34;else if(idx.pricing.includes("paid"))s-=18;if(/getty|shutterstock|istock|adobe stock/.test(idx.name))s-=160}
+ if(p.explicitNoLogin){if(idx.access.includes("no login")||idx.access.includes("optional login"))s+=90;else s-=18}
+ if(t.verification==="Live verified")s+=5;if(t.priority==="High")s+=2;
+ if(/^(Dead \/ unavailable|Parked \/ for sale)$/.test(t.verification||""))s-=60;
+ return s;
+}
+function matchesQuery(t,q){return scoreTool(t,q)>3}
+
+function saveFav(){localStorage.setItem("atlasFavorites",JSON.stringify([...favorites]))}
+function showView(view){
+ state.view=view;
+ trackAtlas("atlas_view",{view});
+ $$(".view").forEach(x=>x.classList.toggle("active",x.id==="view-"+view));
+ $$(".navbtn[data-view]").forEach(x=>x.classList.toggle("active",x.dataset.view===view));
+ $("#mobileNav").classList.remove("open");$("#menuBtn").setAttribute("aria-expanded","false");
+ history.replaceState(null,"","#"+view);
+ window.scrollTo({top:0,behavior:"instant"});
+ if(view==="library") renderLibrary();
+ if(view==="categories") renderCategories();
+ if(view==="free") renderFree();
+ if(view==="archive") renderArchive();
+}
+$$("[data-view]").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));
+$("#menuBtn").onclick=()=>{let o=$("#mobileNav").classList.toggle("open");$("#menuBtn").setAttribute("aria-expanded",String(o))};
+
+async function shareAtlas(){
+ const data={title:"Nick’s Digital Atlas",text:"Browse 1,846 AI tools and useful websites.",url:location.origin+location.pathname};
+ try{if(navigator.share)await navigator.share(data);else{await navigator.clipboard.writeText(data.url);alert("Atlas link copied.")}trackAtlas("atlas_share",{method:navigator.share?"native":"clipboard"})}catch(e){}
+}
+$("#shareAtlas").addEventListener("click",shareAtlas);
+$("#partnerCta").addEventListener("click",()=>trackAtlas("atlas_partner_click",{placement:"home"}));
+document.addEventListener("click",e=>{const a=e.target.closest("[data-tool-visit]");if(a)trackAtlas("atlas_tool_visit",{tool_id:Number(a.dataset.toolId),tool_name:a.dataset.toolName,domain:a.dataset.toolDomain,source:a.dataset.toolSource,verification:a.dataset.toolVerification})});
+function updateAnalyticsStatus(){const off=localStorage.getItem("atlasAnalyticsOptOut")==="1";$("#analyticsStatus").textContent=off?"Analytics disabled on this device.":"Analytics enabled; session recording is off.";$("#analyticsOptOut").textContent=off?"Enable analytics on this device":"Disable analytics on this device"}
+$("#analyticsOptOut").addEventListener("click",()=>{const off=localStorage.getItem("atlasAnalyticsOptOut")==="1";if(off){localStorage.removeItem("atlasAnalyticsOptOut");if(window.posthog&&posthog.opt_in_capturing)posthog.opt_in_capturing()}else{localStorage.setItem("atlasAnalyticsOptOut","1");if(window.posthog&&posthog.opt_out_capturing)posthog.opt_out_capturing()}updateAnalyticsStatus()});
+updateAnalyticsStatus();
+
+$("#jumpCommand").onclick=()=>{trackAtlas("atlas_help_me_choose",{});$("#newHere").scrollIntoView({behavior:"smooth",block:"center"});setTimeout(()=>$("#commandInput").focus(),350)};
+$("#heroBrowse").addEventListener("click",()=>trackAtlas("atlas_hero_cta",{cta:"browse_all"}));
+$("#friendMode").onclick=()=>{showView("home");setTimeout(()=>{$("#newHere").scrollIntoView({behavior:"smooth"});$("#commandInput").focus()},80)};
+
+$("#statIndexed").textContent=fmt(META.indexedTools);
+$("#statSource").textContent=fmt(META.sourceEntries);
+$("#statVerified").textContent=fmt(META.liveVerified);
+$("#qIndexed").textContent=fmt(META.indexedTools);$("#qSource").textContent=fmt(META.sourceEntries);$("#qVerified").textContent=fmt(META.liveVerified);$("#qBlocked").textContent=fmt(META.auditBreakdown.blocked);$("#qDead").textContent=fmt(META.auditBreakdown.dead);$("#qParked").textContent=fmt(META.auditBreakdown.parked);$("#qReview").textContent=fmt(META.auditBreakdown.error+META.auditBreakdown.timeout+META.auditBreakdown.uncertain+META.auditBreakdown.serverError+(META.auditBreakdown.taskEssentialNeedsReview||0)+(META.auditBreakdown.taskEssentialNeedsReview||0));$("#qAccess").textContent=fmt(META.explicitAccessAudits);$("#qDate").textContent=META.lastAudit;$("#footerDate").textContent=META.built;
+
+const goals=[
+ ["🎬","Make an AI video","Ideas, scripts, editing, voice and video tools.","video"],
+ ["🔬","Research something deeply","Learn, investigate and understand complicated subjects.","research"],
+ ["🎨","Create graphics or improve a photo","Design, branding, images, video and creative work.","design"],
+ ["💼","Find a business or money tool","Marketing, productivity, finance and business resources.","business"],
+ ["🌐","Build a website or automate a task","Coding, assistants, agents and digital workflows.","automation"],
+ ["🗺️","Explore maps, 3D or interactive worlds","Mapping, geographic, gaming and visualization resources.","maps"],
+ ["🍿","Watch something free","Movies, TV, documentaries, live channels and nature cams.","watch"],
+ ["🆓","Use something free without an account","Only explicitly audited no-login tools.","no-login"],
+ ["⭐","Just show me something useful","High-priority or live-verified places to begin.","recommended"]
+];
+$("#goalGrid").innerHTML=goals.map(g=>`<button type="button" class="card click" data-goal="${g[3]}"><div class="icon">${g[0]}</div><h3>${g[1]}</h3><p>${g[2]}</p></button>`).join("");
+$$("[data-goal]").forEach(x=>x.onclick=()=>{trackAtlas("atlas_goal_select",{goal:x.dataset.goal});applyGoal(x.dataset.goal)});
+
+const ROUTES={
+ video:{label:"AI video & media",terms:["video","voice","audio","animation","avatar","script"],source:"AI"},
+ research:{label:"Learning & research",terms:["research","study","science","learn","paper","education"],source:"Education & Learning"},
+ design:{label:"Design & creative",terms:["design","photo","image","graphic","logo","ui","ux"],source:"Design & Creative"},
+ business:{label:"Business & productivity",terms:["business","marketing","money","finance","productivity","sales","resume","job"],source:""},
+ automation:{label:"AI & automation",terms:["automation","agent","workflow","code","coding","website","app","developer"],source:"AI"},
+ maps:{label:"Games, maps & 3D",terms:["map","3d","world","terrain","game","minecraft"],source:"Gaming"},
+ watch:{label:"Watch & Multimedia",terms:["free movies","streaming","live tv","documentary","nature cams"],source:"Curated Library"},
+ "no-login":{label:"Free • No Login",terms:[],source:""},
+ recommended:{label:"Recommended starting points",terms:[],source:""}
+};
+function applyGoal(g){
+ if(g==="watch"){showView("watch");return}
+ if(g==="no-login"){showView("free");return}
+ state.query=ROUTES[g]?.terms.slice(0,1).join(" ")||"";
+ state.source=ROUTES[g]?.source||"";
+ state.verification=g==="recommended"?"Live verified":"";
+ state.priority=g==="recommended"?"High":"";
+ state.page=1;showView("library");
+ $("#searchInput").value=g==="recommended"?"":(ROUTES[g]?.terms.slice(0,1).join(" ")||"");
+ $("#sourceFilter").value=state.source;$("#verificationFilter").value=state.verification;$("#priorityFilter").value=state.priority;
+ if(g!=="recommended"){state.query=$("#searchInput").value}
+ renderLibrary();
+}
+function applyIntentSearch(q){
+ const p=parseSmartQuery(q);state.query=q;state.source="";state.pricing="";state.verification="";state.priority="";state.sort="relevance";state.page=1;state.favoritesOnly=false;
+ showView("library");$("#searchInput").value=q;$("#sourceFilter").value="";$("#pricingFilter").value="";$("#verificationFilter").value="";$("#priorityFilter").value="";$("#sortFilter").value="relevance";$("#favOnly").classList.remove("active");renderLibrary();
+ trackAtlas("atlas_intent_search",{intent:p.intent?.id||"general",query_length:p.norm.length,result_count:getFiltered().length,wants_free:p.wantsFree,no_login:p.explicitNoLogin});
+}
+function routeCommand(){
+ const raw=$("#commandInput").value.trim();const p=parseSmartQuery(raw);
+ if(!p.norm){$("#routeSuggestions").innerHTML='<div class="suggestion"><b>Tell me the outcome.</b><span>For example: make a video, watch something free, edit a PDF, create a logo, learn Python, or find a no-login tool.</span></div>';return}
+ const genericNoLogin=p.explicitNoLogin&&!p.intent;
+ let html="";
+ if(genericNoLogin)html+='<button class="suggestion" data-route="no-login" style="text-align:left;cursor:pointer"><b>Free • No Login</b><span>Only explicitly audited no-account tools →</span></button>';
+ else html+=`<button class="suggestion" data-smart-query="${esc(raw)}" style="text-align:left;cursor:pointer"><b>Best matches for this task</b><span>Rank the strongest task matches across all 1,846 tools →</span></button>`;
+ const route=p.intent?.route;
+ if(route&&route!=="no-login")html+=`<button class="suggestion" data-route="${route}" style="text-align:left;cursor:pointer"><b>${esc(ROUTES[route].label)}</b><span>Browse the broader category →</span></button>`;
+ if(p.explicitNoLogin&&!genericNoLogin)html+='<button class="suggestion" data-route="no-login" style="text-align:left;cursor:pointer"><b>Strict no-login collection</b><span>Only explicitly audited no-account tools →</span></button>';
+ $("#routeSuggestions").innerHTML=html;
+ $$("[data-smart-query]").forEach(x=>x.onclick=()=>applyIntentSearch(raw));
+ $$("[data-route]").forEach(x=>x.onclick=()=>applyGoal(x.dataset.route));
+ trackAtlas("atlas_command_submit",{query_length:p.norm.length,intent:p.intent?.id||"general",wants_free:p.wantsFree,no_login:p.explicitNoLogin});
+}
+$("#routeBtn").onclick=routeCommand;
+$$('[data-watch-query]').forEach(b=>b.addEventListener('click',()=>{trackAtlas('atlas_watch_browse',{query_type:b.dataset.watchQuery.slice(0,60)});applyIntentSearch(b.dataset.watchQuery)}));
+document.addEventListener('click',e=>{const a=e.target.closest('[data-watch-link]');if(a)trackAtlas('atlas_watch_launch',{service:a.dataset.watchLink})});$("#commandInput").addEventListener("keydown",e=>{if(e.key==="Enter")routeCommand()});
+
+const sourceValues=[...new Set(TOOLS.map(x=>x.sourceCategory))].sort();
+const pricingValues=[...new Set(TOOLS.map(x=>x.pricing).filter(Boolean))].sort();
+$("#sourceFilter").innerHTML+='<option value="Curated Library">Curated Library</option>'+sourceValues.filter(x=>x!=="Curated Library").map(x=>`<option>${esc(x)}</option>`).join("");
+$("#pricingFilter").innerHTML+=pricingValues.map(x=>`<option>${esc(x)}</option>`).join("");
+
+function syncStateFromControls(){
+ state.query=$("#searchInput").value.trim();state.source=$("#sourceFilter").value;state.pricing=$("#pricingFilter").value;state.verification=$("#verificationFilter").value;state.priority=$("#priorityFilter").value;state.sort=$("#sortFilter").value;state.page=1;
+ renderLibrary();
+}
+let searchTimer;
+$("#searchInput").addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{syncStateFromControls();const n=getFiltered().length;trackAtlas("atlas_search",{query_length:$("#searchInput").value.trim().length,result_count:n,zero_results:n===0});if(n===0)trackAtlas("atlas_zero_result",{query_length:$("#searchInput").value.trim().length})},110)});
+["sourceFilter","pricingFilter","verificationFilter","priorityFilter","sortFilter"].forEach(id=>$("#"+id).addEventListener("change",()=>{syncStateFromControls();trackAtlas("atlas_filter_change",{filter:id,value:$("#"+id).value,result_count:getFiltered().length})}));
+$$("[data-quick-search]").forEach(b=>b.addEventListener("click",()=>{$("#searchInput").value=b.dataset.quickSearch;syncStateFromControls();trackAtlas("atlas_quick_search",{term:b.dataset.quickSearch,result_count:getFiltered().length})}));
+$("#favOnly").onclick=()=>{state.favoritesOnly=!state.favoritesOnly;$("#favOnly").classList.toggle("active",state.favoritesOnly);state.page=1;renderLibrary()};
+$("#clearFilters").onclick=()=>{state={...state,query:"",source:"",pricing:"",verification:"",priority:"",sort:"relevance",page:1,favoritesOnly:false};$("#searchInput").value="";$("#sourceFilter").value="";$("#pricingFilter").value="";$("#verificationFilter").value="";$("#priorityFilter").value="";$("#sortFilter").value="relevance";$("#favOnly").classList.remove("active");renderLibrary()};
+
+function tokenize(q){return normalizeText(q).split(/\s+/).filter(Boolean)}
+function getFiltered(){
+ const hasQuery=!!normalizeText(state.query);const parsed=hasQuery?parseSmartQuery(state.query):null;
+ let arr=TOOLS.filter(t=>{
+  if(state.source&&t.sourceCategory!==state.source&&!t.sourceCategories?.includes(state.source))return false;
+  if(state.pricing&&t.pricing!==state.pricing)return false;
+  if(state.verification==="Live verified"&&t.verification!=="Live verified")return false;
+  if(state.verification==="not-live"&&t.verification==="Live verified")return false;
+  if(state.verification&&state.verification!=="Live verified"&&state.verification!=="not-live"&&t.verification!==state.verification)return false;
+  if(state.priority&&t.priority!==state.priority)return false;
+  if(state.favoritesOnly&&!favorites.has(t.id))return false;
+  return true;
+ });
+ if(hasQuery&&arr.length){const scored=arr.map(t=>[t,scoreTool(t,parsed)]);const max=Math.max(...scored.map(x=>x[1]));let floor=parsed.intent?Math.max(14,max*0.16):5;let kept=scored.filter(x=>x[1]>=floor);if(kept.length<5)kept=scored.sort((a,b)=>b[1]-a[1]).slice(0,Math.min(20,scored.length)).filter(x=>x[1]>3);kept.sort((a,b)=>b[1]-a[1]);if(parsed.intent)kept=kept.slice(0,30);arr=kept.map(x=>x[0])}
+ if(state.sort==="az")arr.sort((a,b)=>a.name.localeCompare(b.name));
+ else if(state.sort==="verified")arr.sort((a,b)=>(b.verification==="Live verified")-(a.verification==="Live verified")||a.name.localeCompare(b.name));
+ else if(state.sort==="priority"){const p={High:3,Medium:2,Low:1};arr.sort((a,b)=>(p[b.priority]||0)-(p[a.priority]||0)||a.name.localeCompare(b.name))}
+ else if(hasQuery)arr.sort((a,b)=>scoreTool(b,parsed)-scoreTool(a,parsed)||a.name.localeCompare(b.name));
+ return arr;
+}
+function toolCard(t){
+ const live=t.verification==="Live verified";
+ const statusClass=live?"live":(/^(Dead|Parked|Server error)/.test(t.verification||"")?"bad":(t.verification==="Automation blocked"?"blocked":"pending"));
+ const unavailable=/^(Dead \/ unavailable|Parked \/ for sale)$/.test(t.verification||"");
+ return `<article class="tool">
+  <div class="tooltop"><div class="favicon">${esc(t.name.charAt(0).toUpperCase())}</div><div><h3>${esc(t.name)}</h3><div class="domain">${esc(domain(t.url))}</div></div></div>
+  <p>${esc(t.description||"No description available in the current source record.")}</p>
+  <div class="badges"><span class="badge ${statusClass}">${live?"✓ Live verified":esc(t.verification||"Source listed")}</span><span class="badge ${String(t.pricing).startsWith("Free")?"free":""}">${esc(t.pricing||"Unknown")}</span>${t.sourceCategory?`<span class="badge">${esc(t.sourceCategory)}</span>`:""}${t.accessType?`<span class="badge live">${esc(t.accessType)}</span>`:""}</div>
+  <div class="toolactions"><button class="btn outline" onclick="openDetail(${t.id})">Details</button>${unavailable?`<span class="btn outline" aria-disabled="true">Unavailable</span>`:`<a class="btn blue" data-tool-visit data-tool-id="${t.id}" data-tool-name="${esc(t.name)}" data-tool-domain="${esc(domain(t.url))}" data-tool-source="${esc(t.sourceCategory)}" data-tool-verification="${esc(t.verification||"")}" href="${esc(t.url)}" target="_blank" rel="noopener noreferrer">Visit ↗</a>`}<button class="btn outline fav" aria-label="Favorite ${esc(t.name)}" onclick="toggleFav(${t.id},this)">${favorites.has(t.id)?"★":"☆"}</button></div>
+ </article>`;
+}
+function renderLibrary(){
+ const arr=getFiltered(), total=arr.length, pages=Math.max(1,Math.ceil(total/PAGE_SIZE));state.page=Math.min(state.page,pages);
+ const slice=arr.slice((state.page-1)*PAGE_SIZE,state.page*PAGE_SIZE);
+ $("#resultCount").textContent=fmt(total)+" results";
+ $("#filterSummary").textContent=state.query?`for “${state.query}”`:"";
+ $("#toolGrid").innerHTML=slice.length?slice.map(toolCard).join(""):`<div class="empty" style="grid-column:1/-1"><h3>No matches yet.</h3><p>Try a broader phrase, clear filters, or browse verified destinations.</p><div class="actions" style="justify-content:center"><button class="btn blue" onclick="recoverClear()">Clear filters</button><button class="btn outline" onclick="recoverVerified()">Browse live-verified</button><button class="btn outline" onclick="showView('categories')">Browse categories</button></div></div>`;
+ $("#pagination").innerHTML=pages>1?`<button ${state.page===1?"disabled":""} onclick="goPage(${state.page-1})">← Previous</button><span>Page ${state.page} of ${pages}</span><button ${state.page===pages?"disabled":""} onclick="goPage(${state.page+1})">Next →</button>`:"";
+}
+window.goPage=p=>{state.page=p;renderLibrary();$("#view-library").scrollIntoView({behavior:"smooth"})};
+window.recoverClear=()=>{$("#clearFilters").click();trackAtlas("atlas_zero_recovery",{action:"clear"})};
+window.recoverVerified=()=>{state.query="";state.source="";state.pricing="";state.verification="Live verified";state.priority="";state.page=1;state.favoritesOnly=false;$("#searchInput").value="";$("#sourceFilter").value="";$("#pricingFilter").value="";$("#verificationFilter").value="Live verified";$("#priorityFilter").value="";$("#favOnly").classList.remove("active");renderLibrary();trackAtlas("atlas_zero_recovery",{action:"verified"})};
+
+window.toggleFav=(id,btn)=>{favorites.has(id)?favorites.delete(id):favorites.add(id);saveFav();const added=favorites.has(id);btn.textContent=added?"★":"☆";trackAtlas("atlas_favorite_toggle",{tool_id:id,added});if(state.favoritesOnly)renderLibrary()};
+
+function openDetail(id){
+ const t=TOOLS.find(x=>x.id===id);if(!t)return;
+ const unavailable=/^(Dead \/ unavailable|Parked \/ for sale)$/.test(t.verification||"");
+ trackAtlas("atlas_tool_detail",{tool_id:t.id,tool_name:t.name,domain:domain(t.url),source:t.sourceCategory,verification:t.verification});
+ $("#modalContent").innerHTML=`<div class="eyebrow" style="color:#175cd3">Tool details</div><h2 id="detailTitle" style="font-size:28px;margin:6px 0">${esc(t.name)}</h2><p style="color:#667085">${esc(t.description||"No description available.")}</p>
+ <dl class="detailgrid"><dt>Website</dt><dd>${unavailable?`<span>${esc(t.url)}</span>`:`<a data-tool-visit data-tool-id="${t.id}" data-tool-name="${esc(t.name)}" data-tool-domain="${esc(domain(t.url))}" data-tool-source="${esc(t.sourceCategory)}" data-tool-verification="${esc(t.verification||"")}" href="${esc(t.url)}" target="_blank" rel="noopener noreferrer" style="color:#175cd3">${esc(t.url)}</a>`}</dd><dt>Source category</dt><dd>${esc(t.sourceCategory)}</dd><dt>Section</dt><dd>${esc(t.section||"—")}</dd><dt>Subcategory</dt><dd>${esc(t.subsection||"—")}</dd><dt>Pricing</dt><dd>${esc(t.pricing||"Unknown")}</dd><dt>Priority</dt><dd>${esc(t.priority||"Not assigned")}</dd><dt>Verification</dt><dd>${esc(t.verification||"Source listed")}</dd><dt>Access type</dt><dd>${esc(t.accessType||"Not audited")}</dd><dt>Function QA</dt><dd>${esc(t.functionQA||"Not audited")}</dd></dl>
+ <div class="actions">${unavailable?`<span class="btn outline" aria-disabled="true">Website unavailable</span>`:`<a class="btn blue" data-tool-visit data-tool-id="${t.id}" data-tool-name="${esc(t.name)}" data-tool-domain="${esc(domain(t.url))}" data-tool-source="${esc(t.sourceCategory)}" data-tool-verification="${esc(t.verification||"")}" href="${esc(t.url)}" target="_blank" rel="noopener noreferrer">Open website ↗</a>`}<button class="btn outline" onclick="toggleModalFav(${t.id},this)">${favorites.has(t.id)?"★ Favorited":"☆ Add favorite"}</button></div>`;
+ $("#detailModal").classList.add("open");$("#modalClose").focus();
+}
+window.openDetail=openDetail;
+window.toggleModalFav=(id,b)=>{favorites.has(id)?favorites.delete(id):favorites.add(id);saveFav();const added=favorites.has(id);b.textContent=added?"★ Favorited":"☆ Add favorite";trackAtlas("atlas_favorite_toggle",{tool_id:id,added})};
+function closeModal(){$("#detailModal").classList.remove("open")}
+$("#modalClose").onclick=closeModal;$("#detailModal").onclick=e=>{if(e.target===e.currentTarget)closeModal()};document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
+
+function renderCategories(){
+ const groups={};
+ TOOLS.forEach(t=>{const k=t.sourceCategory||"Other";groups[k]=(groups[k]||0)+1});
+ $("#categoryGrid").innerHTML=Object.entries(groups).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<button type="button" class="category" data-cat="${esc(k)}"><span class="count">${fmt(n)}</span><strong>${esc(k)}</strong><p style="color:#667085;margin:5px 0 0">Browse ${fmt(n)} indexed entries →</p></button>`).join("");
+ $$("[data-cat]").forEach(x=>x.onclick=()=>{state.source=x.dataset.cat;state.query="";state.page=1;showView("library");$("#sourceFilter").value=state.source;$("#searchInput").value="";renderLibrary()})
+}
+function renderFree(){
+ const arr=TOOLS.filter(x=>/Free - (no login|optional login)/i.test(x.accessType||""));
+ $("#freeGrid").innerHTML=arr.length?arr.map(toolCard).join(""):`<div class="empty"><h3>No explicitly audited no-login records found.</h3></div>`;
+}
+function renderArchive(){
+ $("#archiveGrid").innerHTML=Object.entries(META.sourceStats).map(([k,n])=>`<div class="sourcecard"><div class="eyebrow" style="color:#5925dc">${esc(k)}</div><div class="big">${fmt(n)}</div><p>URL-bearing entries in the original ${esc(k)} source sheet.</p><div class="actions"><button class="btn soft" onclick="browseSource('${esc(k)}')">Browse in Atlas</button><a class="btn outline" href="${SOURCE_LINKS[k]}" target="_blank" rel="noopener noreferrer">Open source ↗</a></div></div>`).join("");
+}
+window.browseSource=k=>{state.source=k;state.query="";state.page=1;showView("library");$("#sourceFilter").value=k;$("#searchInput").value="";renderLibrary()};
+$("#browseRaw").onclick=()=>{state.source="";state.query="";state.verification="not-live";state.page=1;showView("library");$("#sourceFilter").value="";$("#searchInput").value="";$("#verificationFilter").value="not-live";renderLibrary()};
+
+const initial=location.hash.replace("#","");if(["home","library","categories","free","archive","quality"].includes(initial))showView(initial);else{trackAtlas("atlas_view",{view:"home"})}
+})().catch(err=>{console.error(err);document.body.insertAdjacentHTML("beforeend",`<div style="position:fixed;left:12px;right:12px;bottom:12px;background:#fff1f3;color:#9f1239;border:1px solid #fecdd3;border-radius:12px;padding:12px;z-index:9999"><b>Atlas data could not load.</b> ${String(err.message||err)}</div>`)});
+</script>
+</body></html>
