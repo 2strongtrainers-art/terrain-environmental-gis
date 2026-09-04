@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - scripts/apply_atlas_intent_v3.py
+      - qa/atlas-common-intents-20.js
+      - qa/atlas-intent-stress-60.js
       - .github/workflows/atlas-intent-v3.yml
   workflow_dispatch:
 
@@ -68,7 +70,7 @@ jobs:
           node-version: "22"
 
       - name: Install browser driver
-        run: npm install --no-save playwright-core@1.55.0
+        run: npm install --no-save playwright@1.55.0
 
       - name: Wait for production V3
         env:
@@ -93,6 +95,13 @@ jobs:
           ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
           CHROME_PATH: /usr/bin/google-chrome
         run: node qa/atlas-common-intents-20.js
+
+      - name: Run 60-query stress benchmark
+        if: ${{ hashFiles('qa/atlas-intent-stress-60.js') != '' }}
+        env:
+          ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node qa/atlas-intent-stress-60.js
 
       - name: Run full production regression
         env:
