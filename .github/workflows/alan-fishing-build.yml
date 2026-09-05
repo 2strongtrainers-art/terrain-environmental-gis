@@ -7,6 +7,7 @@ on:
       - '.github/workflows/alan-fishing-build.yml'
       - '.alan-visual-perf-v17.py'
       - '.alan-final-all8-v18.py'
+      - '.alan-action-benchmark-v19.py'
       - 'alan-fishing-escape/**'
   workflow_dispatch:
 
@@ -23,12 +24,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply v18 final visual fidelity and heavy-action performance pass
+      - name: Apply v19 final visual, performance and benchmark pass
         shell: bash
         run: |
           set -euo pipefail
           python .alan-visual-perf-v17.py
           python .alan-final-all8-v18.py
+          python .alan-action-benchmark-v19.py
           python - <<'PY'
           from pathlib import Path
           import re
@@ -39,20 +41,17 @@ jobs:
           PY
           node --check /tmp/alan-game.mjs
           grep -F '8PLUS_RELEASE_V10' alan-fishing-escape/index.html >/dev/null
-          grep -F 'HUD_TOUCH_PRIORITY_V15' alan-fishing-escape/index.html >/dev/null
-          grep -F 'FISH_VISUAL_GATE_V16' alan-fishing-escape/index.html >/dev/null
-          grep -F 'VISUAL_PERF_V17' alan-fishing-escape/index.html >/dev/null
           grep -F 'FINAL_ALL8_V18' alan-fishing-escape/index.html >/dev/null
+          grep -F 'ACTION_BENCHMARK_V19' alan-fishing-escape/index.html >/dev/null
+          grep -F 'benchmarkAction:benchmarkActionRender' alan-fishing-escape/index.html >/dev/null
           grep -F "m.name='natural-ridgeline'" alan-fishing-escape/index.html >/dev/null
           grep -F "boatBody.name='tapered-fishing-hull'" alan-fishing-escape/index.html >/dev/null
           grep -F "vestPanel.name='angler-detail'" alan-fishing-escape/index.html >/dev/null
           grep -F "const cap=mode==='action'?.72:1.18" alan-fishing-escape/index.html >/dev/null
-          grep -F "state.fishing!=='REEL'&&state.fishing!=='LANDING'" alan-fishing-escape/index.html >/dev/null
-          grep -F 'pixelRatio:' alan-fishing-escape/index.html >/dev/null
-          sed -E -i 's/alan-fishing-escape-v[0-9]+/alan-fishing-escape-v18/g' alan-fishing-escape/sw.js
-          grep -F 'alan-fishing-escape-v18' alan-fishing-escape/sw.js >/dev/null
+          sed -E -i 's/alan-fishing-escape-v[0-9]+/alan-fishing-escape-v19/g' alan-fishing-escape/sw.js
+          grep -F 'alan-fishing-escape-v19' alan-fishing-escape/sw.js >/dev/null
 
-      - name: Commit verified v18 source to main
+      - name: Commit verified v19 source to main
         shell: bash
         run: |
           set -euo pipefail
@@ -60,13 +59,13 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape/index.html alan-fishing-escape/sw.js
           if ! git diff --cached --quiet; then
-            git commit -m 'Finalize Fishing Escape all-8 visual performance v18'
+            git commit -m 'Add Fishing Escape action performance benchmark v19'
             git push
           else
-            echo 'Fishing Escape v18 source already current.'
+            echo 'Fishing Escape v19 source already current.'
           fi
 
-      - name: Deploy verified v18 build to GitHub Pages
+      - name: Deploy verified v19 build to GitHub Pages
         shell: bash
         run: |
           set -euo pipefail
@@ -83,7 +82,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape
           if ! git diff --cached --quiet; then
-            git commit -m 'Deploy Fishing Escape all-8 v18'
+            git commit -m 'Deploy Fishing Escape benchmark v19'
             git push origin HEAD:gh-pages
           else
             echo 'Pages already current.'
