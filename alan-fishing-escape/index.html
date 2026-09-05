@@ -47,6 +47,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
 /* FINAL_ALL8_V18 */
 /* ACTION_BENCHMARK_V19 */
 /* MOBILE_ACTION_V20 */
+/* RENDER_COST_V21 */
 #objective-card{transition:opacity .25s ease,transform .25s ease,min-width .25s ease,padding .25s ease}
 #objective-card.compact{min-width:0!important;padding:7px 9px!important;opacity:.78;transform:scale(.96);transform-origin:top left}
 #objective-card.compact .obj{display:none}
@@ -341,15 +342,15 @@ function audioTick(dt){
   if(state.fishing==='REEL'&&state.actionHeld){state.reelSoundTimer-=dt;if(state.reelSoundTimer<=0){state.reelSoundTimer=.12+Math.random()*.08;beep(rand(620,820),.018,.006,'square');}}
 }
 
-async function benchmarkActionRender(ms=900){
-  if(!renderer||!state.mobile)return {baselineFps:state.fps,actionFps:state.fps,ratio:1,pixelRatio:renderer?.getPixelRatio?.()||0};
+function benchmarkActionRender(iterations=10){
+  if(!renderer||!state.mobile)return {baselineMs:0,actionMs:0,costRatio:1,pixelRatio:renderer?.getPixelRatio?.()||0};
+  iterations=Math.max(4,Math.min(20,Math.round(iterations)||10));const gl=renderer.getContext();
   const prevFishing=state.fishing,prevHooked=state.hookedFish,prevAction=state.actionHeld;
-  const sample=async animate=>{const start=performance.now();let frames=0;await new Promise(resolve=>{const tick=t=>{frames++;if(animate&&catchFishVisual){catchFishVisual.rotation.y+=.018;catchFishVisual.rotation.z=.35+Math.sin(t*.006)*.18;}if(t-start>=ms)resolve();else requestAnimationFrame(tick);};requestAnimationFrame(tick);});const elapsed=Math.max(1,performance.now()-start);return {fps:frames/(elapsed/1000),frames,elapsed};};
-  state.fishing='IDLE';state.actionHeld=false;updateDynamicResolution();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const normal=await sample(false);
-  const benchFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};state.hookedFish=benchFish;state.fishing='LANDING';
-  let created=false;if(!catchFishVisual){const f=createCatchFish(benchFish);f.position.set(0,1.15,34);f.rotation.set(.08,.2,.4);created=true;}updateDynamicResolution();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const actionPixelRatio=renderer.getPixelRatio(),action=await sample(true);
+  const sample=()=>{renderer.render(scene,camera);gl.finish();const start=performance.now();for(let i=0;i<iterations;i++){renderer.render(scene,camera);gl.finish();}const elapsed=Math.max(.01,performance.now()-start);return elapsed/iterations;};
+  state.fishing='IDLE';state.actionHeld=false;updateDynamicResolution();const baselineMs=sample();
+  const benchFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};state.hookedFish=benchFish;state.fishing='LANDING';let created=false;if(!catchFishVisual){const f=createCatchFish(benchFish);f.position.set(0,1.15,34);f.rotation.set(.08,.2,.4);created=true;}updateDynamicResolution();const actionPixelRatio=renderer.getPixelRatio(),actionMs=sample();
   if(created&&catchFishVisual){scene.remove(catchFishVisual);catchFishVisual=null;}state.fishing=prevFishing;state.hookedFish=prevHooked;state.actionHeld=prevAction;updateDynamicResolution();
-  const rel=normal.fps>0?action.fps/normal.fps:0;return {baselineFps:+normal.fps.toFixed(1),actionFps:+action.fps.toFixed(1),ratio:+rel.toFixed(2),pixelRatio:+actionPixelRatio.toFixed(2),baselineFrames:normal.frames,actionFrames:action.frames};
+  return {baselineMs:+baselineMs.toFixed(2),actionMs:+actionMs.toFixed(2),costRatio:+(actionMs/baselineMs).toFixed(2),pixelRatio:+actionPixelRatio.toFixed(2),baselineEquivalentFps:+(1000/baselineMs).toFixed(1),actionEquivalentFps:+(1000/actionMs).toFixed(1)};
 }
 function canWebGL() {
   try {
