@@ -23,7 +23,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply premium 8-plus upgrade and deterministic landing
+      - name: Apply premium 8-plus upgrade, deterministic landing, and tackle HUD
         shell: bash
         run: |
           set -euo pipefail
@@ -59,9 +59,22 @@ jobs:
           if audit_new not in s:
             if audit_old not in s: raise SystemExit('audit signature missing')
             s=s.replace(audit_old,audit_new,1)
-          css_old="/* PREMIUM_RELEASE_V11 */"
-          if '/* STABLE_LANDING_V12 */' not in s:s=s.replace(css_old,css_old+'\n/* STABLE_LANDING_V12 */',1)
+          settings_lure='<div class="setting-row"><span>Lure</span><button id="lure-toggle" class="secondary small">SPOON</button></div>'
+          hud_anchor='<button id="log-btn" class="icon-btn log-btn" aria-label="Catch log">🐟 <span id="log-count">0</span></button>'
+          hud_lure='<button id="lure-toggle" class="icon-btn tackle-btn" aria-label="Change fishing tackle">SPOON</button>'
+          if hud_lure not in s:
+            if settings_lure not in s or hud_anchor not in s: raise SystemExit('tackle HUD signature missing')
+            s=s.replace(settings_lure,'',1)
+            s=s.replace(hud_anchor,hud_anchor+'\n      '+hud_lure,1)
+          tackle_css=".tackle-btn{top:calc(max(10px,env(safe-area-inset-top)) + 94px);width:62px;height:34px;right:max(10px,env(safe-area-inset-right));font-size:9px;letter-spacing:.04em;color:#f5d89f;background:rgba(7,21,18,.72)}"
+          if tackle_css not in s:s=s.replace('</style>',tackle_css+'\n</style>',1)
+          tutorial_old='<div><b>CAST / REEL</b><span>Fish zones + manage line tension</span></div>'
+          tutorial_new='<div><b>CAST / REEL</b><span>Fish zones + manage line tension • tackle button top-right</span></div>'
+          if tutorial_new not in s and tutorial_old in s:s=s.replace(tutorial_old,tutorial_new,1)
+          if '/* STABLE_LANDING_V12 */' not in s:s=s.replace('/* PREMIUM_RELEASE_V11 */','/* PREMIUM_RELEASE_V11 */\n/* STABLE_LANDING_V12 */',1)
+          if '/* TACKLE_HUD_V13 */' not in s:s=s.replace('/* STABLE_LANDING_V12 */','/* STABLE_LANDING_V12 */\n/* TACKLE_HUD_V13 */',1)
           if '<!-- visual-polish-v12 -->' not in s:s=s.replace('</head>','<!-- visual-polish-v12 -->\n</head>',1)
+          if '<!-- tackle-hud-v13 -->' not in s:s=s.replace('</head>','<!-- tackle-hud-v13 -->\n</head>',1)
           p.write_text(s,encoding='utf-8')
           m=re.search(r'<script type="module">(.*?)</script>',s,re.S)
           if not m: raise SystemExit('module missing')
@@ -71,14 +84,16 @@ jobs:
           grep -F '8PLUS_RELEASE_V10' alan-fishing-escape/index.html >/dev/null
           grep -F 'PREMIUM_RELEASE_V11' alan-fishing-escape/index.html >/dev/null
           grep -F 'STABLE_LANDING_V12' alan-fishing-escape/index.html >/dev/null
-          grep -F 'alan-premium-avatar' alan-fishing-escape/index.html >/dev/null
+          grep -F 'TACKLE_HUD_V13' alan-fishing-escape/index.html >/dev/null
+          grep -F 'class="icon-btn tackle-btn"' alan-fishing-escape/index.html >/dev/null
+          test "$(grep -o 'id="lure-toggle"' alan-fishing-escape/index.html | wc -l)" -eq 1
           grep -F 'startedAt:performance.now()' alan-fishing-escape/index.html >/dev/null
           grep -F 'bobber.position.set(0,.1,42)' alan-fishing-escape/index.html >/dev/null
           grep -F 'landingT:catchAnim?.t||0' alan-fishing-escape/index.html >/dev/null
-          sed -E -i 's/alan-fishing-escape-v[0-9]+/alan-fishing-escape-v12/g' alan-fishing-escape/sw.js
-          grep -F 'alan-fishing-escape-v12' alan-fishing-escape/sw.js >/dev/null
+          sed -E -i 's/alan-fishing-escape-v[0-9]+/alan-fishing-escape-v13/g' alan-fishing-escape/sw.js
+          grep -F 'alan-fishing-escape-v13' alan-fishing-escape/sw.js >/dev/null
 
-      - name: Commit verified premium v12 build to main
+      - name: Commit verified premium v13 build to main
         shell: bash
         run: |
           set -euo pipefail
@@ -86,10 +101,10 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape/index.html alan-fishing-escape/sw.js
           if ! git diff --cached --quiet; then
-            git commit -m 'Stabilize Fishing Escape premium landing v12'
+            git commit -m 'Expose tackle HUD in Fishing Escape premium v13'
             git push
           else
-            echo 'Premium v12 source already current.'
+            echo 'Premium v13 source already current.'
           fi
 
       - name: Deploy verified build to GitHub Pages
@@ -109,7 +124,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape
           if ! git diff --cached --quiet; then
-            git commit -m 'Deploy Fishing Escape premium v12'
+            git commit -m 'Deploy Fishing Escape premium v13'
             git push origin HEAD:gh-pages
           else
             echo 'Pages already current.'
