@@ -5,8 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/alan-fishing-build.yml'
-      - '.alan-action-benchmark-v19.py'
-      - '.alan-mobile-action-v20.py'
+      - '.alan-render-cost-v21.py'
       - 'alan-fishing-escape/**'
   workflow_dispatch:
 
@@ -23,12 +22,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply v20 mobile action optimization and verify release
+      - name: Apply deterministic render-cost benchmark and verify v21
         shell: bash
         run: |
           set -euo pipefail
-          python .alan-action-benchmark-v19.py
-          python .alan-mobile-action-v20.py
+          python .alan-render-cost-v21.py
           python - <<'PY'
           from pathlib import Path
           import re
@@ -39,17 +37,17 @@ jobs:
           PY
           node --check /tmp/alan-game.mjs
           grep -F 'FINAL_ALL8_V18' alan-fishing-escape/index.html >/dev/null
-          grep -F 'ACTION_BENCHMARK_V19' alan-fishing-escape/index.html >/dev/null
           grep -F 'MOBILE_ACTION_V20' alan-fishing-escape/index.html >/dev/null
+          grep -F 'RENDER_COST_V21' alan-fishing-escape/index.html >/dev/null
           grep -F 'benchmarkAction:benchmarkActionRender' alan-fishing-escape/index.html >/dev/null
+          grep -F 'baselineMs:' alan-fishing-escape/index.html >/dev/null
           grep -F "o.name==='shore-rock'" alan-fishing-escape/index.html >/dev/null
-          grep -F 'baselineFps:' alan-fishing-escape/index.html >/dev/null
           grep -F "boatBody.name='tapered-fishing-hull'" alan-fishing-escape/index.html >/dev/null
           grep -F "vestPanel.name='angler-detail'" alan-fishing-escape/index.html >/dev/null
-          sed -E -i 's/alan-fishing-escape-v[0-9]+/alan-fishing-escape-v20/g' alan-fishing-escape/sw.js
-          grep -F 'alan-fishing-escape-v20' alan-fishing-escape/sw.js >/dev/null
+          sed -E -i 's/alan-fishing-escape-v[0-9]+/alan-fishing-escape-v21/g' alan-fishing-escape/sw.js
+          grep -F 'alan-fishing-escape-v21' alan-fishing-escape/sw.js >/dev/null
 
-      - name: Commit verified v20 source to main
+      - name: Commit verified v21 source to main
         shell: bash
         run: |
           set -euo pipefail
@@ -57,13 +55,13 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape/index.html alan-fishing-escape/sw.js
           if ! git diff --cached --quiet; then
-            git commit -m 'Optimize Fishing Escape mobile landing performance v20'
+            git commit -m 'Add deterministic Fishing Escape render-cost benchmark v21'
             git push
           else
-            echo 'Fishing Escape v20 source already current.'
+            echo 'Fishing Escape v21 source already current.'
           fi
 
-      - name: Deploy verified v20 build to GitHub Pages
+      - name: Deploy verified v21 build to GitHub Pages
         shell: bash
         run: |
           set -euo pipefail
@@ -80,7 +78,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape
           if ! git diff --cached --quiet; then
-            git commit -m 'Deploy Fishing Escape mobile action v20'
+            git commit -m 'Deploy Fishing Escape render-cost v21'
             git push origin HEAD:gh-pages
           else
             echo 'Pages already current.'
