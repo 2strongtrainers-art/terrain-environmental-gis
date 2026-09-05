@@ -39,6 +39,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
 
   
 /* 8PLUS_RELEASE_V10 */
+/* PREMIUM_RELEASE_V11 */
 #objective-card{transition:opacity .25s ease,transform .25s ease,min-width .25s ease,padding .25s ease}
 #objective-card.compact{min-width:0!important;padding:7px 9px!important;opacity:.78;transform:scale(.96);transform-origin:top left}
 #objective-card.compact .obj{display:none}
@@ -51,6 +52,19 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
 .action{width:72px!important;height:72px!important}.interact,.run{width:54px!important;height:54px!important}.patrol{width:58px!important;height:58px!important}
 .status{width:min(310px,36vw);background:rgba(8,22,19,.64)}
 @media(max-height:500px){.objectives{min-width:145px}.status{width:min(285px,34vw)}.toast{bottom:92px}.action{width:66px!important;height:66px!important}.joystick-base{width:98px!important;height:98px!important}.joystick-knob{left:28px!important;top:28px!important;width:42px!important;height:42px!important}}
+
+/* PREMIUM_RELEASE_V11 */
+@media (max-width:900px){
+  .objectives{min-width:154px;padding:8px 9px;background:rgba(8,22,19,.59)}
+  .obj{font-size:10px;line-height:1.45}.hud-label{font-size:8px}
+  .status{width:min(270px,32vw);padding:7px 10px;background:rgba(8,22,19,.56)}
+  #status-title{font-size:12px}#status-sub{font-size:9px}
+  .joystick-base{opacity:.56!important;width:100px!important;height:100px!important}
+  .joystick-knob{left:29px!important;top:29px!important;width:42px!important;height:42px!important}
+  .action{width:66px!important;height:66px!important}.run,.interact{width:50px!important;height:50px!important;font-size:10px}
+  .icon-btn{width:38px;height:38px}.log-btn{top:calc(max(10px,env(safe-area-inset-top)) + 44px)}
+}
+
 </style>
   <!-- build: 8PLUS_RELEASE_V10 -->
 <!-- visual-polish-v11 -->
@@ -172,6 +186,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
 
   <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.min.js';
+import { GLTFLoader } from 'https://esm.sh/three@0.185.1/examples/jsm/loaders/GLTFLoader.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('game');
@@ -203,6 +218,7 @@ let renderer, scene, camera, cameraRig, worldClock;
 let sun, water, dock, boat, boatBody, boatWake, partyGroup, skyDome, sunOrb, visualExtras, mistGroup, cloudGroup, shoreGrass;
 let rodGroup, rodTip, bobber, line, rippleGroup;
 let avatar=null, avatarTorso=null, avatarHead=null, avatarLeftArm=null, avatarRightArm=null, avatarLeftLeg=null, avatarRightLeg=null, avatarRodAnchor=null;
+let premiumAvatar=null,premiumMixer=null,premiumActions={},premiumAction='';
 let catchFishVisual=null, catchAnim=null, hookedFishShadow=null, avatarShadow=null;
 let playerVelocity=new THREE.Vector3(), avatarFacing=0, cameraDistance=5.4, cameraCollisionTick=0;
 const cameraRaycaster=new THREE.Raycaster(), cameraObstacles=[];
@@ -294,7 +310,7 @@ function init() {
   if (!canWebGL()) { ui.start.classList.add('hidden'); ui.fallback.classList.remove('hidden'); return; }
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x8da9a7);
-  scene.fog = new THREE.FogExp2(0xaeb9ad, state.mobile ? 0.0072 : 0.0054);
+  scene.fog = new THREE.FogExp2(0xb8c1b5, state.mobile ? 0.0065 : 0.0049);
 
   camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.08, 260);
   cameraRig = new THREE.Group();
@@ -308,15 +324,15 @@ function init() {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.27;
+  renderer.toneMappingExposure = 1.32;
 
   canvas.addEventListener('webglcontextlost', (e)=>{ e.preventDefault(); state.webglLost = true; showToast('Graphics paused — restoring…'); });
   canvas.addEventListener('webglcontextrestored', ()=>{ state.webglLost = false; showToast('Graphics restored'); });
 
   worldClock = new THREE.Clock();
-  buildLights(); buildWorld(); buildDock(); buildBoat(); buildAvatar(); buildRod(); buildRipples(); buildParty();
+  buildLights(); buildWorld(); buildDock(); buildBoat(); buildAvatar(); buildRod(); loadPremiumAvatar(); buildRipples(); buildParty();
   bindUI(); bindInputs(); restore(); resize(); updateObjectives(); updateActionLabel();
-  window.__ALAN_GAME__={release:RELEASE_ID,audit:()=>({release:RELEASE_ID,avatar:!!avatar,rodAttached:rodGroup?.parent===avatarRodAnchor,thirdPerson:camera.position.z>2,lure:state.lure,zone:state.lastZone,score:state.score,catches:state.catches.length,quality:state.quality,fps:state.fps}),forceLanding:()=>{if(state.fishing==='LANDING')return false;state.hookedFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};bobber.position.set(0,.1,30);landFish();return true;}};
+  window.__ALAN_GAME__={release:RELEASE_ID,audit:()=>({release:RELEASE_ID,avatar:!!avatar,premiumAvatar:!!premiumAvatar,rodAttached:rodGroup?.parent===avatarRodAnchor,thirdPerson:camera.position.z>2,lure:state.lure,zone:state.lastZone,score:state.score,catches:state.catches.length,quality:state.quality,fps:state.fps}),forceLanding:()=>{if(state.fishing==='LANDING')return true;state.hookedFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};bobber.position.set(0,.1,30);landFish();return true;}};
   addEventListener('resize', resize, {passive:true});
   addEventListener('orientationchange', ()=>setTimeout(resize, 120), {passive:true});
   document.addEventListener('visibilitychange', ()=>{ if (document.hidden) clearInputs(); lastFrame = performance.now(); });
@@ -325,8 +341,8 @@ function init() {
 }
 
 function buildLights() {
-  const hemi = new THREE.HemisphereLight(0xd8e4e7, 0x17271f, 1.35); scene.add(hemi);
-  const ambient = new THREE.AmbientLight(0xb3c0b6, .46); scene.add(ambient);
+  const hemi = new THREE.HemisphereLight(0xe1edf0, 0x26372c, 1.62); scene.add(hemi);
+  const ambient = new THREE.AmbientLight(0xb6c2b7, .52); scene.add(ambient);
   sun = new THREE.DirectionalLight(0xffcf8a, 3.85); sun.position.set(-46,52,-58); sun.castShadow = !state.mobile;
   if (sun.castShadow) {
     sun.shadow.mapSize.set(1536,1536);
@@ -334,7 +350,7 @@ function buildLights() {
     sun.shadow.camera.near=8; sun.shadow.camera.far=150; sun.shadow.bias=-.00035;
   }
   scene.add(sun);
-  const fill = new THREE.DirectionalLight(0x9fc5d7,.62); fill.position.set(45,26,25); scene.add(fill);
+  const fill = new THREE.DirectionalLight(0xa4cbe0,.68); fill.position.set(45,26,25); scene.add(fill);
   sunOrb = new THREE.Mesh(new THREE.SphereGeometry(3.7,28,18), new THREE.MeshBasicMaterial({color:0xffc46f,fog:false}));
   sunOrb.position.set(-72,28,-126); scene.add(sunOrb);
 }
@@ -367,8 +383,8 @@ function buildWorld() {
   });
   skyDome=new THREE.Mesh(new THREE.SphereGeometry(220,40,24),skyMat); skyDome.name='sky'; scene.add(skyDome);
 
-  const groundTex=makeNoiseTexture('#43503c','#25322a',128,state.mobile?700:1200);
-  const groundMat=new THREE.MeshStandardMaterial({color:0x76856c,roughness:.98,metalness:0,map:groundTex,bumpMap:groundTex,bumpScale:.08});
+  const groundTex=makeNoiseTexture('#536249','#303c32',128,state.mobile?700:1200);
+  const groundMat=new THREE.MeshStandardMaterial({color:0x78866d,roughness:.96,metalness:0,map:groundTex,bumpMap:groundTex,bumpScale:.07});
   const groundGeo=new THREE.PlaneGeometry(210,210,state.mobile?30:44,state.mobile?30:44);groundGeo.rotateX(-Math.PI/2);
   const gp=groundGeo.attributes.position;for(let i=0;i<gp.count;i++){const x=gp.getX(i),z=gp.getZ(i);gp.setY(i,groundHeightAt(x,z)-.08);}groundGeo.computeVertexNormals();
   const ground = new THREE.Mesh(groundGeo,groundMat);ground.receiveShadow=true;scene.add(ground);
@@ -449,9 +465,9 @@ function buildWorld() {
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));g.setIndex(idx);g.computeVertexNormals();return new THREE.Mesh(g,new THREE.MeshStandardMaterial({color,roughness:1,flatShading:false}));
   }
   for(let layer=0;layer<2;layer++){
-    const count=layer?16:13;
+    const count=layer?12:10;
     for(let i=0;i<count;i++){
-      const a=Math.PI*.96+(i/(count-1))*Math.PI*1.03+rand(-.035,.035),r=layer?rand(124,154):rand(92,123),h=layer?rand(34,62):rand(25,51),rad=layer?rand(17,30):rand(13,25);
+      const a=Math.PI*.96+(i/(count-1))*Math.PI*1.03+rand(-.05,.05),r=layer?rand(132,164):rand(96,128),h=layer?rand(30,49):rand(23,40),rad=layer?rand(30,46):rand(24,38);
       const m=mountain(rad,h,9,layer?0x687472:(i%2?0x59675f:0x626d64));m.position.set(Math.cos(a)*r,h*.5-2.5,Math.sin(a)*r);m.rotation.y=rand(0,6.28);scene.add(m);
       if(!state.mobile&&layer===0&&h>38&&i%2===0){const cap=mountain(rad*.27,h*.20,9,0xc8c7bb);cap.position.set(m.position.x,h*.88-2.3,m.position.z);cap.rotation.y=m.rotation.y;visualExtras.add(cap);}
     }
@@ -527,6 +543,25 @@ function buildAvatar(){
   avatarRodAnchor=new THREE.Group();avatarRodAnchor.position.set(.48,1.23,-.24);avatarRodAnchor.rotation.set(-.12,0,-.08);avatar.add(avatarRodAnchor);
   const shadowTex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),g=x.createRadialGradient(32,32,3,32,32,30);g.addColorStop(0,'rgba(0,0,0,.42)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,64,64);return new THREE.CanvasTexture(c)})();avatarShadow=new THREE.Mesh(new THREE.PlaneGeometry(1.15,.62),new THREE.MeshBasicMaterial({map:shadowTex,transparent:true,depthWrite:false,opacity:.55}));avatarShadow.rotation.x=-Math.PI/2;scene.add(avatarShadow);
   avatar.traverse(o=>{if(o.isMesh){o.castShadow=!state.mobile;o.receiveShadow=true;}});scene.add(avatar);
+}
+
+function setPremiumAction(name){
+  if(!premiumMixer||premiumAction===name||!premiumActions[name])return;
+  const next=premiumActions[name],prev=premiumActions[premiumAction];
+  next.reset().fadeIn(.18).play();if(prev)prev.fadeOut(.18);premiumAction=name;
+}
+function loadPremiumAvatar(){
+  try{
+    const loader=new GLTFLoader();
+    loader.load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r185/examples/models/gltf/Soldier.glb',gltf=>{
+      const model=gltf.scene;premiumAvatar=model;model.name='alan-premium-avatar';model.scale.setScalar(1.04);model.position.set(0,.02,0);
+      model.traverse(o=>{if(o.isMesh){o.castShadow=!state.mobile;o.receiveShadow=true;if(o.material){o.material=o.material.clone();o.material.roughness=Math.max(.52,o.material.roughness??.7);o.material.metalness=Math.min(.08,o.material.metalness??0);}}});
+      const isRodMesh=o=>{let q=o;while(q){if(q===rodGroup)return true;q=q.parent;}return false;};
+      avatar.traverse(o=>{if(o.isMesh&&!isRodMesh(o))o.visible=false;});avatar.add(model);
+      premiumMixer=new THREE.AnimationMixer(model);for(const clip of gltf.animations){premiumActions[clip.name]=premiumMixer.clipAction(clip);}setPremiumAction(premiumActions.Idle?'Idle':Object.keys(premiumActions)[0]);
+      if(avatarRodAnchor){avatarRodAnchor.position.set(.39,1.26,-.32);avatarRodAnchor.rotation.set(-.22,.08,-.13);}
+    },undefined,()=>{premiumAvatar=null;});
+  }catch{premiumAvatar=null;}
 }
 
 function buildRod(){
@@ -811,7 +846,7 @@ function updateObjectives(){
 function toggleDone(el,done,yes,no){el.classList.toggle('done',done);if(el===ui.objectiveFish){el.innerHTML=(done?'✓ Catch 3 fish ':'○ Catch 3 fish ')+`<span id="fish-count">${Math.min(3,state.catches.length)}/3</span>`;ui.fishCount=$('fish-count');}else el.textContent=done?yes:no;}
 
 function updateAvatar(dt){
-  if(!avatar)return;const moving=playerVelocity.lengthSq()>.08||Math.abs(input.x)+Math.abs(input.y)>.08;const fishing=['WAIT','REEL','LANDING','CAUGHT'].includes(state.fishing);
+  if(!avatar)return;const moving=playerVelocity.lengthSq()>.08||Math.abs(input.x)+Math.abs(input.y)>.08;const fishing=['WAIT','REEL','LANDING','CAUGHT'].includes(state.fishing);if(premiumMixer){premiumMixer.update(dt);const desired=fishing?'Idle':(moving?(input.run?'Run':'Walk'):'Idle');setPremiumAction(premiumActions[desired]?desired:(premiumActions.Idle?'Idle':Object.keys(premiumActions)[0]));}
   if(state.inBoat){const seatOffset=new THREE.Vector3(-.45,.16,.58).applyAxisAngle(new THREE.Vector3(0,1,0),boatYaw);avatar.position.copy(boat.position).add(seatOffset);avatarFacing=angleLerp(avatarFacing,boatYaw,.22);avatar.rotation.y=avatarFacing;avatarLeftLeg.rotation.x=THREE.MathUtils.lerp(avatarLeftLeg.rotation.x,-1.18,.2);avatarRightLeg.rotation.x=THREE.MathUtils.lerp(avatarRightLeg.rotation.x,-1.18,.2);}
   else{const gy=groundHeightAt(playerPos.x,playerPos.z);avatar.position.set(playerPos.x,gy+.19,playerPos.z);let desired=yaw;if(playerVelocity.lengthSq()>.12)desired=Math.atan2(-playerVelocity.x,-playerVelocity.z);avatarFacing=angleLerp(avatarFacing,desired,1-Math.exp(-9*dt));avatar.rotation.y=avatarFacing;const cadence=input.run?11:7.5,amp=input.run?.5:.38;avatarLeftLeg.rotation.x=moving?Math.sin(state.elapsed*cadence)*amp:THREE.MathUtils.lerp(avatarLeftLeg.rotation.x,0,.18);avatarRightLeg.rotation.x=moving?-Math.sin(state.elapsed*cadence)*amp:THREE.MathUtils.lerp(avatarRightLeg.rotation.x,0,.18);}
   if(fishing){const fight=state.fishing==='REEL'?Math.sin(state.elapsed*5.2)*.08:0;avatarRightArm.rotation.x=THREE.MathUtils.lerp(avatarRightArm.rotation.x,-.88+fight,.2);avatarLeftArm.rotation.x=THREE.MathUtils.lerp(avatarLeftArm.rotation.x,-.62-fight,.2);avatarTorso.rotation.x=THREE.MathUtils.lerp(avatarTorso.rotation.x,state.fishing==='REEL'?.05:0,.16);}
