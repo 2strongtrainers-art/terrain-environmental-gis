@@ -1,5 +1,5 @@
 name: Alan Fishing Escape Live QA
-# Visual overhaul v6 verification
+# Visual overhaul v7 composition verification
 
 on:
   push:
@@ -35,7 +35,7 @@ jobs:
           echo 'HTTP response headers:'
           curl -fsSIL --max-time 30 "$GAME_URL?curlqa=$(date +%s)" | sed -n '1,20p'
           echo 'Public source fingerprint:'
-          curl -fsSL --max-time 30 "$GAME_URL?sourceqa=$(date +%s)" | grep -Eo 'Alan Kaplan[^<]{0,80}|id="play-btn"|catch-log|manifest.webmanifest|fog:false' | head -20 || true
+          curl -fsSL --max-time 30 "$GAME_URL?sourceqa=$(date +%s)" | grep -Eo 'Alan Kaplan[^<]{0,80}|id="play-btn"|catch-log|manifest.webmanifest|fog:false|let yaw = 0' | head -20 || true
           cat > /tmp/alan-live-qa.cjs <<'EOF'
           const { chromium } = require('playwright');
           (async()=>{
@@ -85,6 +85,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: alan-fishing-live-qa-v6
+          name: alan-fishing-live-qa-v7
           path: alan-fishing-live-qa.png
           if-no-files-found: ignore
