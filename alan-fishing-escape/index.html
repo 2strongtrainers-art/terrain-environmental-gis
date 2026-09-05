@@ -1,24 +1,594 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"><meta name="theme-color" content="#0f241f"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Fishing Escape"><link rel="manifest" href="manifest.webmanifest"><title>Alan Kaplan’s Fishing Escape</title><style>html,body{margin:0;width:100%;height:100%;background:#071512;color:#f5f5ec;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;display:grid;place-items:center}.load{text-align:center;padding:28px}.load b{display:block;font-size:28px;margin-bottom:8px}.load span{color:#b8c8c0;font-size:13px}.err{max-width:520px;line-height:1.5}a{color:#f0bf69}</style></head><body><div class="load" id="load"><b>Alan Kaplan’s Fishing Escape</b><span>Loading the lake…</span></div><script>
-(async()=>{
-  try{
-    let h=await fetch('./play.html?v=3',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Game core '+r.status);return r.text()});
-    const edits=[
-      ['boatYaw=2.9','boatYaw=.22'],
-      ['let yaw=0,pitch=-.07','let yaw=Math.PI,pitch=-.07'],
-      ['p.set(5.5,1.72,38);toast(\'Back on shore\')','p.set(3.2,1.72,38);toast(\'Back on the dock\')'],
-      ['S.bite=1.5','S.bite=2'],
-      ['party.position.set(rnd(-19,-12),0,rnd(46,53))','party.position.set(rnd(-16,-11),0,rnd(45,49))'],
-      ['Rowdy party spotted — use PATROL nearby','Rowdy party spotted — get close and use the AIR HORN'],
-      ['<b>PATROL</b><span>Use an air horn to quiet rowdy partygoers</span>','<b>AIR HORN</b><span>Quiet the rowdy party across the lake</span>'],
-      ['>PATROL</button>','>AIR HORN</button>']
-    ];
-    for(const [a,b] of edits)h=h.split(a).join(b);
-    h=h.replace('</head>','<link rel="manifest" href="manifest.webmanifest"></head>');
-    h=h.replace('</body>','<script>if(\'serviceWorker\' in navigator){addEventListener(\'load\',()=>navigator.serviceWorker.register(\'./sw.js\').catch(()=>{}));}<\/script></body>');
-    document.open();document.write(h);document.close();
-  }catch(e){
-    document.getElementById('load').innerHTML='<div class="err"><b>Could not load the lake</b><span>'+String(e.message||e)+'</span><p><a href="play.html">Open the backup game</a></p></div>';
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1" />
+  <meta name="theme-color" content="#0f241f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Fishing Escape" />
+  <title>Alan Kaplan’s Fishing Escape</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <style>
+:root{
+  --glass:rgba(8,22,19,.72);--glass2:rgba(11,31,27,.88);--line:rgba(255,255,255,.14);
+  --text:#f5f5ec;--muted:#c6d2cb;--accent:#f0bf69;--accent2:#78b7a5;--danger:#d9675d;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071512;color:var(--text);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;touch-action:none;overscroll-behavior:none}
+button,input{font:inherit}
+button{touch-action:none;user-select:none;-webkit-user-select:none}
+#game-shell,#game{position:fixed;inset:0;width:100%;height:100%}
+#game{display:block;background:linear-gradient(#8ab6c2,#d5a764)}
+.hidden{display:none!important}
+.screen{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:calc(20px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));background:radial-gradient(circle at 50% 38%,rgba(12,40,35,.25),rgba(5,16,14,.72))}
+.hero-card,.card,.victory-card{width:min(720px,92vw);border:1px solid rgba(255,255,255,.16);background:linear-gradient(180deg,rgba(9,28,24,.78),rgba(6,18,16,.9));box-shadow:0 26px 80px rgba(0,0,0,.35);backdrop-filter:blur(14px);border-radius:28px;padding:clamp(24px,5vw,52px);text-align:center}
+.hero-card h1{font-size:clamp(42px,8vw,84px);line-height:.93;letter-spacing:-.05em;margin:8px 0 18px}.card h2,.victory-card h2{font-size:clamp(28px,5vw,48px);letter-spacing:-.04em;margin:8px 0 18px}.kicker{font-size:12px;letter-spacing:.24em;font-weight:800;color:var(--accent)}.lede{max-width:580px;margin:0 auto 26px;color:var(--muted);font-size:clamp(15px,2.3vw,19px);line-height:1.55}.micro{font-size:12px;color:#aebdb5;margin-top:14px}.narrow{max-width:520px}
+.primary,.secondary,.danger,.plain-btn{border:0;border-radius:14px;min-height:48px;padding:0 20px;font-weight:800;letter-spacing:.03em}.primary{background:linear-gradient(180deg,#f5cb7e,#dca853);color:#1d241e;box-shadow:0 10px 28px rgba(228,176,86,.24)}.primary:active,.control-btn:active{transform:scale(.96)}.big{min-width:190px;min-height:58px;font-size:18px}.secondary{background:rgba(255,255,255,.1);color:var(--text);border:1px solid var(--line)}.danger{background:rgba(217,103,93,.16);color:#ffb2ab;border:1px solid rgba(217,103,93,.35);width:100%}.plain-btn{background:transparent;color:var(--muted);padding:0 8px}.small{min-height:38px;padding:0 14px;font-size:12px}
+.tutorial-card{max-width:760px}.tutorial-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:22px 0}.tutorial-grid div{text-align:left;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:13px}.tutorial-grid b,.tutorial-grid span{display:block}.tutorial-grid b{font-size:13px;color:var(--accent)}.tutorial-grid span{font-size:12px;color:var(--muted);margin-top:4px}
+.orientation{position:fixed;z-index:21;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:rgba(7,20,17,.86);border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-size:11px;color:var(--muted);white-space:nowrap;pointer-events:none}
+#hud{position:fixed;inset:0;z-index:10;pointer-events:none;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}.hud-panel{position:absolute;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(10px);border-radius:15px;color:var(--text);box-shadow:0 8px 26px rgba(0,0,0,.18)}.objectives{top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));padding:10px 12px;min-width:190px}.hud-label{font-size:9px;letter-spacing:.18em;font-weight:900;color:var(--accent);margin-bottom:6px}.obj{font-size:11px;color:#e8eee9;line-height:1.55}.obj span{float:right;color:#bcd0c5;margin-left:10px}.obj.done{color:#83c7a9}.status{top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);padding:9px 12px;text-align:center;width:min(360px,44vw)}#status-title{font-size:13px;font-weight:800}#status-sub{font-size:10px;color:var(--muted);margin-top:2px}.meter-label{display:flex;justify-content:space-between;font-size:8px;letter-spacing:.08em;color:#c8d4ce;margin:7px 1px 3px}.meter{height:7px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden;position:relative}.meter>div{height:100%;width:0;background:linear-gradient(90deg,#66b596,#efc16e);border-radius:99px;transition:width .08s linear}.meter .safe-zone{position:absolute;left:42%;width:28%;top:0;background:rgba(255,255,255,.13);border-left:1px solid rgba(255,255,255,.35);border-right:1px solid rgba(255,255,255,.35);pointer-events:none}.icon-btn{pointer-events:auto;position:absolute;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));width:42px;height:42px;border-radius:13px;border:1px solid var(--line);background:var(--glass);color:white;backdrop-filter:blur(10px);font-size:16px}.log-btn{top:calc(max(10px,env(safe-area-inset-top)) + 50px);font-size:14px}.log-btn span{font-size:10px}
+.toast{position:fixed;z-index:22;left:50%;bottom:calc(118px + env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(6,18,16,.9);border:1px solid var(--line);border-radius:999px;padding:10px 16px;font-size:12px;font-weight:700;box-shadow:0 8px 30px rgba(0,0,0,.25);pointer-events:none;white-space:nowrap}
+#controls{position:fixed;inset:0;z-index:14;pointer-events:none;touch-action:none}.joystick-zone,.look-zone{position:absolute;bottom:0;height:70%;touch-action:none;pointer-events:auto}.joystick-zone{left:0;width:45%}.look-zone{right:0;width:55%}.joystick-base{position:absolute;left:max(26px,calc(env(safe-area-inset-left) + 18px));bottom:max(28px,calc(env(safe-area-inset-bottom) + 18px));width:124px;height:124px;border-radius:50%;background:rgba(7,19,17,.25);border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(3px)}.joystick-knob{position:absolute;left:36px;top:36px;width:52px;height:52px;border-radius:50%;background:rgba(240,191,105,.65);border:1px solid rgba(255,255,255,.32);box-shadow:0 6px 18px rgba(0,0,0,.2);transform:translate(0,0)}.control-btn{position:absolute;z-index:3;pointer-events:auto;border:1px solid rgba(255,255,255,.18);background:rgba(7,21,18,.58);backdrop-filter:blur(9px);color:white;font-weight:900;font-size:11px;letter-spacing:.05em;border-radius:50%;box-shadow:0 8px 22px rgba(0,0,0,.2);min-width:58px;min-height:58px}.action{right:max(18px,calc(env(safe-area-inset-right) + 14px));bottom:max(28px,calc(env(safe-area-inset-bottom) + 18px));width:84px;height:84px;background:rgba(218,168,83,.72);color:#142019}.interact{right:max(110px,calc(env(safe-area-inset-right) + 102px));bottom:max(35px,calc(env(safe-area-inset-bottom) + 25px));width:64px;height:64px}.run{left:max(148px,calc(env(safe-area-inset-left) + 140px));bottom:max(42px,calc(env(safe-area-inset-bottom) + 34px));width:62px;height:62px}.patrol{right:max(24px,calc(env(safe-area-inset-right) + 18px));bottom:max(124px,calc(env(safe-area-inset-bottom) + 114px));width:66px;height:66px;background:rgba(90,155,139,.76)}
+.sheet{position:fixed;inset:0;z-index:40;background:rgba(2,9,8,.6);display:grid;place-items:center;padding:18px;backdrop-filter:blur(7px);touch-action:auto}.sheet-card{width:min(520px,95vw);max-height:84vh;overflow:auto;background:var(--glass2);border:1px solid var(--line);border-radius:24px;padding:20px;box-shadow:0 28px 90px rgba(0,0,0,.45)}.sheet-head{display:flex;justify-content:space-between;align-items:center;gap:15px}.sheet-head h2{margin:0;font-size:24px;letter-spacing:-.03em}.setting-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-top:1px solid rgba(255,255,255,.08);font-size:13px}.setting-row:first-of-type{margin-top:12px}.setting-row input{width:55%}.diag{background:rgba(255,255,255,.05);border-radius:13px;padding:12px;margin:8px 0 16px}.diag #diag-text{font:11px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;color:#c7d4cd;white-space:pre-line}.best-catch{margin:15px 0;background:rgba(240,191,105,.1);border:1px solid rgba(240,191,105,.22);padding:12px;border-radius:13px;font-size:13px;color:#f3d49b}.catch-list{display:grid;gap:8px}.catch-item{display:flex;justify-content:space-between;gap:10px;padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.05);font-size:12px}.catch-item span:last-child{color:var(--accent)}.empty{color:var(--muted);font-size:12px;padding:12px}
+.pointer-pass{pointer-events:none;background:transparent;place-items:end center}.pointer-on{pointer-events:auto;margin-bottom:calc(120px + env(safe-area-inset-bottom));padding:22px;max-width:520px}.victory-card p{color:var(--muted);font-size:13px;line-height:1.5}
+@media (pointer:fine){#controls{display:none!important}.toast{bottom:28px}.pointer-on{margin-bottom:30px}}
+@media (max-width:760px){.objectives{min-width:165px}.status{width:44vw;max-width:300px}.tutorial-grid{grid-template-columns:1fr 1fr}.hero-card{padding:28px}.hero-card h1{font-size:48px}.lede{font-size:14px}}
+@media (orientation:portrait){.objectives{top:max(58px,calc(env(safe-area-inset-top) + 48px))}.status{top:max(8px,env(safe-area-inset-top));width:65vw}.joystick-base{width:112px;height:112px}.joystick-knob{left:32px;top:32px;width:48px;height:48px}.run{left:max(128px,calc(env(safe-area-inset-left) + 120px))}.action{width:78px;height:78px}.interact{right:max(100px,calc(env(safe-area-inset-right) + 92px))}.tutorial-grid{grid-template-columns:1fr}}
+@media (max-height:500px){.objectives{padding:7px 9px}.obj{font-size:10px}.status{padding:7px 9px}.joystick-base{width:108px;height:108px}.joystick-knob{left:31px;top:31px;width:46px;height:46px}.control-btn{min-width:52px;min-height:52px}.action{width:72px;height:72px}.interact,.run{width:56px;height:56px}.patrol{width:58px;height:58px}.tutorial-card{padding:18px}.tutorial-grid{margin:12px 0;gap:6px}.tutorial-grid div{padding:8px}}
+
+  </style>
+  <!-- build: alan-fishing-escape-v3 -->
+</head>
+<body>
+  <div id="game-shell">
+    <canvas id="game" aria-label="Alan Kaplan’s Fishing Escape 3D game"></canvas>
+
+    <div id="webgl-fallback" class="screen hidden">
+      <div class="card narrow">
+        <div class="kicker">ALAN KAPLAN’S</div>
+        <h1>Fishing Escape</h1>
+        <p>This browser could not start WebGL. Open the link in Safari or Chrome on a recent iPhone, iPad, Mac, or PC.</p>
+      </div>
+    </div>
+
+    <div id="start-screen" class="screen">
+      <div class="hero-card">
+        <div class="kicker">ALAN KAPLAN’S</div>
+        <h1>Fishing Escape</h1>
+        <p class="lede">Sunrise. Quiet water. Three fish to catch. One boat to take out. And a lake worth keeping peaceful.</p>
+        <button id="play-btn" class="primary big">PLAY</button>
+        <div class="micro">Best in landscape • iPhone + desktop controls included</div>
+      </div>
+    </div>
+
+    <div id="tutorial" class="screen hidden">
+      <div class="card tutorial-card">
+        <div class="kicker">QUICK CONTROLS</div>
+        <h2>One screen, then you’re fishing.</h2>
+        <div class="tutorial-grid">
+          <div><b>Left thumb</b><span>Move / steer boat</span></div>
+          <div><b>Right side drag</b><span>Look around</span></div>
+          <div><b>RUN</b><span>Sprint on shore</span></div>
+          <div><b>CAST / REEL</b><span>Fish anywhere by water</span></div>
+          <div><b>INTERACT</b><span>Enter / exit boat</span></div>
+          <div><b>AIR HORN</b><span>Quiet the rowdy party across the lake</span></div>
+        </div>
+        <button id="tutorial-go" class="primary">GOT IT</button>
+      </div>
+    </div>
+
+    <div id="orientation-hint" class="orientation hidden">Rotate sideways for the widest view — portrait still works.</div>
+
+    <div id="hud" class="hidden">
+      <div id="objective-card" class="hud-panel objectives">
+        <div class="hud-label">TODAY’S ESCAPE</div>
+        <div id="obj-fish" class="obj">○ Catch 3 fish <span id="fish-count">0/3</span></div>
+        <div id="obj-boat" class="obj">○ Take the boat out</div>
+        <div id="obj-peace" class="obj">○ Restore lake peace</div>
+      </div>
+
+      <div id="status-card" class="hud-panel status">
+        <div id="status-title">Walk to the dock</div>
+        <div id="status-sub">Find a good casting spot by the water.</div>
+        <div id="tension-wrap" class="hidden">
+          <div class="meter-label"><span>LINE TENSION</span><span id="tension-text">0%</span></div>
+          <div class="meter"><div id="tension-fill"></div><div class="safe-zone"></div></div>
+          <div class="meter-label"><span>FISH PROGRESS</span><span id="reel-text">0%</span></div>
+          <div class="meter"><div id="reel-fill"></div></div>
+        </div>
+        <div id="peace-wrap" class="hidden">
+          <div class="meter-label"><span>PEACE RESTORED</span><span id="peace-text">0%</span></div>
+          <div class="meter"><div id="peace-fill"></div></div>
+        </div>
+      </div>
+
+      <button id="settings-btn" class="icon-btn" aria-label="Settings">☰</button>
+      <button id="log-btn" class="icon-btn log-btn" aria-label="Catch log">🐟 <span id="log-count">0</span></button>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <div id="controls" class="hidden" aria-label="Mobile game controls">
+      <div id="joystick-zone" class="joystick-zone">
+        <div class="joystick-base"><div id="joystick-knob" class="joystick-knob"></div></div>
+      </div>
+      <div id="look-zone" class="look-zone"></div>
+      <button id="run-btn" class="control-btn run">RUN</button>
+      <button id="interact-btn" class="control-btn interact">INTERACT</button>
+      <button id="action-btn" class="control-btn action">CAST</button>
+      <button id="patrol-btn" class="control-btn patrol hidden">AIR HORN</button>
+    </div>
+
+    <div id="settings" class="sheet hidden">
+      <div class="sheet-card">
+        <div class="sheet-head"><h2>Pause & Settings</h2><button id="close-settings" class="plain-btn">Close</button></div>
+        <div class="setting-row"><span>Sound</span><button id="sound-toggle" class="secondary small">ON</button></div>
+        <div class="setting-row"><span>Quality</span><button id="quality-toggle" class="secondary small">AUTO</button></div>
+        <div class="setting-row"><span>Camera sensitivity</span><input id="sensitivity" type="range" min="0.45" max="1.8" step="0.05" value="1" /></div>
+        <div class="diag">
+          <div class="hud-label">DIAGNOSTICS</div>
+          <div id="diag-text">Waiting for game…</div>
+        </div>
+        <button id="reset-btn" class="danger">RESET GAME</button>
+      </div>
+    </div>
+
+    <div id="catch-log" class="sheet hidden">
+      <div class="sheet-card">
+        <div class="sheet-head"><h2>Alan’s Catch Log</h2><button id="close-log" class="plain-btn">Close</button></div>
+        <div id="best-catch" class="best-catch">Best catch: —</div>
+        <div id="catch-list" class="catch-list"><div class="empty">No fish yet. The lake is waiting.</div></div>
+      </div>
+    </div>
+
+    <div id="victory" class="screen hidden pointer-pass">
+      <div class="victory-card pointer-on">
+        <div class="kicker">ESCAPE COMPLETE</div>
+        <h2>Alan earned the quiet morning.</h2>
+        <p>You caught fish, took the boat out, and kept the lake peaceful. Free play is still open.</p>
+        <button id="continue-btn" class="primary">KEEP FISHING</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.min.js';
+
+const $ = (id) => document.getElementById(id);
+const canvas = $('game');
+const ui = {
+  start: $('start-screen'), play: $('play-btn'), tutorial: $('tutorial'), tutorialGo: $('tutorial-go'),
+  fallback: $('webgl-fallback'), orientation: $('orientation-hint'), hud: $('hud'), controls: $('controls'),
+  objectiveFish: $('obj-fish'), objectiveBoat: $('obj-boat'), objectivePeace: $('obj-peace'), fishCount: $('fish-count'),
+  statusTitle: $('status-title'), statusSub: $('status-sub'), tensionWrap: $('tension-wrap'), tensionFill: $('tension-fill'), tensionText: $('tension-text'),
+  reelFill: $('reel-fill'), reelText: $('reel-text'), peaceWrap: $('peace-wrap'), peaceFill: $('peace-fill'), peaceText: $('peace-text'),
+  toast: $('toast'), settingsBtn: $('settings-btn'), settings: $('settings'), closeSettings: $('close-settings'), soundToggle: $('sound-toggle'), qualityToggle: $('quality-toggle'),
+  sensitivity: $('sensitivity'), diagText: $('diag-text'), resetBtn: $('reset-btn'), logBtn: $('log-btn'), logCount: $('log-count'), logSheet: $('catch-log'), closeLog: $('close-log'),
+  catchList: $('catch-list'), bestCatch: $('best-catch'), victory: $('victory'), continueBtn: $('continue-btn'),
+  joyZone: $('joystick-zone'), joyKnob: $('joystick-knob'), lookZone: $('look-zone'), runBtn: $('run-btn'), interactBtn: $('interact-btn'), actionBtn: $('action-btn'), patrolBtn: $('patrol-btn')
+};
+
+const state = {
+  started: false, paused: false, sound: true, quality: 'AUTO', sensitivity: 1,
+  mobile: matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0,
+  inBoat: false, hasBoated: false, catches: [], best: null, peaceDone: false, victoryShown: false,
+  partyActive: false, partyPeace: 0, nextPartyAt: 35,
+  fishing: 'IDLE', castTimer: 0, biteWindow: 0, tension: 0, reelProgress: 0, actionHeld: false, hookedFish: null,
+  lastInput: 'none', fps: 60, frameTier: 'good', elapsed: 0,
+  qualityScale: 1, tutorialSeen: false, webglLost: false
+};
+
+let renderer, scene, camera, cameraRig, worldClock;
+let sun, water, dock, boat, boatBody, boatWake, partyGroup;
+let rodGroup, rodTip, bobber, line, rippleGroup;
+let playerPos = new THREE.Vector3(0, 1.72, 53);
+let yaw = Math.PI, pitch = -0.08, boatYaw = 0.22;
+let input = { x: 0, y: 0, run: false, keys: new Set() };
+let joyPointer = null, lookPointer = null, lastLook = new THREE.Vector2();
+let audioCtx = null, ambientGain = null;
+let lastFrame = performance.now(), fpsAccum = 0, fpsFrames = 0, fpsTimer = 0;
+let toastTimer = 0, saveTimer = 0;
+const tmpV = new THREE.Vector3(), tmpV2 = new THREE.Vector3(), tmpQ = new THREE.Quaternion();
+const fishSpecies = [
+  {name:'Rainbow Trout', min:1.1,max:5.8,rarity:0.34,power:0.62},
+  {name:'Smallmouth Bass',min:0.8,max:4.6,rarity:0.27,power:0.56},
+  {name:'Kokanee Salmon',min:0.7,max:3.4,rarity:0.20,power:0.67},
+  {name:'Brown Trout',min:1.4,max:7.2,rarity:0.14,power:0.78},
+  {name:'Golden Trout',min:0.9,max:4.2,rarity:0.05,power:0.92}
+];
+
+function canWebGL() {
+  try {
+    const c = document.createElement('canvas');
+    return !!(window.WebGL2RenderingContext && c.getContext('webgl2')) || !!c.getContext('webgl');
+  } catch { return false; }
+}
+
+function init() {
+  if (!canWebGL()) { ui.start.classList.add('hidden'); ui.fallback.classList.remove('hidden'); return; }
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x9fb7b1);
+  scene.fog = new THREE.FogExp2(0xb8c1b2, state.mobile ? 0.008 : 0.006);
+
+  camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.08, 260);
+  cameraRig = new THREE.Group();
+  cameraRig.add(camera); scene.add(cameraRig);
+  camera.position.set(0,0,0);
+
+  renderer = new THREE.WebGLRenderer({canvas, antialias: !state.mobile, powerPreference:'high-performance', alpha:false});
+  renderer.setSize(innerWidth, innerHeight, false);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, state.mobile ? 1.45 : 1.8));
+  renderer.shadowMap.enabled = !state.mobile;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+
+  canvas.addEventListener('webglcontextlost', (e)=>{ e.preventDefault(); state.webglLost = true; showToast('Graphics paused — restoring…'); });
+  canvas.addEventListener('webglcontextrestored', ()=>{ state.webglLost = false; showToast('Graphics restored'); });
+
+  worldClock = new THREE.Clock();
+  buildLights(); buildWorld(); buildDock(); buildBoat(); buildRod(); buildRipples(); buildParty();
+  bindUI(); bindInputs(); restore(); resize(); updateObjectives(); updateActionLabel();
+  addEventListener('resize', resize, {passive:true});
+  addEventListener('orientationchange', ()=>setTimeout(resize, 120), {passive:true});
+  document.addEventListener('visibilitychange', ()=>{ if (document.hidden) clearInputs(); lastFrame = performance.now(); });
+  requestAnimationFrame(loop);
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+function buildLights() {
+  const hemi = new THREE.HemisphereLight(0xe8d7af, 0x203c32, 1.9); scene.add(hemi);
+  sun = new THREE.DirectionalLight(0xffd59c, 2.8); sun.position.set(-38,55,38); sun.castShadow = !state.mobile;
+  if (sun.castShadow) { sun.shadow.mapSize.set(1024,1024); sun.shadow.camera.left=-70; sun.shadow.camera.right=70; sun.shadow.camera.top=70; sun.shadow.camera.bottom=-70; }
+  scene.add(sun);
+  const orb = new THREE.Mesh(new THREE.SphereGeometry(3.2,20,12), new THREE.MeshBasicMaterial({color:0xffd094})); orb.position.set(-58,38,-92); scene.add(orb);
+}
+
+function buildWorld() {
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(190,190,1,1), new THREE.MeshStandardMaterial({color:0x42533c,roughness:1}));
+  ground.rotation.x = -Math.PI/2; ground.position.y=-0.12; ground.receiveShadow=true; scene.add(ground);
+
+  const waterGeo = new THREE.CircleGeometry(40, 96);
+  waterGeo.rotateX(-Math.PI/2);
+  const waterMat = new THREE.ShaderMaterial({
+    uniforms:{uTime:{value:0},uSun:{value:new THREE.Vector3(-.4,.7,.2)}}, transparent:true,
+    vertexShader:`varying vec3 vPos; varying float vWave; uniform float uTime; void main(){vec3 p=position; float w=sin(p.x*.23+uTime*1.25)*.12+cos(p.z*.17-uTime*.9)*.08+sin((p.x+p.z)*.08+uTime*.55)*.06; p.y+=w; vWave=w; vPos=p; gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);}`,
+    fragmentShader:`varying vec3 vPos; varying float vWave; uniform float uTime; void main(){float shore=smoothstep(40.0,33.5,length(vPos.xz)); vec3 deep=vec3(.045,.19,.20); vec3 shallow=vec3(.12,.38,.36); float glint=pow(max(0.0,sin(vPos.x*.12+uTime)*cos(vPos.z*.1-uTime*.8)),12.0)*.14; vec3 c=mix(deep,shallow,shore)+glint+vWave*.08; gl_FragColor=vec4(c,.94);}`
+  });
+  water = new THREE.Mesh(waterGeo, waterMat); water.position.y=0; scene.add(water);
+
+  const sandMat = new THREE.MeshStandardMaterial({color:0x82765a,roughness:1});
+  const shore = new THREE.Mesh(new THREE.RingGeometry(39.5,44.5,96), sandMat); shore.rotation.x=-Math.PI/2; shore.position.y=-0.03; scene.add(shore);
+
+  const rockGeo = new THREE.DodecahedronGeometry(0.75,0); const rockMat = new THREE.MeshStandardMaterial({color:0x676c60,roughness:1});
+  for(let i=0;i<60;i++){const a=i/60*Math.PI*2 + rand(-.04,.04); const r=rand(40.3,44.2); const m=new THREE.Mesh(rockGeo,rockMat); m.scale.set(rand(.5,1.3),rand(.35,.9),rand(.5,1.4)); m.position.set(Math.cos(a)*r,rand(-.05,.18),Math.sin(a)*r); m.rotation.set(rand(0,2),rand(0,2),rand(0,2)); m.castShadow=!state.mobile; scene.add(m);}
+
+  const trunkMat = new THREE.MeshStandardMaterial({color:0x4b3424,roughness:1});
+  const pineMat = new THREE.MeshStandardMaterial({color:0x1f4a37,roughness:.95});
+  const treeCount = state.mobile ? 66 : 90;
+  for(let i=0;i<treeCount;i++){
+    const a=Math.random()*Math.PI*2; const r=rand(47,84); if (Math.abs(a-Math.PI/2)<.18 && r<62) continue;
+    const h=rand(5.5,10.5), g=new THREE.Group();
+    const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.16,.25,h*.48,6),trunkMat); trunk.position.y=h*.24;
+    const c1=new THREE.Mesh(new THREE.ConeGeometry(h*.18,h*.52,8),pineMat); c1.position.y=h*.54;
+    const c2=new THREE.Mesh(new THREE.ConeGeometry(h*.14,h*.42,8),pineMat); c2.position.y=h*.76;
+    g.add(trunk,c1,c2); g.position.set(Math.cos(a)*r,0,Math.sin(a)*r); g.rotation.y=Math.random()*6.28; g.scale.multiplyScalar(rand(.8,1.18)); scene.add(g);
   }
-})();
-</script></body></html>
+
+  const mountainMat = new THREE.MeshStandardMaterial({color:0x6d7368,roughness:1,flatShading:true});
+  const mountainBack = new THREE.MeshStandardMaterial({color:0x7f8479,roughness:1,flatShading:true});
+  for(let i=0;i<18;i++){
+    const a = Math.PI*1.05 + (i/17)*Math.PI*.9; const r=rand(96,125); const h=rand(18,42); const rad=rand(12,25);
+    const m=new THREE.Mesh(new THREE.ConeGeometry(rad,h,6), i%2?mountainMat:mountainBack); m.position.set(Math.cos(a)*r,h*.5-1,Math.sin(a)*r); m.rotation.y=Math.random(); scene.add(m);
+  }
+
+  const mistMat = new THREE.MeshBasicMaterial({color:0xe8eadf,transparent:true,opacity:.08,depthWrite:false});
+  for(let i=0;i<8;i++){ const mist=new THREE.Mesh(new THREE.PlaneGeometry(rand(18,32),rand(4,8)),mistMat.clone()); mist.position.set(rand(-35,35),rand(2,6),rand(-36,18)); mist.rotation.y=rand(-.3,.3); scene.add(mist); mist.userData.drift=rand(.03,.09); mist.userData.baseX=mist.position.x; mist.userData.phase=Math.random()*6.28; mist.name='mist'; }
+
+  const birdMat = new THREE.MeshBasicMaterial({color:0x2a2f2b});
+  for(let i=0;i<7;i++){ const g=new THREE.Group(); const wing1=new THREE.Mesh(new THREE.BoxGeometry(.5,.025,.08),birdMat); const wing2=wing1.clone(); wing1.rotation.z=.25; wing2.rotation.z=-.25; wing1.position.x=-.22; wing2.position.x=.22; g.add(wing1,wing2); g.position.set(rand(-25,25),rand(15,25),rand(-55,-25)); g.userData.speed=rand(.3,.65); g.userData.phase=Math.random()*6.28; g.name='bird'; scene.add(g); }
+}
+
+function buildDock(){
+  dock=new THREE.Group(); const wood=new THREE.MeshStandardMaterial({color:0x6b4f34,roughness:.9});
+  for(let z=20;z<=49;z+=2){ const plank=new THREE.Mesh(new THREE.BoxGeometry(7.2,.24,1.72),wood); plank.position.set(0,.42,z); plank.rotation.y=rand(-.01,.01); plank.receiveShadow=true; plank.castShadow=!state.mobile; dock.add(plank); }
+  for(const x of [-3.1,3.1]) for(let z=21;z<=48;z+=5.5){ const post=new THREE.Mesh(new THREE.CylinderGeometry(.18,.24,2.3,8),wood); post.position.set(x,-.35,z); dock.add(post); }
+  scene.add(dock);
+}
+
+function buildBoat(){
+  boat=new THREE.Group(); boat.position.set(7.5,.45,34); boatYaw=0.22; boat.rotation.y=boatYaw;
+  const hullMat=new THREE.MeshStandardMaterial({color:0xd7d2bd,roughness:.55,metalness:.05});
+  const trimMat=new THREE.MeshStandardMaterial({color:0x31594c,roughness:.7});
+  boatBody=new THREE.Mesh(new THREE.BoxGeometry(3.2,.65,6.6),hullMat); boatBody.position.y=.25; boat.add(boatBody);
+  const bow=new THREE.Mesh(new THREE.ConeGeometry(1.65,2.3,4),hullMat); bow.rotation.x=Math.PI/2; bow.rotation.z=Math.PI/4; bow.position.set(0,.25,-4.2); boat.add(bow);
+  const inner=new THREE.Mesh(new THREE.BoxGeometry(2.5,.16,4.6),trimMat); inner.position.y=.58; boat.add(inner);
+  const consoleBox=new THREE.Mesh(new THREE.BoxGeometry(.8,.75,.7),trimMat); consoleBox.position.set(.65,1.02,.35); boat.add(consoleBox);
+  const motor=new THREE.Mesh(new THREE.BoxGeometry(.75,.95,.65),new THREE.MeshStandardMaterial({color:0x24292a,roughness:.5})); motor.position.set(0,.52,3.55); boat.add(motor);
+  boatWake=new THREE.Group();
+  for(let i=0;i<8;i++){const ring=new THREE.Mesh(new THREE.RingGeometry(.5+i*.28,.56+i*.28,24),new THREE.MeshBasicMaterial({color:0xdcebe6,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false})); ring.rotation.x=-Math.PI/2; ring.position.set(0,-.38,3.7+i*.55); ring.userData.phase=i/8; boatWake.add(ring);} boat.add(boatWake);
+  scene.add(boat);
+}
+
+function buildRod(){
+  rodGroup=new THREE.Group();
+  const rodMat=new THREE.MeshStandardMaterial({color:0x3a3326,roughness:.55});
+  const reelMat=new THREE.MeshStandardMaterial({color:0xb3b5ad,metalness:.55,roughness:.35});
+  const rod=new THREE.Mesh(new THREE.CylinderGeometry(.018,.045,2.15,8),rodMat); rod.rotation.z=-.28; rod.position.set(.48,-.43,-1.1); rodGroup.add(rod);
+  const reel=new THREE.Mesh(new THREE.CylinderGeometry(.11,.11,.12,12),reelMat); reel.rotation.z=Math.PI/2; reel.position.set(.34,-.63,-.46); rodGroup.add(reel);
+  rodTip=new THREE.Object3D(); rodTip.position.set(.78,-.16,-2.05); rodGroup.add(rodTip);
+  camera.add(rodGroup); rodGroup.position.set(0,0,0); rodGroup.rotation.y=-.06;
+  bobber=new THREE.Mesh(new THREE.SphereGeometry(.11,12,8),new THREE.MeshStandardMaterial({color:0xff5f4e,roughness:.5})); bobber.visible=false; scene.add(bobber);
+  const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]); line=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xe9eee7,transparent:true,opacity:.78})); line.frustumCulled=false; line.visible=false; scene.add(line);
+}
+
+function buildRipples(){
+  rippleGroup=new THREE.Group();
+  for(let i=0;i<6;i++){ const r=new THREE.Mesh(new THREE.RingGeometry(.18,.24,28),new THREE.MeshBasicMaterial({color:0xdceae5,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false})); r.rotation.x=-Math.PI/2; r.visible=false; rippleGroup.add(r); }
+  scene.add(rippleGroup);
+}
+
+function buildParty(){
+  partyGroup=new THREE.Group(); partyGroup.visible=false;
+  const colors=[0xe07263,0x5e8cc7,0xdcb85d];
+  for(let i=0;i<3;i++){
+    const g=new THREE.Group(); const body=new THREE.Mesh(new THREE.CylinderGeometry(.25,.31,.95,8),new THREE.MeshStandardMaterial({color:colors[i],roughness:.8})); body.position.y=.52;
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.23,10,8),new THREE.MeshStandardMaterial({color:0xc99877,roughness:.9})); head.position.y=1.18; g.add(body,head); g.position.set(i*.85-0.85,0,0); g.userData.phase=i*2.1; partyGroup.add(g);
+  }
+  const speaker=new THREE.Mesh(new THREE.BoxGeometry(.8,.75,.55),new THREE.MeshStandardMaterial({color:0x252b2d,roughness:.6})); speaker.position.set(0,.4,1.0); partyGroup.add(speaker);
+  partyGroup.position.set(-14,0,47); scene.add(partyGroup);
+}
+
+function bindUI(){
+  ui.play.addEventListener('click', ()=>{ startAudio(); ui.start.classList.add('hidden'); ui.tutorial.classList.remove('hidden'); });
+  ui.tutorialGo.addEventListener('click', ()=>{ ui.tutorial.classList.add('hidden'); state.started=true; ui.hud.classList.remove('hidden'); if(state.mobile) ui.controls.classList.remove('hidden'); updateOrientation(); showToast('Walk to the dock and cast a line'); save(); });
+  ui.settingsBtn.addEventListener('click', ()=>openSheet(ui.settings)); ui.closeSettings.addEventListener('click', ()=>closeSheet(ui.settings));
+  ui.logBtn.addEventListener('click', ()=>{ renderCatchLog(); openSheet(ui.logSheet); }); ui.closeLog.addEventListener('click', ()=>closeSheet(ui.logSheet));
+  ui.soundToggle.addEventListener('click', ()=>{ state.sound=!state.sound; ui.soundToggle.textContent=state.sound?'ON':'OFF'; if(ambientGain) ambientGain.gain.setTargetAtTime(state.sound?.028:0,audioCtx.currentTime,.15); beep(520,.06,.035); save(); });
+  ui.qualityToggle.addEventListener('click', ()=>{ const order=['AUTO','HIGH','LOW']; state.quality=order[(order.indexOf(state.quality)+1)%order.length]; ui.qualityToggle.textContent=state.quality; applyQuality(); save(); });
+  ui.sensitivity.addEventListener('input', ()=>{state.sensitivity=Number(ui.sensitivity.value); save();});
+  ui.resetBtn.addEventListener('click', ()=>resetGame(true));
+  ui.continueBtn.addEventListener('click', ()=>ui.victory.classList.add('hidden'));
+}
+
+function openSheet(sheet){ state.paused=true; clearInputs(); sheet.classList.remove('hidden'); }
+function closeSheet(sheet){ sheet.classList.add('hidden'); state.paused=false; lastFrame=performance.now(); }
+
+function bindInputs(){
+  addEventListener('keydown',(e)=>{
+    if(['KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','KeyE','Space','KeyP'].includes(e.code)) e.preventDefault();
+    input.keys.add(e.code); state.lastInput='keyboard';
+    if(e.code==='KeyE' && !e.repeat) interact();
+    if((e.code==='Space'||e.code==='KeyF')&&!e.repeat){state.actionHeld=true; actionPress();}
+    if(e.code==='KeyP'&&!e.repeat) patrol();
+    if(e.code==='Escape' && state.started){ if(ui.settings.classList.contains('hidden')) openSheet(ui.settings); else closeSheet(ui.settings); }
+  },{passive:false});
+  addEventListener('keyup',(e)=>{input.keys.delete(e.code); if(e.code==='Space'||e.code==='KeyF') state.actionHeld=false;});
+  canvas.addEventListener('click',()=>{if(state.started&&!state.mobile&&!state.paused) canvas.requestPointerLock?.(); startAudio();});
+  addEventListener('mousemove',(e)=>{if(document.pointerLockElement===canvas&&!state.paused){lookBy(e.movementX,e.movementY);state.lastInput='mouse';}});
+  addEventListener('mousedown',(e)=>{if(e.button===0&&document.pointerLockElement===canvas&&state.started&&!state.paused){state.actionHeld=true;actionPress();}});
+  addEventListener('mouseup',(e)=>{if(e.button===0)state.actionHeld=false;});
+
+  ui.joyZone.addEventListener('pointerdown',e=>{ if(joyPointer!==null) return; joyPointer=e.pointerId; ui.joyZone.setPointerCapture(e.pointerId); moveJoy(e); state.lastInput='touch'; startAudio(); });
+  ui.joyZone.addEventListener('pointermove',e=>{if(e.pointerId===joyPointer) moveJoy(e);});
+  const endJoy=e=>{if(e.pointerId===joyPointer){joyPointer=null;input.x=0;input.y=0;ui.joyKnob.style.transform='translate(0px,0px)';}};
+  ui.joyZone.addEventListener('pointerup',endJoy); ui.joyZone.addEventListener('pointercancel',endJoy);
+
+  ui.lookZone.addEventListener('pointerdown',e=>{if(lookPointer!==null)return; lookPointer=e.pointerId; lastLook.set(e.clientX,e.clientY); ui.lookZone.setPointerCapture(e.pointerId);state.lastInput='touch';startAudio();});
+  ui.lookZone.addEventListener('pointermove',e=>{if(e.pointerId!==lookPointer)return; const dx=e.clientX-lastLook.x,dy=e.clientY-lastLook.y;lastLook.set(e.clientX,e.clientY);lookBy(dx,dy);});
+  const endLook=e=>{if(e.pointerId===lookPointer)lookPointer=null;}; ui.lookZone.addEventListener('pointerup',endLook);ui.lookZone.addEventListener('pointercancel',endLook);
+
+  ui.runBtn.addEventListener('pointerdown',e=>{e.preventDefault();input.run=true;ui.runBtn.setPointerCapture?.(e.pointerId);});
+  const endRun=()=>input.run=false; ui.runBtn.addEventListener('pointerup',endRun);ui.runBtn.addEventListener('pointercancel',endRun);
+  ui.interactBtn.addEventListener('pointerdown',e=>{e.preventDefault();startAudio();interact();});
+  ui.actionBtn.addEventListener('pointerdown',e=>{e.preventDefault();state.actionHeld=true;startAudio();actionPress();});
+  ui.actionBtn.addEventListener('pointerup',()=>state.actionHeld=false);ui.actionBtn.addEventListener('pointercancel',()=>state.actionHeld=false);
+  ui.patrolBtn.addEventListener('pointerdown',e=>{e.preventDefault();startAudio();patrol();});
+}
+
+function moveJoy(e){
+  const r=ui.joyZone.getBoundingClientRect(); const cx=Math.max(74,r.left+88+parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-left')||0)), cy=r.bottom-90;
+  const base=ui.joyZone.querySelector('.joystick-base').getBoundingClientRect(); const bx=base.left+base.width/2,by=base.top+base.height/2; let dx=e.clientX-bx,dy=e.clientY-by; const max=base.width*.34; const len=Math.hypot(dx,dy)||1; if(len>max){dx=dx/len*max;dy=dy/len*max;} input.x=dx/max;input.y=-dy/max;ui.joyKnob.style.transform=`translate(${dx}px,${dy}px)`;
+}
+
+function lookBy(dx,dy){ const s=.00235*state.sensitivity; yaw-=dx*s; pitch-=dy*s; pitch=THREE.MathUtils.clamp(pitch,-1.1,1.08); }
+function clearInputs(){input.x=input.y=0;input.run=false;input.keys.clear();state.actionHeld=false;joyPointer=lookPointer=null;ui.joyKnob.style.transform='translate(0px,0px)';}
+
+function startAudio(){
+  if(audioCtx){ if(audioCtx.state==='suspended') audioCtx.resume(); return; }
+  try{
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    ambientGain=audioCtx.createGain(); ambientGain.gain.value=state.sound?.028:0; ambientGain.connect(audioCtx.destination);
+    const buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*2,audioCtx.sampleRate); const data=buffer.getChannelData(0); for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*.5;
+    const src=audioCtx.createBufferSource();src.buffer=buffer;src.loop=true; const filter=audioCtx.createBiquadFilter();filter.type='lowpass';filter.frequency.value=720;src.connect(filter);filter.connect(ambientGain);src.start();
+  }catch{}
+}
+function beep(freq=420,dur=.08,gain=.04,type='sine'){
+  if(!state.sound||!audioCtx)return; try{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=freq;o.type=type;g.gain.setValueAtTime(gain,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+dur);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+dur);}catch{}
+}
+function haptic(ms=25){try{navigator.vibrate?.(ms)}catch{}}
+
+function resize(){
+  if(!renderer)return; const w=innerWidth,h=innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);applyQuality();updateOrientation();
+}
+function updateOrientation(){ if(!state.started||!state.mobile)return; const portrait=innerHeight>innerWidth; ui.orientation.classList.toggle('hidden',!portrait); }
+function applyQuality(){
+  if(!renderer)return; let ratio; if(state.quality==='LOW')ratio=1; else if(state.quality==='HIGH')ratio=Math.min(devicePixelRatio,state.mobile?1.6:2); else ratio=Math.min(devicePixelRatio,state.frameTier==='low'?1:state.mobile?1.4:1.8); renderer.setPixelRatio(ratio);renderer.shadowMap.enabled=state.quality==='HIGH'&&!state.mobile; state.qualityScale=ratio;
+}
+
+function loop(now){ requestAnimationFrame(loop); if(!renderer||state.webglLost)return; const dt=Math.min(.04,Math.max(.001,(now-lastFrame)/1000));lastFrame=now; if(state.started&&!state.paused){state.elapsed+=dt;updateGame(dt);} updateWorld(dt); updateCamera(dt); updateRod(dt); updateDiagnostics(dt); renderer.render(scene,camera); }
+
+function updateGame(dt){
+  const k=input.keys; const ix=(k.has('KeyD')?1:0)-(k.has('KeyA')?1:0)+input.x; const iy=(k.has('KeyW')?1:0)-(k.has('KeyS')?1:0)+input.y; const run=input.run||k.has('ShiftLeft')||k.has('ShiftRight');
+  if(state.inBoat) updateBoat(dt,ix,iy); else updatePlayer(dt,ix,iy,run);
+  updateFishing(dt); updateParty(dt); updateStatus();
+  saveTimer+=dt;if(saveTimer>8){saveTimer=0;save();}
+}
+
+function updatePlayer(dt,ix,iy,run){
+  const v=new THREE.Vector2(ix,iy); if(v.lengthSq()>1)v.normalize(); if(v.lengthSq()<.002)return;
+  const speed=run?6.4:3.65; const forward=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw)); const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+  const move=forward.multiplyScalar(v.y).add(right.multiplyScalar(v.x)).multiplyScalar(speed*dt); const prev=playerPos.clone();playerPos.add(move);
+  const r=Math.hypot(playerPos.x,playerPos.z); const onDock=Math.abs(playerPos.x)<3.85&&playerPos.z>18&&playerPos.z<50.5;
+  if(r<40.1&&!onDock)playerPos.copy(prev); if(r>86)playerPos.copy(prev);playerPos.y=1.72;
+}
+
+function updateBoat(dt,ix,iy){
+  const steer=THREE.MathUtils.clamp(ix,-1,1), throttle=THREE.MathUtils.clamp(iy,-1,1); boatYaw-=steer*(1.15+Math.abs(throttle)*.45)*dt; boat.rotation.y=boatYaw;
+  const speed=throttle>=0?throttle*7.2:throttle*3.0; const fwd=new THREE.Vector3(-Math.sin(boatYaw),0,-Math.cos(boatYaw)); const prev=boat.position.clone(); boat.position.addScaledVector(fwd,speed*dt);
+  const r=Math.hypot(boat.position.x,boat.position.z); if(r>35.2){boat.position.copy(prev); showToast('That water gets shallow — turn back',900);}
+  const bob=Math.sin(state.elapsed*1.7)*.035+Math.sin(state.elapsed*.8)*.018; boat.position.y=.45+bob; boat.rotation.z=THREE.MathUtils.lerp(boat.rotation.z,-steer*.06,.08); boat.rotation.x=THREE.MathUtils.lerp(boat.rotation.x,throttle*.025,.08);
+  boat.userData.speed=Math.abs(speed); if(Math.abs(speed)>.6&&!state.hasBoated){state.hasBoated=true;updateObjectives();showToast('Boat objective complete');beep(620,.11,.04);}
+}
+
+function interact(){
+  if(!state.started||state.paused)return;
+  if(state.inBoat){
+    if(boat.position.distanceTo(new THREE.Vector3(7.5,boat.position.y,34))<8.5){state.inBoat=false;playerPos.set(3.2,1.72,38);showToast('Back on the dock');beep(360,.08,.035);updateActionLabel();}
+    else showToast('Return near the dock to exit safely');
+    return;
+  }
+  const d=playerPos.distanceTo(new THREE.Vector3(boat.position.x,1.72,boat.position.z));
+  if(d<5.2){state.inBoat=true;state.fishing='IDLE';hideBobber();showToast('Boat controls: left thumb steers + throttles');beep(520,.09,.04);updateActionLabel();}
+  else showToast('Move closer to the boat');
+}
+
+function actionPress(){
+  if(!state.started||state.paused)return;
+  if(state.fishing==='IDLE') castLine();
+  else if(state.fishing==='WAIT'&&state.biteWindow>0) hookFish();
+  else if(state.fishing==='WAIT') { showToast('Easy… wait for the bobber'); beep(250,.04,.02); }
+  else if(state.fishing==='CAUGHT'){state.fishing='IDLE';hideBobber();updateActionLabel();}
+}
+
+function canFish(){
+  if(state.inBoat)return Math.hypot(boat.position.x,boat.position.z)<35.5;
+  const r=Math.hypot(playerPos.x,playerPos.z); const onDock=Math.abs(playerPos.x)<4.2&&playerPos.z>18&&playerPos.z<50.5;return onDock||r<44;
+}
+
+function castLine(){
+  if(!canFish()){showToast('Get closer to the water');return;}
+  const origin=new THREE.Vector3(); rodTip.getWorldPosition(origin); const dir=new THREE.Vector3(0,0,-1).applyQuaternion(camera.getWorldQuaternion(tmpQ));dir.y=0;dir.normalize();
+  let target;
+  if(state.inBoat){target=boat.position.clone().addScaledVector(dir,rand(7.5,12));}
+  else{target=playerPos.clone().addScaledVector(dir,rand(8,13));}
+  const r=Math.hypot(target.x,target.z); if(r>38.4){const s=38.2/r;target.x*=s;target.z*=s;}
+  target.y=.22; bobber.position.copy(target);bobber.visible=true;line.visible=true;rippleGroup.position.set(target.x,.06,target.z);spawnRipple();state.fishing='WAIT';state.castTimer=rand(2.6,6.7);state.biteWindow=0;state.tension=0;state.reelProgress=0;state.hookedFish=null;showToast('Cast! Watch the bobber…');beep(440,.05,.035);haptic(18);updateActionLabel();
+}
+
+function updateFishing(dt){
+  if(state.fishing==='WAIT'){
+    if(state.biteWindow>0){state.biteWindow-=dt;bobber.position.y=.08+Math.sin(state.elapsed*18)*.06;if(Math.random()<dt*7)spawnRipple();if(state.biteWindow<=0){state.castTimer=rand(2.8,5.4);bobber.position.y=.22;showToast('Missed it — keep waiting');updateActionLabel();}}
+    else{state.castTimer-=dt;bobber.position.y=.21+Math.sin(state.elapsed*2.5)*.025;if(state.castTimer<=0){state.biteWindow=2.0;showToast('BITE! Tap HOOK');beep(760,.12,.05,'triangle');haptic(45);updateActionLabel();}}
+  } else if(state.fishing==='REEL'){
+    const fish=state.hookedFish; const pulse=.62+.38*Math.sin(state.elapsed*(2.3+fish.power*2.2)+fish.seed); const resistance=fish.power*(.17+.18*pulse);
+    if(state.actionHeld){state.tension+=dt*(.31+resistance);state.reelProgress+=dt*(.095+(1-state.tension)*.13);} else {state.tension-=dt*(.24-resistance*.22);state.reelProgress-=dt*.012;}
+    state.tension=THREE.MathUtils.clamp(state.tension,0,1.08);state.reelProgress=THREE.MathUtils.clamp(state.reelProgress,0,1);
+    bobber.position.y=.12+Math.sin(state.elapsed*13+fish.seed)*.08; bobber.position.x+=Math.sin(state.elapsed*3.4+fish.seed)*dt*.22; bobber.position.z+=Math.cos(state.elapsed*2.8+fish.seed)*dt*.18;
+    if(state.tension>.98){lineBreak();return;} if(state.reelProgress>=1){landFish();return;} updateMeters();
+  }
+}
+
+function hookFish(){
+  state.hookedFish=rollFish();state.fishing='REEL';state.tension=.42;state.reelProgress=.05;state.biteWindow=0;showToast(`${state.hookedFish.name} hooked — hold REEL, release if tension spikes`);beep(880,.08,.05,'triangle');haptic([25,35,25]);updateActionLabel();updateMeters();
+}
+function rollFish(){
+  let t=Math.random(), pick=fishSpecies[0];let acc=0;for(const f of fishSpecies){acc+=f.rarity;if(t<=acc){pick=f;break;}}
+  const weight=+(pick.min+Math.pow(Math.random(),.72)*(pick.max-pick.min)).toFixed(1);return {...pick,weight,seed:Math.random()*6.28};
+}
+function lineBreak(){showToast('Line snapped — too much tension');beep(170,.16,.06,'sawtooth');haptic(80);state.fishing='IDLE';state.actionHeld=false;hideBobber();updateActionLabel();}
+function landFish(){
+  const f=state.hookedFish;state.catches.push({name:f.name,weight:f.weight,time:new Date().toISOString()});if(!state.best||f.weight>state.best.weight)state.best={name:f.name,weight:f.weight};state.fishing='CAUGHT';state.actionHeld=false;ui.logCount.textContent=state.catches.length;showToast(`Caught ${f.weight} lb ${f.name}!`,2200);beep(660,.09,.05);setTimeout(()=>beep(880,.13,.04),90);haptic([35,45,70]);spawnRipple(true);updateObjectives();updateActionLabel();save();
+}
+function hideBobber(){bobber.visible=false;line.visible=false;ui.tensionWrap.classList.add('hidden');}
+function updateMeters(){ui.tensionWrap.classList.remove('hidden');ui.tensionFill.style.width=`${Math.min(100,state.tension*100)}%`;ui.tensionText.textContent=`${Math.round(state.tension*100)}%`;ui.reelFill.style.width=`${state.reelProgress*100}%`;ui.reelText.textContent=`${Math.round(state.reelProgress*100)}%`;}
+
+function spawnRipple(big=false){
+  rippleGroup.children.forEach((r,i)=>{r.visible=true;r.userData.life=0;r.userData.delay=i*.085;r.scale.setScalar(big?1.5:1);});
+}
+function updateRipples(dt){
+  rippleGroup.children.forEach(r=>{if(!r.visible)return;r.userData.life+=dt;if(r.userData.life<r.userData.delay)return;const t=(r.userData.life-r.userData.delay)/1.1;r.scale.setScalar(1+t*4.2);r.material.opacity=Math.max(0,.38*(1-t));if(t>1)r.visible=false;});
+}
+
+function spawnParty(){state.partyActive=true;state.partyPeace=0;partyGroup.visible=true;partyGroup.position.set(rand(-16,-11),0,rand(45,49));ui.patrolBtn.classList.remove('hidden');ui.peaceWrap.classList.remove('hidden');showToast('Rowdy lakeside party spotted — get close and use the AIR HORN',2200);beep(230,.08,.035,'square');}
+function updateParty(dt){
+  if(!state.partyActive){if(!state.peaceDone&&state.elapsed>state.nextPartyAt)spawnParty();return;}
+  partyGroup.children.forEach((g,i)=>{if(g.userData?.phase!==undefined){g.position.y=Math.max(0,Math.sin(state.elapsed*3+g.userData.phase)*.07);g.rotation.y=Math.sin(state.elapsed*1.8+g.userData.phase)*.12;}});
+  const p=state.inBoat?boat.position:playerPos;const d=p.distanceTo(partyGroup.position);ui.patrolBtn.classList.toggle('hidden',d>18);ui.peaceWrap.classList.toggle('hidden',d>23);ui.peaceFill.style.width=`${state.partyPeace*100}%`;ui.peaceText.textContent=`${Math.round(state.partyPeace*100)}%`;
+}
+function patrol(){
+  if(!state.partyActive){showToast('The lake is peaceful right now');return;}const p=state.inBoat?boat.position:playerPos;const d=p.distanceTo(partyGroup.position);if(d>19){showToast('Get closer to the party first');return;}
+  state.partyPeace=Math.min(1,state.partyPeace+.28);showToast('Air horn: BWAAAP — “Keep it peaceful, folks!”',900);beep(185,.22,.07,'sawtooth');haptic(30);if(state.partyPeace>=1){state.partyActive=false;state.peaceDone=true;partyGroup.visible=false;ui.patrolBtn.classList.add('hidden');ui.peaceWrap.classList.add('hidden');showToast('Peace restored +100',1800);beep(520,.08,.04);setTimeout(()=>beep(760,.12,.04),80);updateObjectives();save();}
+}
+
+function updateStatus(){
+  if(state.fishing==='REEL'){ui.statusTitle.textContent='Fish on!';ui.statusSub.textContent='Hold REEL to gain line. Release when tension gets high.';return;}
+  if(state.fishing==='WAIT'){ui.statusTitle.textContent=state.biteWindow>0?'BITE — HOOK NOW!':'Line in the water';ui.statusSub.textContent=state.biteWindow>0?'Tap the action button before it gets away.':'Watch the bobber and listen for the bite.';return;}
+  if(state.fishing==='CAUGHT'){ui.statusTitle.textContent='Nice catch';ui.statusSub.textContent='Tap DONE, then cast again whenever you want.';return;}
+  if(state.inBoat){ui.statusTitle.textContent='Boat mode';ui.statusSub.textContent='Steer with the left control. CAST to fish from here.';return;}
+  const d=playerPos.distanceTo(new THREE.Vector3(boat.position.x,1.72,boat.position.z));
+  if(d<6){ui.statusTitle.textContent='Boat ready';ui.statusSub.textContent='INTERACT to enter — or CAST from the dock.';return;}
+  ui.statusTitle.textContent='Explore the lake';ui.statusSub.textContent=state.catches.length<3?'Get near the water and CAST.':'Free fish, boat, or patrol the shore.';
+}
+
+function updateActionLabel(){
+  let text='CAST';if(state.fishing==='WAIT')text=state.biteWindow>0?'HOOK':'WAIT';else if(state.fishing==='REEL')text='REEL';else if(state.fishing==='CAUGHT')text='DONE';ui.actionBtn.textContent=text;
+}
+function updateObjectives(){
+  const c=Math.min(3,state.catches.length);ui.fishCount.textContent=`${c}/3`;toggleDone(ui.objectiveFish,state.catches.length>=3,`✓ Catch 3 fish ${c}/3`,`○ Catch 3 fish ${c}/3`);toggleDone(ui.objectiveBoat,state.hasBoated,'✓ Take the boat out','○ Take the boat out');toggleDone(ui.objectivePeace,state.peaceDone,'✓ Restore lake peace','○ Restore lake peace');
+  ui.logCount.textContent=state.catches.length;if(state.catches.length>=3&&state.hasBoated&&state.peaceDone&&!state.victoryShown){state.victoryShown=true;setTimeout(()=>{ui.victory.classList.remove('hidden');beep(620,.1,.05);setTimeout(()=>beep(820,.14,.04),110);},500);}
+}
+function toggleDone(el,done,yes,no){el.classList.toggle('done',done);if(el===ui.objectiveFish){el.innerHTML=(done?'✓ Catch 3 fish ':'○ Catch 3 fish ')+`<span id="fish-count">${Math.min(3,state.catches.length)}/3</span>`;ui.fishCount=$('fish-count');}else el.textContent=done?yes:no;}
+
+function updateCamera(dt){
+  cameraRig.rotation.set(0,yaw,0);camera.rotation.x=pitch;
+  if(state.inBoat){const offset=new THREE.Vector3(0,1.52,-.35).applyAxisAngle(new THREE.Vector3(0,1,0),boatYaw);cameraRig.position.lerp(boat.position.clone().add(offset),1-Math.pow(.001,dt));}
+  else{cameraRig.position.lerp(playerPos,1-Math.pow(.0001,dt));}
+}
+
+function updateRod(dt){
+  if(!rodGroup)return; const active=state.fishing==='REEL'; const bend=active?state.tension*.2:0;rodGroup.rotation.x=THREE.MathUtils.lerp(rodGroup.rotation.x,-bend,.12);
+  if(line.visible&&bobber.visible){const a=new THREE.Vector3();rodTip.getWorldPosition(a);const arr=line.geometry.attributes.position.array;arr[0]=a.x;arr[1]=a.y;arr[2]=a.z;arr[3]=bobber.position.x;arr[4]=bobber.position.y;arr[5]=bobber.position.z;line.geometry.attributes.position.needsUpdate=true;}
+}
+
+function updateWorld(dt){
+  if(water)water.material.uniforms.uTime.value=state.elapsed;
+  if(scene){scene.children.forEach(o=>{if(o.name==='mist'){o.position.x=o.userData.baseX+Math.sin(state.elapsed*o.userData.drift+o.userData.phase)*3;}else if(o.name==='bird'){o.position.x+=o.userData.speed*dt;if(o.position.x>45)o.position.x=-45;o.position.y+=Math.sin(state.elapsed*3+o.userData.phase)*dt*.1;}});}
+  updateRipples(dt);
+  if(boatWake){const s=boat?.userData.speed||0;boatWake.children.forEach((r,i)=>{r.material.opacity=THREE.MathUtils.lerp(r.material.opacity,s>.6?.12*(1-i/9):0,.08);r.scale.setScalar(1+Math.sin(state.elapsed*2+i)*.06);});}
+  const t=(Math.sin(state.elapsed*.012)*.5+.5);if(scene)scene.background.setHSL(.47,.16,.62+t*.025);
+}
+
+function updateDiagnostics(dt){
+  fpsAccum+=dt;fpsFrames++;fpsTimer+=dt;if(fpsTimer>=1){state.fps=Math.round(fpsFrames/fpsAccum);state.frameTier=state.fps<30?'low':state.fps<48?'medium':'good';fpsAccum=fpsFrames=fpsTimer=0;if(state.quality==='AUTO'&&state.frameTier==='low')applyQuality();}
+  if(ui.settings.classList.contains('hidden'))return;
+  ui.diagText.textContent=`FPS: ${state.fps} (${state.frameTier})\nInput: ${state.lastInput}\nTouch points: ${navigator.maxTouchPoints||0}\nFishing: ${state.fishing}\nBoat: ${state.inBoat?'IN BOAT':'ON FOOT'}\nAudio: ${audioCtx?.state||'not started'}\nQuality: ${state.quality} @ ${state.qualityScale.toFixed(2)}x`;
+}
+
+function renderCatchLog(){
+  ui.bestCatch.textContent=state.best?`Best catch: ${state.best.weight} lb ${state.best.name}`:'Best catch: —';
+  if(!state.catches.length){ui.catchList.innerHTML='<div class="empty">No fish yet. The lake is waiting.</div>';return;}
+  ui.catchList.innerHTML=state.catches.slice().reverse().map((c,i)=>`<div class="catch-item"><span>${state.catches.length-i}. ${escapeHtml(c.name)}</span><span>${Number(c.weight).toFixed(1)} lb</span></div>`).join('');
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
+function save(){
+  try{localStorage.setItem('alan-fishing-escape-v1',JSON.stringify({sound:state.sound,quality:state.quality,sensitivity:state.sensitivity,catches:state.catches.slice(-30),best:state.best,hasBoated:state.hasBoated,peaceDone:state.peaceDone,victoryShown:state.victoryShown}));}catch{}
+}
+function restore(){
+  try{const d=JSON.parse(localStorage.getItem('alan-fishing-escape-v1')||'{}');if(typeof d.sound==='boolean')state.sound=d.sound;if(['AUTO','HIGH','LOW'].includes(d.quality))state.quality=d.quality;if(Number.isFinite(d.sensitivity))state.sensitivity=d.sensitivity;if(Array.isArray(d.catches))state.catches=d.catches;if(d.best)state.best=d.best;state.hasBoated=!!d.hasBoated;state.peaceDone=!!d.peaceDone;state.victoryShown=!!d.victoryShown;ui.soundToggle.textContent=state.sound?'ON':'OFF';ui.qualityToggle.textContent=state.quality;ui.sensitivity.value=state.sensitivity;}catch{}
+}
+function resetGame(confirmFirst=false){
+  if(confirmFirst&&!confirm('Reset Alan’s catches and progress?'))return;state.inBoat=false;state.hasBoated=false;state.catches=[];state.best=null;state.peaceDone=false;state.victoryShown=false;state.partyActive=false;state.partyPeace=0;state.nextPartyAt=35;state.fishing='IDLE';state.actionHeld=false;playerPos.set(0,1.72,53);boat.position.set(7.5,.45,34);boatYaw=0.22;boat.rotation.set(0,boatYaw,0);partyGroup.visible=false;hideBobber();ui.patrolBtn.classList.add('hidden');ui.peaceWrap.classList.add('hidden');ui.victory.classList.add('hidden');updateObjectives();updateActionLabel();renderCatchLog();save();showToast('Game reset');closeSheet(ui.settings);
+}
+
+function showToast(text,ms=1300){ui.toast.textContent=text;ui.toast.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>ui.toast.classList.add('hidden'),ms);}
+function rand(a,b){return a+Math.random()*(b-a)}
+
+init();
+
+  </script>
+</body>
+</html>
