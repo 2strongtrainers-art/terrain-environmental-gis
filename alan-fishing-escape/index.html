@@ -43,6 +43,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
 /* FINAL_8PLUS_V12 */
 /* STABLE_LANDING_V12 */
 /* TACKLE_HUD_V13 */
+/* VISUAL_PERF_V17 */
 #objective-card{transition:opacity .25s ease,transform .25s ease,min-width .25s ease,padding .25s ease}
 #objective-card.compact{min-width:0!important;padding:7px 9px!important;opacity:.78;transform:scale(.96);transform-origin:top left}
 #objective-card.compact .obj{display:none}
@@ -253,7 +254,7 @@ let input = { x: 0, y: 0, run: false, keys: new Set() };
 let joyPointer = null, lookPointer = null, lastLook = new THREE.Vector2();
 let audioCtx = null, ambientGain = null;
 let lastFrame = performance.now(), fpsAccum = 0, fpsFrames = 0, fpsTimer = 0;
-let toastTimer = 0, saveTimer = 0;
+let toastTimer = 0, saveTimer = 0, renderScaleMode = 'normal';
 const tmpV = new THREE.Vector3(), tmpV2 = new THREE.Vector3(), tmpQ = new THREE.Quaternion();
 const fishSpecies = [
   {name:'Rainbow Trout', min:1.1,max:5.8,rarity:0.34,power:0.62},
@@ -306,6 +307,19 @@ function makePineCrown(radius,height,segments=10,phase=0){
   for(let i=0;i<a.count;i++){const x=a.getX(i),z=a.getZ(i),y=a.getY(i),ang=Math.atan2(z,x);const wobble=1+Math.sin(ang*3.0+phase+y*.8)*.08+Math.sin(ang*7.0-phase)*.035;a.setX(i,x*wobble);a.setZ(i,z*wobble);}
   g.computeVertexNormals();return g;
 }
+function makeIrregularRing(inner,outer,segments=128,phase=0){
+  const v=[],uv=[],idx=[];
+  for(let i=0;i<segments;i++){
+    const a=i/segments*Math.PI*2;
+    const n1=Math.sin(a*3.0+phase)*.42+Math.sin(a*7.0-phase*.7)*.18+Math.sin(a*13.0+phase*.4)*.08;
+    const n2=Math.sin(a*2.0+phase*.6)*.68+Math.sin(a*5.0-phase)*.24+Math.sin(a*11.0+phase)*.10;
+    const ri=inner+n1,ro=outer+n2;
+    v.push(Math.cos(a)*ri,Math.sin(a)*ri,0,Math.cos(a)*ro,Math.sin(a)*ro,0);
+    uv.push(0,i/segments,1,i/segments);
+  }
+  for(let i=0;i<segments;i++){const n=(i+1)%segments,a=i*2,b=a+1,c=n*2,d=c+1;idx.push(a,c,b,b,c,d);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();return g;
+}
 function angleLerp(a,b,t){let d=((b-a+Math.PI)%(Math.PI*2))-Math.PI;return a+d*t;}
 function revealObjectives(seconds=3.2){state.objectiveRevealUntil=state.elapsed+seconds;ui.objectiveCard?.classList.remove('compact');}
 function updateHUDPresentation(){
@@ -344,7 +358,7 @@ function init() {
 
   renderer = new THREE.WebGLRenderer({canvas, antialias: !state.mobile, powerPreference:'high-performance', alpha:false});
   renderer.setSize(innerWidth, innerHeight, false);
-  renderer.setPixelRatio(Math.min(devicePixelRatio, state.mobile ? 1.45 : 1.8));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, state.mobile ? 1.25 : 1.8));
   renderer.shadowMap.enabled = !state.mobile;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -357,7 +371,7 @@ function init() {
   worldClock = new THREE.Clock();
   buildLights(); buildWorld(); buildDock(); buildBoat(); buildAvatar(); buildRod(); loadPremiumAvatar(); buildRipples(); buildParty();
   bindUI(); bindInputs(); restore(); resize(); updateObjectives(); updateActionLabel();
-  window.__ALAN_GAME__={release:RELEASE_ID,audit:()=>({release:RELEASE_ID,avatar:!!avatar,premiumAvatar:!!premiumAvatar,fisherGear:!!premiumAvatar?.getObjectByName('fisher-pack'),rodAttached:rodGroup?.parent===avatarRodAnchor,thirdPerson:camera.position.z>2,lure:state.lure,zone:state.lastZone,score:state.score,catches:state.catches.length,quality:state.quality,fps:state.fps,fishing:state.fishing,landingT:catchAnim?.t||0,fishVisible:!!catchFishVisual?.visible}),forceLanding:()=>{if(state.fishing==='LANDING')return true;state.hookedFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};bobber.position.set(0,.1,42);landFish();return true;}};
+  window.__ALAN_GAME__={release:RELEASE_ID,audit:()=>({release:RELEASE_ID,avatar:!!avatar,premiumAvatar:!!premiumAvatar,fisherGear:!!premiumAvatar?.getObjectByName('fisher-pack'),rodAttached:rodGroup?.parent===avatarRodAnchor,thirdPerson:camera.position.z>2,lure:state.lure,zone:state.lastZone,score:state.score,catches:state.catches.length,quality:state.quality,fps:state.fps,fishing:state.fishing,landingT:catchAnim?.t||0,fishVisible:!!catchFishVisual?.visible,pixelRatio:renderer?.getPixelRatio?.()||0,anglerDetail:!!premiumAvatar?.getObjectByName('angler-detail'),taperedHull:!!boat?.getObjectByName('tapered-fishing-hull'),naturalRidge:!!visualExtras?.getObjectByName('natural-ridgeline')}),forceLanding:()=>{if(state.fishing==='LANDING')return true;state.hookedFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};bobber.position.set(0,.1,42);landFish();return true;}};
   addEventListener('resize', resize, {passive:true});
   addEventListener('orientationchange', ()=>setTimeout(resize, 120), {passive:true});
   document.addEventListener('visibilitychange', ()=>{ if (document.hidden) clearInputs(); lastFrame = performance.now(); });
@@ -453,9 +467,9 @@ function buildWorld() {
 
   const shoreTex=makeNoiseTexture('#786c51','#4d493d',96,state.mobile?420:700);
   const wetMat=new THREE.MeshStandardMaterial({color:0x696052,roughness:.9,metalness:.02,map:shoreTex,bumpMap:shoreTex,bumpScale:.06});
-  const wet=new THREE.Mesh(new THREE.RingGeometry(39.4,41.6,144),wetMat);wet.rotation.x=-Math.PI/2;wet.position.y=-.045;scene.add(wet);
+  const wet=new THREE.Mesh(makeIrregularRing(39.25,41.75,state.mobile?112:160,.7),wetMat);wet.rotation.x=-Math.PI/2;wet.position.y=-.045;scene.add(wet);
   const shoreMat=new THREE.MeshStandardMaterial({color:0x8a7a58,roughness:1,map:shoreTex,bumpMap:shoreTex,bumpScale:.085});
-  const shore=new THREE.Mesh(new THREE.RingGeometry(41.4,45.5,144),shoreMat);shore.rotation.x=-Math.PI/2;shore.position.y=-.08;shore.receiveShadow=true;scene.add(shore);
+  const shore=new THREE.Mesh(makeIrregularRing(41.35,45.9,state.mobile?112:160,1.9),shoreMat);shore.rotation.x=-Math.PI/2;shore.position.y=-.08;shore.receiveShadow=true;scene.add(shore);
 
   const rockGeo = new THREE.DodecahedronGeometry(.78,0);
   const rockTex=makeNoiseTexture('#73756b','#434941',96,state.mobile?350:650);
@@ -498,6 +512,21 @@ function buildWorld() {
     }
   }
 
+  function addRidge(z,baseY,amp,step,color,phase){
+    const verts=[],idx=[],count=Math.floor(320/step)+1;
+    for(let i=0;i<count;i++){
+      const x=-160+i*step;
+      const y=baseY+Math.sin(i*.48+phase)*amp*.34+Math.sin(i*.19-phase)*amp*.42+Math.abs(Math.sin(i*.11+phase))*amp*.55;
+      const zz=z+Math.sin(i*.23+phase)*2.8;
+      verts.push(x,-6,zz,x,y,zz);
+    }
+    for(let i=0;i<count-1;i++){const a=i*2,b=a+1,c=a+2,d=a+3;idx.push(a,c,b,b,c,d);}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));g.setIndex(idx);g.computeVertexNormals();
+    const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color,roughness:1,metalness:0,side:THREE.DoubleSide}));m.name='natural-ridgeline';visualExtras.add(m);
+  }
+  addRidge(-104,12,22,state.mobile?11:8,0x4d6259,.8);
+  addRidge(-142,17,28,state.mobile?13:9,0x66776f,2.1);
+
   const mistShader=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,fog:false,
     uniforms:{uOpacity:{value:.12}},vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
     fragmentShader:`varying vec2 vUv;uniform float uOpacity;void main(){vec2 p=(vUv-.5)*2.0;float a=smoothstep(1.0,.05,length(vec2(p.x*.72,p.y)));a*=smoothstep(-1.0,.1,p.y);gl_FragColor=vec4(.89,.91,.84,a*uOpacity);}`});
@@ -532,11 +561,24 @@ function buildDock(){
   scene.add(dock);cameraObstacles.push(dock);
 }
 
+function makeBoatHullGeometry(){
+  const sections=[[-3.95,.12],[-3.15,.86],[-1.45,1.34],[1.45,1.38],[3.05,1.18]],verts=[],idx=[];
+  for(const [z,w] of sections){verts.push(-w,.34,z,w,.34,z,-w*.82,-.34,z,w*.82,-.34,z);}
+  for(let i=0;i<sections.length-1;i++){
+    const a=i*4,b=a+4;
+    idx.push(a,b,a+1,a+1,b,b+1);          // deck
+    idx.push(a+2,a+3,b+2,a+3,b+3,b+2);    // keel
+    idx.push(a,a+2,b,a+2,b+2,b);          // port
+    idx.push(a+1,b+1,a+3,a+3,b+1,b+3);    // starboard
+  }
+  idx.push(0,1,2,1,3,2);const e=(sections.length-1)*4;idx.push(e,e+2,e+1,e+1,e+2,e+3);
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));g.setIndex(idx);g.computeVertexNormals();return g;
+}
 function buildBoat(){
   boat=new THREE.Group();boat.position.set(7.5,.45,34);boatYaw=.22;boat.rotation.y=boatYaw;
   const hullMat=new THREE.MeshStandardMaterial({color:0xe4e0d4,roughness:.3,metalness:.08});const lowerMat=new THREE.MeshStandardMaterial({color:0x1e5b58,roughness:.42,metalness:.08});const trimMat=new THREE.MeshStandardMaterial({color:0x243a36,roughness:.5});
-  boatBody=new THREE.Mesh(new THREE.BoxGeometry(2.8,.48,5.8),hullMat);boatBody.position.y=.22;boat.add(boatBody);const lower=new THREE.Mesh(new THREE.BoxGeometry(2.42,.38,5.55),lowerMat);lower.position.y=-.08;boat.add(lower);
-  const bow=new THREE.Mesh(new THREE.ConeGeometry(1.48,2.55,4),hullMat);bow.rotation.x=Math.PI/2;bow.rotation.z=Math.PI/4;bow.position.set(0,.19,-4.1);boat.add(bow);
+  boatBody=new THREE.Mesh(makeBoatHullGeometry(),hullMat);boatBody.position.y=.28;boat.add(boatBody);const lower=new THREE.Mesh(makeBoatHullGeometry(),lowerMat);lower.scale.set(.91,.72,.96);lower.position.y=-.17;boat.add(lower);boatBody.name='tapered-fishing-hull';
+  const bow=new THREE.Mesh(new THREE.ConeGeometry(1.48,2.55,4),hullMat);bow.rotation.x=Math.PI/2;bow.rotation.z=Math.PI/4;bow.position.set(0,.19,-4.1);bow.visible=false;boat.add(bow);
   for(const x of [-1.27,1.27]){const rail=new THREE.Mesh(new THREE.BoxGeometry(.13,.56,5.7),hullMat);rail.position.set(x,.56,.08);rail.rotation.z=x>0?-.055:.055;boat.add(rail);}
   for(const z of [-1.3,.68,2.2]){const seatBase=new THREE.Mesh(new THREE.BoxGeometry(2.24,.16,.64),trimMat);seatBase.position.set(0,.72,z);boat.add(seatBase);const cushion=new THREE.Mesh(new THREE.BoxGeometry(2.08,.11,.53),new THREE.MeshStandardMaterial({color:0xddd7c8,roughness:.72}));cushion.position.set(0,.84,z);boat.add(cushion);}
   const consoleBox=new THREE.Mesh(new THREE.BoxGeometry(.86,.78,.82),trimMat);consoleBox.position.set(.55,1.02,.38);boat.add(consoleBox);const glass=new THREE.Mesh(new THREE.BoxGeometry(.94,.5,.045),new THREE.MeshPhysicalMaterial({color:0xb9e2e2,transparent:true,opacity:.34,roughness:.06,depthWrite:false}));glass.position.set(.55,1.55,-.04);glass.rotation.x=-.18;boat.add(glass);
@@ -580,13 +622,18 @@ function loadPremiumAvatar(){
     const loader=new GLTFLoader();
     loader.load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r185/examples/models/gltf/Soldier.glb',gltf=>{
       const model=gltf.scene;premiumAvatar=model;model.name='alan-premium-avatar';model.scale.setScalar(1.04);model.position.set(0,.02,0);
-      model.traverse(o=>{if(o.isMesh){o.castShadow=!state.mobile;o.receiveShadow=true;if(o.material){o.material=o.material.clone();o.material.roughness=Math.max(.52,o.material.roughness??.7);o.material.metalness=Math.min(.08,o.material.metalness??0);}}});
+      model.traverse(o=>{if(o.isMesh){o.castShadow=!state.mobile;o.receiveShadow=true;if(o.material){o.material=o.material.clone();o.material.roughness=Math.max(.58,o.material.roughness??.7);o.material.metalness=Math.min(.05,o.material.metalness??0);if(o.material.color)o.material.color.lerp(new THREE.Color(0x50604d),.16);}}});
       const isRodMesh=o=>{let q=o;while(q){if(q===rodGroup)return true;q=q.parent;}return false;};
       avatar.traverse(o=>{if(o.isMesh&&!isRodMesh(o))o.visible=false;});avatar.add(model);
       const gearMat=new THREE.MeshStandardMaterial({color:0x776043,roughness:.9,metalness:0});
       const gearDark=new THREE.MeshStandardMaterial({color:0x30463a,roughness:.92,metalness:0});
       const fisherPack=new THREE.Mesh(new THREE.BoxGeometry(.52,.58,.16),gearMat);fisherPack.name='fisher-pack';fisherPack.position.set(0,1.14,.25);fisherPack.rotation.x=-.03;model.add(fisherPack);
       const packFlap=new THREE.Mesh(new THREE.BoxGeometry(.43,.18,.055),gearDark);packFlap.position.set(0,1.31,.35);model.add(packFlap);
+      const strapMat=new THREE.MeshStandardMaterial({color:0x223a31,roughness:.94});
+      for(const x of [-.17,.17]){const strap=new THREE.Mesh(new THREE.BoxGeometry(.065,.72,.035),strapMat);strap.position.set(x,1.30,.29);strap.rotation.z=x<0?-.08:.08;model.add(strap);}
+      for(const x of [-.29,.29]){const pouch=new THREE.Mesh(new THREE.BoxGeometry(.19,.23,.13),gearMat);pouch.position.set(x,1.02,.27);pouch.rotation.z=x<0?.08:-.08;model.add(pouch);}
+      const netHandle=new THREE.Mesh(new THREE.CylinderGeometry(.018,.024,.78,7),gearDark);netHandle.position.set(.31,.72,.33);netHandle.rotation.z=-.18;model.add(netHandle);
+      const vestPanel=new THREE.Mesh(new THREE.BoxGeometry(.48,.44,.055),new THREE.MeshStandardMaterial({color:0x55664a,roughness:.95}));vestPanel.name='angler-detail';vestPanel.position.set(0,1.34,-.19);model.add(vestPanel);
       const netRing=new THREE.Mesh(new THREE.TorusGeometry(.18,.022,7,22),gearDark);netRing.position.set(.31,1.05,.35);netRing.rotation.y=.24;model.add(netRing);
       const capTop=new THREE.Mesh(new THREE.CylinderGeometry(.19,.23,.14,16),gearDark);capTop.position.set(0,1.79,0);model.add(capTop);
       const capBrim=new THREE.Mesh(new THREE.BoxGeometry(.34,.025,.18),gearDark);capBrim.position.set(0,1.75,-.16);model.add(capBrim);
@@ -717,7 +764,13 @@ function applyQuality(){
 
 function loop(now){ requestAnimationFrame(loop); if(!renderer||state.webglLost)return; const dt=Math.min(.04,Math.max(.001,(now-lastFrame)/1000));lastFrame=now; if(state.started&&!state.paused){state.elapsed+=dt;updateGame(dt);} updateWorld(dt); updateCamera(dt); updateRod(dt); updateDiagnostics(dt); renderer.render(scene,camera); }
 
+function updateDynamicResolution(){
+  if(!renderer||!state.mobile)return;
+  const mode=(state.fishing==='REEL'||state.fishing==='LANDING')?'action':'normal';if(mode===renderScaleMode)return;renderScaleMode=mode;
+  const cap=mode==='action'?.85:1.25;renderer.setPixelRatio(Math.min(devicePixelRatio,cap));renderer.setSize(innerWidth,innerHeight,false);
+}
 function updateGame(dt){
+  updateDynamicResolution();
   const k=input.keys; const ix=(k.has('KeyD')?1:0)-(k.has('KeyA')?1:0)+input.x; const iy=(k.has('KeyW')?1:0)-(k.has('KeyS')?1:0)+input.y; const run=input.run||k.has('ShiftLeft')||k.has('ShiftRight');
   if(state.inBoat) updateBoat(dt,ix,iy); else updatePlayer(dt,ix,iy,run);
   updateFishing(dt); updateParty(dt); updateStatus(); updateHUDPresentation(); audioTick(dt);
