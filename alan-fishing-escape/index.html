@@ -37,8 +37,21 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
 @media (orientation:portrait){.objectives{top:max(58px,calc(env(safe-area-inset-top) + 48px))}.status{top:max(8px,env(safe-area-inset-top));width:65vw}.joystick-base{width:112px;height:112px}.joystick-knob{left:32px;top:32px;width:48px;height:48px}.run{left:max(128px,calc(env(safe-area-inset-left) + 120px))}.action{width:78px;height:78px}.interact{right:max(100px,calc(env(safe-area-inset-right) + 92px))}.tutorial-grid{grid-template-columns:1fr}}
 @media (max-height:500px){.objectives{padding:7px 9px}.obj{font-size:10px}.status{padding:7px 9px}.joystick-base{width:108px;height:108px}.joystick-knob{left:31px;top:31px;width:46px;height:46px}.control-btn{min-width:52px;min-height:52px}.action{width:72px;height:72px}.interact,.run{width:56px;height:56px}.patrol{width:58px;height:58px}.tutorial-card{padding:18px}.tutorial-grid{margin:12px 0;gap:6px}.tutorial-grid div{padding:8px}}
 
-  </style>
-  <!-- build: alan-fishing-escape-v3 -->
+  
+/* 8PLUS_RELEASE_V10 */
+#objective-card{transition:opacity .25s ease,transform .25s ease,min-width .25s ease,padding .25s ease}
+#objective-card.compact{min-width:0!important;padding:7px 9px!important;opacity:.78;transform:scale(.96);transform-origin:top left}
+#objective-card.compact .obj{display:none}
+#objective-card.compact .hud-label{margin:0;font-size:8px;white-space:nowrap}
+#zone-chip{margin-top:5px;font-size:8px;letter-spacing:.08em;color:#f2d39b;opacity:.9;white-space:nowrap}
+#lake-summary{margin:10px 0 14px;padding:12px;border-radius:13px;background:rgba(120,183,165,.09);border:1px solid rgba(120,183,165,.2);font-size:12px;line-height:1.55;color:#dce8e1}
+.control-btn{transition:opacity .18s ease,transform .1s ease;background:rgba(7,21,18,.52)}
+.joystick-base{width:108px!important;height:108px!important;opacity:.72}.joystick-knob{left:31px!important;top:31px!important;width:46px!important;height:46px!important}
+.action{width:72px!important;height:72px!important}.interact,.run{width:54px!important;height:54px!important}.patrol{width:58px!important;height:58px!important}
+.status{width:min(310px,36vw);background:rgba(8,22,19,.64)}
+@media(max-height:500px){.objectives{min-width:145px}.status{width:min(285px,34vw)}.toast{bottom:92px}.action{width:66px!important;height:66px!important}.joystick-base{width:98px!important;height:98px!important}.joystick-knob{left:28px!important;top:28px!important;width:42px!important;height:42px!important}}
+</style>
+  <!-- build: 8PLUS_RELEASE_V10 -->
 </head>
 <body>
   <div id="game-shell">
@@ -58,7 +71,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
         <h1>Fishing Escape</h1>
         <p class="lede">Sunrise. Quiet water. Three fish to catch. One boat to take out. And a lake worth keeping peaceful.</p>
         <button id="play-btn" class="primary big">PLAY</button>
-        <div class="micro">Third-person • Best in landscape • iPhone + desktop controls included</div>
+        <div class="micro">Third-person • Fishing zones • Trophy progression • iPhone + desktop</div>
       </div>
     </div>
 
@@ -70,7 +83,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
           <div><b>Left thumb</b><span>Move / steer boat</span></div>
           <div><b>Right side drag</b><span>Look around</span></div>
           <div><b>RUN</b><span>Sprint on shore</span></div>
-          <div><b>CAST / REEL</b><span>Fish anywhere by water</span></div>
+          <div><b>CAST / REEL</b><span>Fish zones + manage line tension</span></div>
           <div><b>INTERACT</b><span>Enter / exit boat</span></div>
           <div><b>AIR HORN</b><span>Quiet the rowdy party across the lake</span></div>
         </div>
@@ -82,7 +95,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
 
     <div id="hud" class="hidden">
       <div id="objective-card" class="hud-panel objectives">
-        <div class="hud-label">TODAY’S ESCAPE</div>
+        <div id="objective-label" class="hud-label">TODAY’S ESCAPE</div>
         <div id="obj-fish" class="obj">○ Catch 3 fish <span id="fish-count">0/3</span></div>
         <div id="obj-boat" class="obj">○ Take the boat out</div>
         <div id="obj-peace" class="obj">○ Restore lake peace</div>
@@ -91,6 +104,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
       <div id="status-card" class="hud-panel status">
         <div id="status-title">Walk to the dock</div>
         <div id="status-sub">Find a good casting spot by the water.</div>
+        <div id="zone-chip">SHORE • SPOON • 0 XP</div>
         <div id="tension-wrap" class="hidden">
           <div class="meter-label"><span>LINE TENSION</span><span id="tension-text">0%</span></div>
           <div class="meter"><div id="tension-fill"></div><div class="safe-zone"></div></div>
@@ -125,6 +139,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
         <div class="sheet-head"><h2>Pause & Settings</h2><button id="close-settings" class="plain-btn">Close</button></div>
         <div class="setting-row"><span>Sound</span><button id="sound-toggle" class="secondary small">ON</button></div>
         <div class="setting-row"><span>Quality</span><button id="quality-toggle" class="secondary small">AUTO</button></div>
+        <div class="setting-row"><span>Lure</span><button id="lure-toggle" class="secondary small">SPOON</button></div>
         <div class="setting-row"><span>Camera sensitivity</span><input id="sensitivity" type="range" min="0.45" max="1.8" step="0.05" value="1" /></div>
         <div class="diag">
           <div class="hud-label">DIAGNOSTICS</div>
@@ -138,6 +153,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
       <div class="sheet-card">
         <div class="sheet-head"><h2>Alan’s Catch Log</h2><button id="close-log" class="plain-btn">Close</button></div>
         <div id="best-catch" class="best-catch">Best catch: —</div>
+        <div id="lake-summary">Lake rank: Rookie • 0 XP</div>
         <div id="catch-list" class="catch-list"><div class="empty">No fish yet. The lake is waiting.</div></div>
       </div>
     </div>
@@ -165,7 +181,8 @@ const ui = {
   reelFill: $('reel-fill'), reelText: $('reel-text'), peaceWrap: $('peace-wrap'), peaceFill: $('peace-fill'), peaceText: $('peace-text'),
   toast: $('toast'), settingsBtn: $('settings-btn'), settings: $('settings'), closeSettings: $('close-settings'), soundToggle: $('sound-toggle'), qualityToggle: $('quality-toggle'),
   sensitivity: $('sensitivity'), diagText: $('diag-text'), resetBtn: $('reset-btn'), logBtn: $('log-btn'), logCount: $('log-count'), logSheet: $('catch-log'), closeLog: $('close-log'),
-  catchList: $('catch-list'), bestCatch: $('best-catch'), victory: $('victory'), continueBtn: $('continue-btn'),
+  catchList: $('catch-list'), bestCatch: $('best-catch'), lakeSummary: $('lake-summary'), victory: $('victory'), continueBtn: $('continue-btn'),
+  objectiveCard: $('objective-card'), objectiveLabel: $('objective-label'), zoneChip: $('zone-chip'), lureToggle: $('lure-toggle'),
   joyZone: $('joystick-zone'), joyKnob: $('joystick-knob'), lookZone: $('look-zone'), runBtn: $('run-btn'), interactBtn: $('interact-btn'), actionBtn: $('action-btn'), patrolBtn: $('patrol-btn')
 };
 
@@ -176,14 +193,17 @@ const state = {
   partyActive: false, partyPeace: 0, nextPartyAt: 35,
   fishing: 'IDLE', castTimer: 0, biteWindow: 0, tension: 0, reelProgress: 0, actionHeld: false, hookedFish: null,
   lastInput: 'none', fps: 60, frameTier: 'good', elapsed: 0,
-  qualityScale: 1, tutorialSeen: false, webglLost: false
+  qualityScale: 1, tutorialSeen: false, webglLost: false,
+  score: 0, rank: 'Lake Rookie', lure: 'SPOON', lastZone: 'SHORE', objectiveRevealUntil: 10, soundTimer: 2.5, reelSoundTimer: 0, deepWaterTrips: 0
 };
 
 let renderer, scene, camera, cameraRig, worldClock;
 let sun, water, dock, boat, boatBody, boatWake, partyGroup, skyDome, sunOrb, visualExtras, mistGroup, cloudGroup, shoreGrass;
 let rodGroup, rodTip, bobber, line, rippleGroup;
 let avatar=null, avatarTorso=null, avatarHead=null, avatarLeftArm=null, avatarRightArm=null, avatarLeftLeg=null, avatarRightLeg=null, avatarRodAnchor=null;
-let catchFishVisual=null, catchAnim=null;
+let catchFishVisual=null, catchAnim=null, hookedFishShadow=null, avatarShadow=null;
+let playerVelocity=new THREE.Vector3(), avatarFacing=0, cameraDistance=5.4, cameraCollisionTick=0;
+const cameraRaycaster=new THREE.Raycaster(), cameraObstacles=[];
 let playerPos = new THREE.Vector3(0, 1.72, 53);
 let yaw = 0, pitch = -0.045, boatYaw = 0.22;
 let input = { x: 0, y: 0, run: false, keys: new Set() };
@@ -199,6 +219,67 @@ const fishSpecies = [
   {name:'Brown Trout',min:1.4,max:7.2,rarity:0.14,power:0.78},
   {name:'Golden Trout',min:0.9,max:4.2,rarity:0.05,power:0.92}
 ];
+
+const RELEASE_ID='8PLUS_RELEASE_V10';
+const LURES=['SPOON','SPINNER','WORM'];
+function groundHeightAt(x,z){
+  const r=Math.hypot(x,z);
+  if(Math.abs(x)<3.9&&z>18&&z<50.6)return .56;
+  if(r<40.2)return -.08;
+  return .02+Math.sin(x*.12)*.045+Math.sin(z*.105+x*.035)*.035;
+}
+function lakeZoneAt(x,z){
+  const r=Math.hypot(x,z);
+  if(r<19)return 'DEEP';
+  if(x<-8&&z<14)return 'COVE';
+  if(x>10&&z<13)return 'INLET';
+  return 'SHORE';
+}
+function rankForScore(score){if(score>=1400)return 'Lake Legend';if(score>=850)return 'Trophy Angler';if(score>=400)return 'Lake Regular';return 'Lake Rookie';}
+function speciesWeight(f,zone,lure){
+  const zoneBoost={
+    'Rainbow Trout':{SHORE:1.35,INLET:1.65,COVE:1.05,DEEP:1.2},
+    'Smallmouth Bass':{SHORE:1.0,INLET:.9,COVE:2.0,DEEP:.7},
+    'Kokanee Salmon':{SHORE:.45,INLET:.8,COVE:.45,DEEP:2.7},
+    'Brown Trout':{SHORE:1.05,INLET:1.9,COVE:1.25,DEEP:1.0},
+    'Golden Trout':{SHORE:.65,INLET:1.25,COVE:.7,DEEP:1.8}
+  }[f.name]?.[zone]||1;
+  const lureBoost={SPOON:{'Rainbow Trout':1.35,'Kokanee Salmon':1.45,'Golden Trout':1.15},SPINNER:{'Smallmouth Bass':1.45,'Rainbow Trout':1.18},WORM:{'Smallmouth Bass':1.35,'Brown Trout':1.45}}[lure]?.[f.name]||1;
+  return f.rarity*zoneBoost*lureBoost;
+}
+function makeNoiseTexture(base='#4f5b49',speck='#273128',size=128,grain=1100){
+  const c=document.createElement('canvas');c.width=c.height=size;const x=c.getContext('2d');x.fillStyle=base;x.fillRect(0,0,size,size);
+  for(let i=0;i<grain;i++){const a=Math.random()*.22+.03;x.globalAlpha=a;x.fillStyle=i%3?speck:'#9b8b68';const q=Math.random()*2+0.35;x.fillRect(Math.random()*size,Math.random()*size,q,q);}
+  x.globalAlpha=1;const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(12,12);t.colorSpace=THREE.SRGBColorSpace;return t;
+}
+function makeWoodTexture(){
+  const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');x.fillStyle='#765438';x.fillRect(0,0,128,128);
+  for(let y=0;y<128;y+=8){x.strokeStyle=`rgba(55,31,19,${.14+Math.random()*.14})`;x.lineWidth=1+Math.random()*2;x.beginPath();x.moveTo(0,y+Math.random()*4);for(let xx=0;xx<=128;xx+=16)x.lineTo(xx,y+Math.sin(xx*.12+y)*2.2+Math.random()*2);x.stroke();}
+  for(let i=0;i<18;i++){x.strokeStyle='rgba(38,24,16,.20)';x.beginPath();x.ellipse(Math.random()*128,Math.random()*128,3+Math.random()*7,1+Math.random()*2,0,0,Math.PI*2);x.stroke();}
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(3,1);t.colorSpace=THREE.SRGBColorSpace;return t;
+}
+function makePineCrown(radius,height,segments=10,phase=0){
+  const g=new THREE.ConeGeometry(radius,height,segments,4,false),a=g.attributes.position;
+  for(let i=0;i<a.count;i++){const x=a.getX(i),z=a.getZ(i),y=a.getY(i),ang=Math.atan2(z,x);const wobble=1+Math.sin(ang*3.0+phase+y*.8)*.08+Math.sin(ang*7.0-phase)*.035;a.setX(i,x*wobble);a.setZ(i,z*wobble);}
+  g.computeVertexNormals();return g;
+}
+function angleLerp(a,b,t){let d=((b-a+Math.PI)%(Math.PI*2))-Math.PI;return a+d*t;}
+function revealObjectives(seconds=3.2){state.objectiveRevealUntil=state.elapsed+seconds;ui.objectiveCard?.classList.remove('compact');}
+function updateHUDPresentation(){
+  if(!ui.objectiveCard)return;
+  const active=state.elapsed<state.objectiveRevealUntil||state.fishing==='CAUGHT'||state.fishing==='LANDING';ui.objectiveCard.classList.toggle('compact',!active);
+  const done=(state.catches.length>=3?1:0)+(state.hasBoated?1:0)+(state.peaceDone?1:0);if(ui.objectiveLabel)ui.objectiveLabel.textContent=active?'TODAY’S ESCAPE':`ESCAPE ${done}/3`;
+  const p=state.inBoat?boat.position:playerPos;const zone=lakeZoneAt(p.x,p.z);state.lastZone=zone;state.rank=rankForScore(state.score);if(ui.zoneChip)ui.zoneChip.textContent=`${zone} • ${state.lure} • ${Math.round(state.score)} XP`;
+  if(ui.interactBtn){const d=playerPos.distanceTo(new THREE.Vector3(boat.position.x,1.72,boat.position.z));const near=state.inBoat?Math.hypot(boat.position.x-7.5,boat.position.z-34)<8.5:d<5.8;ui.interactBtn.classList.toggle('hidden',!near);}
+}
+function fishPoints(f,zone){const rarityBonus={'Rainbow Trout':1,'Smallmouth Bass':1,'Kokanee Salmon':1.25,'Brown Trout':1.4,'Golden Trout':2.4}[f.name]||1;return Math.round((35+f.weight*24)*rarityBonus*(zone==='DEEP'?1.18:1));}
+function makeHookShadow(){
+  if(hookedFishShadow){scene.remove(hookedFishShadow);hookedFishShadow=null;}const g=new THREE.Group();const m=new THREE.MeshBasicMaterial({color:0x172b29,transparent:true,opacity:.28,depthTest:false,depthWrite:false});const body=new THREE.Mesh(new THREE.CircleGeometry(.42,16),m);body.scale.set(1.8,.55,1);body.rotation.x=-Math.PI/2;g.add(body);const tail=new THREE.Mesh(new THREE.CircleGeometry(.22,10),m);tail.scale.set(.9,.45,1);tail.rotation.x=-Math.PI/2;tail.position.x=-.65;g.add(tail);g.renderOrder=4;scene.add(g);hookedFishShadow=g;
+}
+function audioTick(dt){
+  if(!audioCtx||!state.sound)return;state.soundTimer-=dt;if(state.soundTimer<=0){state.soundTimer=rand(4.2,8.8);const f=rand(1450,2300);beep(f,.055,.009,'sine');setTimeout(()=>beep(f*1.18,.045,.006,'sine'),70);}
+  if(state.fishing==='REEL'&&state.actionHeld){state.reelSoundTimer-=dt;if(state.reelSoundTimer<=0){state.reelSoundTimer=.12+Math.random()*.08;beep(rand(620,820),.018,.006,'square');}}
+}
 
 function canWebGL() {
   try {
@@ -233,6 +314,7 @@ function init() {
   worldClock = new THREE.Clock();
   buildLights(); buildWorld(); buildDock(); buildBoat(); buildAvatar(); buildRod(); buildRipples(); buildParty();
   bindUI(); bindInputs(); restore(); resize(); updateObjectives(); updateActionLabel();
+  window.__ALAN_GAME__={release:RELEASE_ID,audit:()=>({release:RELEASE_ID,avatar:!!avatar,rodAttached:rodGroup?.parent===avatarRodAnchor,thirdPerson:camera.position.z>2,lure:state.lure,zone:state.lastZone,score:state.score,catches:state.catches.length,quality:state.quality,fps:state.fps}),forceLanding:()=>{if(state.fishing==='LANDING')return;state.hookedFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};bobber.position.set(0,.1,30);landFish();}};
   addEventListener('resize', resize, {passive:true});
   addEventListener('orientationchange', ()=>setTimeout(resize, 120), {passive:true});
   document.addEventListener('visibilitychange', ()=>{ if (document.hidden) clearInputs(); lastFrame = performance.now(); });
@@ -283,9 +365,11 @@ function buildWorld() {
   });
   skyDome=new THREE.Mesh(new THREE.SphereGeometry(220,40,24),skyMat); skyDome.name='sky'; scene.add(skyDome);
 
-  const groundMat=new THREE.MeshStandardMaterial({color:0x26372b,roughness:1,metalness:0});
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(210,210,1,1), groundMat);
-  ground.rotation.x=-Math.PI/2; ground.position.y=-.15; ground.receiveShadow=true; scene.add(ground);
+  const groundTex=makeNoiseTexture('#43503c','#25322a',128,state.mobile?700:1200);
+  const groundMat=new THREE.MeshStandardMaterial({color:0x61705a,roughness:.98,metalness:0,map:groundTex,bumpMap:groundTex,bumpScale:.08});
+  const groundGeo=new THREE.PlaneGeometry(210,210,state.mobile?30:44,state.mobile?30:44);groundGeo.rotateX(-Math.PI/2);
+  const gp=groundGeo.attributes.position;for(let i=0;i<gp.count;i++){const x=gp.getX(i),z=gp.getZ(i);gp.setY(i,groundHeightAt(x,z)-.08);}groundGeo.computeVertexNormals();
+  const ground = new THREE.Mesh(groundGeo,groundMat);ground.receiveShadow=true;scene.add(ground);
 
   const waterGeo = new THREE.CircleGeometry(40, 144); waterGeo.rotateX(-Math.PI/2);
   const waterMat = new THREE.ShaderMaterial({
@@ -324,13 +408,15 @@ function buildWorld() {
   });
   water = new THREE.Mesh(waterGeo, waterMat); water.position.y=0; water.receiveShadow=true; scene.add(water);
 
-  const wetMat=new THREE.MeshStandardMaterial({color:0x595140,roughness:.88,metalness:.02});
+  const shoreTex=makeNoiseTexture('#786c51','#4d493d',96,state.mobile?420:700);
+  const wetMat=new THREE.MeshStandardMaterial({color:0x696052,roughness:.9,metalness:.02,map:shoreTex,bumpMap:shoreTex,bumpScale:.06});
   const wet=new THREE.Mesh(new THREE.RingGeometry(39.4,41.6,144),wetMat);wet.rotation.x=-Math.PI/2;wet.position.y=-.045;scene.add(wet);
-  const shoreMat=new THREE.MeshStandardMaterial({color:0x6a624b,roughness:1});
+  const shoreMat=new THREE.MeshStandardMaterial({color:0x8a7a58,roughness:1,map:shoreTex,bumpMap:shoreTex,bumpScale:.085});
   const shore=new THREE.Mesh(new THREE.RingGeometry(41.4,45.5,144),shoreMat);shore.rotation.x=-Math.PI/2;shore.position.y=-.08;shore.receiveShadow=true;scene.add(shore);
 
   const rockGeo = new THREE.DodecahedronGeometry(.78,0);
-  const rockMats=[0x555d57,0x656961,0x76736a,0x4c5650].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:.96,metalness:.01}));
+  const rockTex=makeNoiseTexture('#73756b','#434941',96,state.mobile?350:650);
+  const rockMats=[0x626b65,0x72756d,0x837d70,0x56625a].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:.94,metalness:.015,map:rockTex,bumpMap:rockTex,bumpScale:.12}));
   const rockCount=state.mobile?92:138;
   for(let i=0;i<rockCount;i++){
     const a=i/rockCount*Math.PI*2+rand(-.05,.05), r=rand(40.4,45.1), m=new THREE.Mesh(rockGeo,rockMats[i%rockMats.length]);
@@ -339,7 +425,7 @@ function buildWorld() {
 
   const treeCount=state.mobile?108:168;
   const trunkGeo=new THREE.CylinderGeometry(.13,.25,4.2,6);
-  const crown1Geo=new THREE.ConeGeometry(1.22,4.5,8), crown2Geo=new THREE.ConeGeometry(.98,3.9,8), crown3Geo=new THREE.ConeGeometry(.72,3.1,8);
+  const crown1Geo=makePineCrown(1.22,4.5,10,.4), crown2Geo=makePineCrown(.98,3.9,10,1.3), crown3Geo=makePineCrown(.72,3.1,10,2.1);
   const trunkMat=new THREE.MeshStandardMaterial({color:0x4a3021,roughness:1});
   const foliageMats=[0x153c2e,0x1b4734,0x214f39].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:.96}));
   const trunks=new THREE.InstancedMesh(trunkGeo,trunkMat,treeCount);
@@ -352,12 +438,13 @@ function buildWorld() {
     const ys=[4.2,6.1,7.7], ss=[1.0,1.0,.94];
     for(let j=0;j<3;j++){dummy.position.set(x,ys[j]*h,z);dummy.rotation.set(0,rot+j*.24,0);dummy.scale.set(w*ss[j],h,w*ss[j]);dummy.updateMatrix();crowns[j].setMatrixAt(i,dummy.matrix);}
   }
-  trunks.castShadow=!state.mobile;trunks.receiveShadow=true;scene.add(trunks);crowns.forEach((m,i)=>{m.castShadow=!state.mobile&&i===0;scene.add(m)});
+  trunks.castShadow=!state.mobile;trunks.receiveShadow=true;scene.add(trunks);cameraObstacles.push(trunks);crowns.forEach((m,i)=>{m.castShadow=!state.mobile&&i===0;scene.add(m)});
 
   function mountain(rad,h,segments,color){
-    const g=new THREE.ConeGeometry(rad,h,segments,3,false); const pos=g.attributes.position;
-    for(let i=0;i<pos.count;i++){const y=pos.getY(i),x=pos.getX(i),z=pos.getZ(i);if(Math.abs(x)+Math.abs(z)>.01){const ang=Math.atan2(z,x);const f=1+Math.sin(ang*3.1+y*.08)*.08+Math.sin(ang*7.3)*.045;pos.setX(i,x*f);pos.setZ(i,z*f);}}
-    g.computeVertexNormals();return new THREE.Mesh(g,new THREE.MeshStandardMaterial({color,roughness:1,flatShading:true}));
+    const seg=state.mobile?14:20,rings=6,verts=[],idx=[];
+    for(let j=0;j<=rings;j++){const t=j/rings,rr=rad*Math.pow(1-t,.72);const cy=-h*.5+t*h;for(let i=0;i<seg;i++){const a=i/seg*Math.PI*2;const wob=1+Math.sin(a*3.1+j*.7)*.11+Math.sin(a*7.3-j*.45)*.055;const drift=Math.sin(t*Math.PI)*rad*.08;verts.push(Math.cos(a)*rr*wob+drift*Math.sin(j*.8),cy,Math.sin(a)*rr*wob+drift*Math.cos(j*.6));}}
+    for(let j=0;j<rings;j++)for(let i=0;i<seg;i++){const n=(i+1)%seg,a=j*seg+i,b=j*seg+n,c=(j+1)*seg+i,d=(j+1)*seg+n;idx.push(a,c,b,b,c,d);}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));g.setIndex(idx);g.computeVertexNormals();return new THREE.Mesh(g,new THREE.MeshStandardMaterial({color,roughness:1,flatShading:false}));
   }
   for(let layer=0;layer<2;layer++){
     const count=layer?16:13;
@@ -391,56 +478,53 @@ function buildWorld() {
 }
 
 function buildDock(){
-  dock=new THREE.Group();
-  const woods=[0x6a4b31,0x745438,0x62452f,0x7a593b].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:.82,metalness:0}));
+  dock=new THREE.Group();const woodTex=makeWoodTexture();
+  const colors=[0x7b583a,0x825e3e,0x6e4c33,0x8b6442];const woods=colors.map(c=>new THREE.MeshStandardMaterial({color:c,roughness:.82,metalness:0,map:woodTex,bumpMap:woodTex,bumpScale:.075}));
   for(let z=20;z<=49;z+=1.55){const plank=new THREE.Mesh(new THREE.BoxGeometry(7.15,.24,1.34),woods[Math.floor((z*10)%woods.length)]);plank.position.set(rand(-.025,.025),.43,z);plank.rotation.y=rand(-.012,.012);plank.receiveShadow=true;plank.castShadow=!state.mobile;dock.add(plank);}
-  const beamMat=new THREE.MeshStandardMaterial({color:0x49321f,roughness:.95});
+  const beamMat=new THREE.MeshStandardMaterial({color:0x4d3421,roughness:.95,map:woodTex,bumpMap:woodTex,bumpScale:.07});
   for(const x of [-2.72,2.72]){const beam=new THREE.Mesh(new THREE.BoxGeometry(.28,.35,30),beamMat);beam.position.set(x,.15,34.5);dock.add(beam);}
-  for(const x of [-3.15,3.15])for(let z=21;z<=48;z+=5.2){const post=new THREE.Mesh(new THREE.CylinderGeometry(.19,.25,2.55,8),beamMat);post.position.set(x,-.32,z);post.castShadow=!state.mobile;dock.add(post);const cap=new THREE.Mesh(new THREE.CylinderGeometry(.27,.27,.12,8),beamMat);cap.position.set(x,.96,z);dock.add(cap);}
-  const cleatMat=new THREE.MeshStandardMaterial({color:0x333a37,roughness:.35,metalness:.55});
-  for(const x of [-2.55,2.55])for(const z of [29,43]){const cleat=new THREE.Mesh(new THREE.BoxGeometry(.45,.12,.14),cleatMat);cleat.position.set(x,.68,z);dock.add(cleat);}
-  scene.add(dock);
+  for(const x of [-3.15,3.15])for(let z=21;z<=48;z+=5.2){const post=new THREE.Mesh(new THREE.CylinderGeometry(.19,.25,2.55,10),beamMat);post.position.set(x,-.32,z);post.castShadow=!state.mobile;dock.add(post);const cap=new THREE.Mesh(new THREE.CylinderGeometry(.27,.27,.12,10),beamMat);cap.position.set(x,.96,z);dock.add(cap);}
+  const cleatMat=new THREE.MeshStandardMaterial({color:0x333a37,roughness:.35,metalness:.55});for(const x of [-2.55,2.55])for(const z of [29,43]){const cleat=new THREE.Mesh(new THREE.BoxGeometry(.45,.12,.14),cleatMat);cleat.position.set(x,.68,z);dock.add(cleat);}
+  const ropeMat=new THREE.MeshStandardMaterial({color:0xb39a70,roughness:1});for(const z of [26,45]){const rope=new THREE.Mesh(new THREE.TorusGeometry(.28,.025,6,20),ropeMat);rope.position.set(-2.8,.72,z);rope.rotation.y=Math.PI/2;dock.add(rope);}
+  scene.add(dock);cameraObstacles.push(dock);
 }
 
 function buildBoat(){
   boat=new THREE.Group();boat.position.set(7.5,.45,34);boatYaw=.22;boat.rotation.y=boatYaw;
-  const hullMat=new THREE.MeshStandardMaterial({color:0xd8d7cc,roughness:.34,metalness:.08});
-  const lowerMat=new THREE.MeshStandardMaterial({color:0x1f4e4b,roughness:.48,metalness:.06});
-  const trimMat=new THREE.MeshStandardMaterial({color:0x263e38,roughness:.58});
-  boatBody=new THREE.Mesh(new THREE.BoxGeometry(2.75,.52,5.85),hullMat);boatBody.position.y=.2;boatBody.scale.set(1,.9,1);boat.add(boatBody);
-  const lower=new THREE.Mesh(new THREE.BoxGeometry(2.35,.38,5.45),lowerMat);lower.position.y=-.08;lower.rotation.z=.01;boat.add(lower);
-  const bow=new THREE.Mesh(new THREE.ConeGeometry(1.45,2.45,4),hullMat);bow.rotation.x=Math.PI/2;bow.rotation.z=Math.PI/4;bow.position.set(0,.18,-4.08);boat.add(bow);
-  for(const x of [-1.25,1.25]){const rail=new THREE.Mesh(new THREE.BoxGeometry(.14,.55,5.6),hullMat);rail.position.set(x,.55,.1);rail.rotation.z=x>0?-.06:.06;boat.add(rail);}
-  for(const z of [-1.25,.65,2.2]){const seat=new THREE.Mesh(new THREE.BoxGeometry(2.25,.17,.55),trimMat);seat.position.set(0,.72,z);boat.add(seat);}
-  const consoleBox=new THREE.Mesh(new THREE.BoxGeometry(.8,.72,.76),trimMat);consoleBox.position.set(.58,1.03,.42);boat.add(consoleBox);
-  const glass=new THREE.Mesh(new THREE.BoxGeometry(.86,.46,.045),new THREE.MeshPhysicalMaterial({color:0xb9d9da,transparent:true,opacity:.38,roughness:.08,metalness:0,depthWrite:false}));glass.position.set(.58,1.52,.02);glass.rotation.x=-.18;boat.add(glass);
-  const wheel=new THREE.Mesh(new THREE.TorusGeometry(.22,.035,8,18),new THREE.MeshStandardMaterial({color:0x1f2425,roughness:.45}));wheel.position.set(.58,1.28,.02);wheel.rotation.x=Math.PI/2;boat.add(wheel);
-  const motorMat=new THREE.MeshStandardMaterial({color:0x1f2629,roughness:.3,metalness:.3});const motor=new THREE.Mesh(new THREE.BoxGeometry(.78,.98,.7),motorMat);motor.position.set(0,.48,3.45);boat.add(motor);
-  boatWake=new THREE.Group();for(let i=0;i<10;i++){const ring=new THREE.Mesh(new THREE.RingGeometry(.45+i*.26,.51+i*.26,28),new THREE.MeshBasicMaterial({color:0xdcebe6,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.set(0,-.40,3.55+i*.48);ring.userData.phase=i/10;boatWake.add(ring);}boat.add(boatWake);
-  boat.traverse(o=>{if(o.isMesh){o.castShadow=!state.mobile;o.receiveShadow=true;}});scene.add(boat);
+  const hullMat=new THREE.MeshStandardMaterial({color:0xe4e0d4,roughness:.3,metalness:.08});const lowerMat=new THREE.MeshStandardMaterial({color:0x1e5b58,roughness:.42,metalness:.08});const trimMat=new THREE.MeshStandardMaterial({color:0x243a36,roughness:.5});
+  boatBody=new THREE.Mesh(new THREE.BoxGeometry(2.8,.48,5.8),hullMat);boatBody.position.y=.22;boat.add(boatBody);const lower=new THREE.Mesh(new THREE.BoxGeometry(2.42,.38,5.55),lowerMat);lower.position.y=-.08;boat.add(lower);
+  const bow=new THREE.Mesh(new THREE.ConeGeometry(1.48,2.55,4),hullMat);bow.rotation.x=Math.PI/2;bow.rotation.z=Math.PI/4;bow.position.set(0,.19,-4.1);boat.add(bow);
+  for(const x of [-1.27,1.27]){const rail=new THREE.Mesh(new THREE.BoxGeometry(.13,.56,5.7),hullMat);rail.position.set(x,.56,.08);rail.rotation.z=x>0?-.055:.055;boat.add(rail);}
+  for(const z of [-1.3,.68,2.2]){const seatBase=new THREE.Mesh(new THREE.BoxGeometry(2.24,.16,.64),trimMat);seatBase.position.set(0,.72,z);boat.add(seatBase);const cushion=new THREE.Mesh(new THREE.BoxGeometry(2.08,.11,.53),new THREE.MeshStandardMaterial({color:0xddd7c8,roughness:.72}));cushion.position.set(0,.84,z);boat.add(cushion);}
+  const consoleBox=new THREE.Mesh(new THREE.BoxGeometry(.86,.78,.82),trimMat);consoleBox.position.set(.55,1.02,.38);boat.add(consoleBox);const glass=new THREE.Mesh(new THREE.BoxGeometry(.94,.5,.045),new THREE.MeshPhysicalMaterial({color:0xb9e2e2,transparent:true,opacity:.34,roughness:.06,depthWrite:false}));glass.position.set(.55,1.55,-.04);glass.rotation.x=-.18;boat.add(glass);
+  const wheel=new THREE.Mesh(new THREE.TorusGeometry(.22,.035,8,20),new THREE.MeshStandardMaterial({color:0x171d1e,roughness:.4}));wheel.position.set(.55,1.3,-.02);wheel.rotation.x=Math.PI/2;boat.add(wheel);
+  const finder=new THREE.Mesh(new THREE.BoxGeometry(.38,.27,.05),new THREE.MeshStandardMaterial({color:0x10231f,emissive:0x205e50,emissiveIntensity:.8,roughness:.25}));finder.position.set(.15,1.28,-.06);finder.rotation.x=-.12;boat.add(finder);
+  const motorMat=new THREE.MeshStandardMaterial({color:0x1b2428,roughness:.28,metalness:.34});const motor=new THREE.Mesh(new THREE.BoxGeometry(.82,1.02,.72),motorMat);motor.position.set(0,.48,3.46);boat.add(motor);
+  for(const x of [-.95,.95]){const holder=new THREE.Mesh(new THREE.CylinderGeometry(.045,.055,.42,8),trimMat);holder.position.set(x,1.05,2.65);holder.rotation.x=-.3;boat.add(holder);}
+  const nav=new THREE.Mesh(new THREE.SphereGeometry(.06,8,6),new THREE.MeshBasicMaterial({color:0x86d5c5}));nav.position.set(0,1.02,-3.95);boat.add(nav);
+  boatWake=new THREE.Group();for(let i=0;i<12;i++){const ring=new THREE.Mesh(new THREE.RingGeometry(.45+i*.24,.51+i*.24,28),new THREE.MeshBasicMaterial({color:0xe6f4f0,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.set(0,-.40,3.55+i*.45);ring.userData.phase=i/12;boatWake.add(ring);}boat.add(boatWake);
+  boat.traverse(o=>{if(o.isMesh){o.castShadow=!state.mobile;o.receiveShadow=true;}});scene.add(boat);cameraObstacles.push(boat);
 }
 
 function buildAvatar(){
   avatar=new THREE.Group();avatar.name='alan-avatar';
-  const skin=new THREE.MeshStandardMaterial({color:0xc6926f,roughness:.9});
-  const shirt=new THREE.MeshStandardMaterial({color:0x355747,roughness:.92});
-  const pants=new THREE.MeshStandardMaterial({color:0x343b3c,roughness:.96});
-  const shoe=new THREE.MeshStandardMaterial({color:0x202526,roughness:.92});
-  const capMat=new THREE.MeshStandardMaterial({color:0x7a5b38,roughness:.9});
-  avatarTorso=new THREE.Mesh(new THREE.BoxGeometry(.72,.92,.4),shirt);avatarTorso.position.y=1.28;avatar.add(avatarTorso);
-  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.12,.14,.18,10),skin);neck.position.y=1.78;avatar.add(neck);
-  avatarHead=new THREE.Mesh(new THREE.SphereGeometry(.28,14,10),skin);avatarHead.position.y=2.0;avatar.add(avatarHead);
-  const cap=new THREE.Mesh(new THREE.CylinderGeometry(.25,.29,.18,12),capMat);cap.position.y=2.19;avatar.add(cap);
-  const brim=new THREE.Mesh(new THREE.BoxGeometry(.4,.035,.24),capMat);brim.position.set(0,2.13,-.2);avatar.add(brim);
-  function limb(x,y,mat,isArm){
-    const g=new THREE.Group();g.position.set(x,y,0);const mesh=new THREE.Mesh(new THREE.CylinderGeometry(isArm?.085:.12,isArm?.105:.14,isArm?.72:.78,8),mat);mesh.position.y=isArm?-.34:-.38;g.add(mesh);avatar.add(g);return g;
-  }
-  avatarLeftArm=limb(-.47,1.62,shirt,true);avatarRightArm=limb(.47,1.62,shirt,true);
-  avatarLeftLeg=limb(-.2,.85,pants,false);avatarRightLeg=limb(.2,.85,pants,false);
-  for(const x of [-.2,.2]){const foot=new THREE.Mesh(new THREE.BoxGeometry(.25,.14,.42),shoe);foot.position.set(x,.08,-.12);avatar.add(foot);}
-  avatarRodAnchor=new THREE.Group();avatarRodAnchor.position.set(.5,1.23,-.18);avatar.add(avatarRodAnchor);
-  avatar.traverse(o=>{if(o.isMesh){o.castShadow=!state.mobile;o.receiveShadow=true;}});
-  scene.add(avatar);
+  const skin=new THREE.MeshStandardMaterial({color:0xc99775,roughness:.82});const shirt=new THREE.MeshStandardMaterial({color:0x315c49,roughness:.88});const shirt2=new THREE.MeshStandardMaterial({color:0x274b3d,roughness:.92});const pants=new THREE.MeshStandardMaterial({color:0x343d3f,roughness:.93});const shoe=new THREE.MeshStandardMaterial({color:0x202628,roughness:.86});const capMat=new THREE.MeshStandardMaterial({color:0x795a38,roughness:.86});
+  const pelvis=new THREE.Mesh(new THREE.CapsuleGeometry(.31,.34,5,10),pants);pelvis.position.y=.9;pelvis.scale.set(1.08,1,.72);avatar.add(pelvis);
+  avatarTorso=new THREE.Mesh(new THREE.CapsuleGeometry(.36,.58,6,12),shirt);avatarTorso.position.y=1.38;avatarTorso.scale.set(1.0,1,.68);avatar.add(avatarTorso);
+  const vest=new THREE.Mesh(new THREE.BoxGeometry(.62,.6,.08),shirt2);vest.position.set(0,1.4,-.31);vest.rotation.x=.04;avatar.add(vest);
+  const collar=new THREE.Mesh(new THREE.TorusGeometry(.17,.035,6,18,Math.PI),shirt2);collar.position.set(0,1.72,-.22);collar.rotation.x=Math.PI/2;avatar.add(collar);
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.13,.145,.2,12),skin);neck.position.y=1.82;avatar.add(neck);
+  avatarHead=new THREE.Mesh(new THREE.SphereGeometry(.29,18,13),skin);avatarHead.scale.set(.93,1.05,.9);avatarHead.position.y=2.04;avatar.add(avatarHead);
+  const nose=new THREE.Mesh(new THREE.ConeGeometry(.045,.12,8),skin);nose.rotation.x=-Math.PI/2;nose.position.set(0,2.04,-.265);avatar.add(nose);
+  const eyeMat=new THREE.MeshBasicMaterial({color:0x171a18});for(const x of [-.09,.09]){const eye=new THREE.Mesh(new THREE.SphereGeometry(.025,8,6),eyeMat);eye.position.set(x,2.095,-.258);avatar.add(eye);}
+  for(const x of [-.285,.285]){const ear=new THREE.Mesh(new THREE.SphereGeometry(.055,8,6),skin);ear.scale.set(.6,1,.45);ear.position.set(x,2.04,0);avatar.add(ear);}
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(.245,.295,.19,14),capMat);cap.position.y=2.235;avatar.add(cap);const brim=new THREE.Mesh(new THREE.BoxGeometry(.43,.035,.27),capMat);brim.position.set(0,2.17,-.2);avatar.add(brim);
+  function arm(side){const g=new THREE.Group();g.position.set(.43*side,1.62,0);const upper=new THREE.Mesh(new THREE.CapsuleGeometry(.09,.4,4,8),shirt);upper.position.y=-.24;g.add(upper);const fore=new THREE.Mesh(new THREE.CapsuleGeometry(.078,.34,4,8),skin);fore.position.set(0,-.65,-.05);fore.rotation.x=.12;g.add(fore);const hand=new THREE.Mesh(new THREE.SphereGeometry(.105,10,8),skin);hand.position.set(0,-.88,-.10);g.add(hand);avatar.add(g);return g;}
+  function leg(side){const g=new THREE.Group();g.position.set(.19*side,.82,0);const thigh=new THREE.Mesh(new THREE.CapsuleGeometry(.12,.38,4,8),pants);thigh.position.y=-.24;g.add(thigh);const shin=new THREE.Mesh(new THREE.CapsuleGeometry(.105,.36,4,8),pants);shin.position.set(0,-.68,.01);g.add(shin);const foot=new THREE.Mesh(new THREE.BoxGeometry(.25,.16,.42),shoe);foot.position.set(0,-.93,-.1);g.add(foot);avatar.add(g);return g;}
+  avatarLeftArm=arm(-1);avatarRightArm=arm(1);avatarLeftLeg=leg(-1);avatarRightLeg=leg(1);
+  avatarRodAnchor=new THREE.Group();avatarRodAnchor.position.set(.48,1.23,-.24);avatarRodAnchor.rotation.set(-.12,0,-.08);avatar.add(avatarRodAnchor);
+  const shadowTex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),g=x.createRadialGradient(32,32,3,32,32,30);g.addColorStop(0,'rgba(0,0,0,.42)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,64,64);return new THREE.CanvasTexture(c)})();avatarShadow=new THREE.Mesh(new THREE.PlaneGeometry(1.15,.62),new THREE.MeshBasicMaterial({map:shadowTex,transparent:true,depthWrite:false,opacity:.55}));avatarShadow.rotation.x=-Math.PI/2;scene.add(avatarShadow);
+  avatar.traverse(o=>{if(o.isMesh){o.castShadow=!state.mobile;o.receiveShadow=true;}});scene.add(avatar);
 }
 
 function buildRod(){
@@ -481,6 +565,7 @@ function bindUI(){
   ui.logBtn.addEventListener('click', ()=>{ renderCatchLog(); openSheet(ui.logSheet); }); ui.closeLog.addEventListener('click', ()=>closeSheet(ui.logSheet));
   ui.soundToggle.addEventListener('click', ()=>{ state.sound=!state.sound; ui.soundToggle.textContent=state.sound?'ON':'OFF'; if(ambientGain) ambientGain.gain.setTargetAtTime(state.sound?.028:0,audioCtx.currentTime,.15); beep(520,.06,.035); save(); });
   ui.qualityToggle.addEventListener('click', ()=>{ const order=['AUTO','HIGH','LOW']; state.quality=order[(order.indexOf(state.quality)+1)%order.length]; ui.qualityToggle.textContent=state.quality; applyQuality(); save(); });
+  ui.lureToggle.addEventListener('click', ()=>{const i=(LURES.indexOf(state.lure)+1)%LURES.length;state.lure=LURES[i];ui.lureToggle.textContent=state.lure;showToast(`Tackle: ${state.lure}`);revealObjectives(2);save();});
   ui.sensitivity.addEventListener('input', ()=>{state.sensitivity=Number(ui.sensitivity.value); save();});
   ui.resetBtn.addEventListener('click', ()=>resetGame(true));
   ui.continueBtn.addEventListener('click', ()=>ui.victory.classList.add('hidden'));
@@ -526,16 +611,16 @@ function moveJoy(e){
   const base=ui.joyZone.querySelector('.joystick-base').getBoundingClientRect(); const bx=base.left+base.width/2,by=base.top+base.height/2; let dx=e.clientX-bx,dy=e.clientY-by; const max=base.width*.34; const len=Math.hypot(dx,dy)||1; if(len>max){dx=dx/len*max;dy=dy/len*max;} input.x=dx/max;input.y=-dy/max;ui.joyKnob.style.transform=`translate(${dx}px,${dy}px)`;
 }
 
-function lookBy(dx,dy){ const s=.00235*state.sensitivity; yaw-=dx*s; pitch-=dy*s; pitch=THREE.MathUtils.clamp(pitch,-1.1,1.08); }
+function lookBy(dx,dy){ const s=.00215*state.sensitivity; yaw-=dx*s; pitch-=dy*s; pitch=THREE.MathUtils.clamp(pitch,-.68,.52); }
 function clearInputs(){input.x=input.y=0;input.run=false;input.keys.clear();state.actionHeld=false;joyPointer=lookPointer=null;ui.joyKnob.style.transform='translate(0px,0px)';}
 
 function startAudio(){
-  if(audioCtx){ if(audioCtx.state==='suspended') audioCtx.resume(); return; }
+  if(audioCtx){if(audioCtx.state==='suspended')audioCtx.resume();return;}
   try{
-    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-    ambientGain=audioCtx.createGain(); ambientGain.gain.value=state.sound?.028:0; ambientGain.connect(audioCtx.destination);
-    const buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*2,audioCtx.sampleRate); const data=buffer.getChannelData(0); for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*.5;
-    const src=audioCtx.createBufferSource();src.buffer=buffer;src.loop=true; const filter=audioCtx.createBiquadFilter();filter.type='lowpass';filter.frequency.value=720;src.connect(filter);filter.connect(ambientGain);src.start();
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();ambientGain=audioCtx.createGain();ambientGain.gain.value=state.sound?.026:0;ambientGain.connect(audioCtx.destination);
+    const buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*3,audioCtx.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*.42;
+    const waterSrc=audioCtx.createBufferSource();waterSrc.buffer=buffer;waterSrc.loop=true;const waterFilter=audioCtx.createBiquadFilter();waterFilter.type='lowpass';waterFilter.frequency.value=560;waterFilter.Q.value=.7;const waterGain=audioCtx.createGain();waterGain.gain.value=.72;waterSrc.connect(waterFilter);waterFilter.connect(waterGain);waterGain.connect(ambientGain);waterSrc.start();
+    const windSrc=audioCtx.createBufferSource();windSrc.buffer=buffer;windSrc.loop=true;const windFilter=audioCtx.createBiquadFilter();windFilter.type='bandpass';windFilter.frequency.value=1250;windFilter.Q.value=.45;const windGain=audioCtx.createGain();windGain.gain.value=.18;windSrc.connect(windFilter);windFilter.connect(windGain);windGain.connect(ambientGain);windSrc.start();
   }catch{}
 }
 function beep(freq=420,dur=.08,gain=.04,type='sine'){
@@ -552,7 +637,7 @@ function applyQuality(){
   let ratio;
   if(state.quality==='LOW')ratio=1;
   else if(state.quality==='HIGH')ratio=Math.min(devicePixelRatio,state.mobile?1.65:2.05);
-  else ratio=Math.min(devicePixelRatio,state.frameTier==='low'?1:state.mobile?1.42:1.85);
+  else ratio=Math.min(devicePixelRatio,state.frameTier==='low'?1:state.frameTier==='medium'?(state.mobile?1.22:1.55):state.mobile?1.42:1.85);
   renderer.setPixelRatio(ratio);
   renderer.shadowMap.enabled=state.quality==='HIGH'&&!state.mobile;
   if(visualExtras)visualExtras.visible=state.quality==='HIGH'||(state.quality==='AUTO'&&state.frameTier!=='low');
@@ -566,16 +651,18 @@ function loop(now){ requestAnimationFrame(loop); if(!renderer||state.webglLost)r
 function updateGame(dt){
   const k=input.keys; const ix=(k.has('KeyD')?1:0)-(k.has('KeyA')?1:0)+input.x; const iy=(k.has('KeyW')?1:0)-(k.has('KeyS')?1:0)+input.y; const run=input.run||k.has('ShiftLeft')||k.has('ShiftRight');
   if(state.inBoat) updateBoat(dt,ix,iy); else updatePlayer(dt,ix,iy,run);
-  updateFishing(dt); updateParty(dt); updateStatus();
+  updateFishing(dt); updateParty(dt); updateStatus(); updateHUDPresentation(); audioTick(dt);
   saveTimer+=dt;if(saveTimer>8){saveTimer=0;save();}
 }
 
 function updatePlayer(dt,ix,iy,run){
-  const v=new THREE.Vector2(ix,iy); if(v.lengthSq()>1)v.normalize(); if(v.lengthSq()<.002)return;
-  const speed=run?6.4:3.65; const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)); const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
-  const move=forward.multiplyScalar(v.y).add(right.multiplyScalar(v.x)).multiplyScalar(speed*dt); const prev=playerPos.clone();playerPos.add(move);
-  const r=Math.hypot(playerPos.x,playerPos.z); const onDock=Math.abs(playerPos.x)<3.85&&playerPos.z>18&&playerPos.z<50.5;
-  if(r<40.1&&!onDock)playerPos.copy(prev); if(r>86)playerPos.copy(prev);playerPos.y=1.72;
+  const v=new THREE.Vector2(ix,iy);if(v.lengthSq()>1)v.normalize();
+  const speed=run?6.45:3.72,forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));const target=new THREE.Vector3();
+  if(v.lengthSq()>.002)target.copy(forward).multiplyScalar(v.y).addScaledVector(right,v.x).normalize().multiplyScalar(speed);
+  const response=v.lengthSq()>.002?(run?9.5:11.5):14;playerVelocity.lerp(target,1-Math.exp(-response*dt));
+  if(playerVelocity.lengthSq()<.002){playerVelocity.set(0,0,0);return;}
+  const prev=playerPos.clone();playerPos.addScaledVector(playerVelocity,dt);const r=Math.hypot(playerPos.x,playerPos.z),onDock=Math.abs(playerPos.x)<3.85&&playerPos.z>18&&playerPos.z<50.5;
+  if((r<40.1&&!onDock)||r>86){playerPos.copy(prev);playerVelocity.multiplyScalar(.15);}playerPos.y=1.72+groundHeightAt(playerPos.x,playerPos.z);
 }
 
 function updateBoat(dt,ix,iy){
@@ -583,7 +670,7 @@ function updateBoat(dt,ix,iy){
   const speed=throttle>=0?throttle*7.2:throttle*3.0; const fwd=new THREE.Vector3(-Math.sin(boatYaw),0,-Math.cos(boatYaw)); const prev=boat.position.clone(); boat.position.addScaledVector(fwd,speed*dt);
   const r=Math.hypot(boat.position.x,boat.position.z); if(r>35.2){boat.position.copy(prev); showToast('That water gets shallow — turn back',900);}
   const bob=Math.sin(state.elapsed*1.7)*.035+Math.sin(state.elapsed*.8)*.018; boat.position.y=.45+bob; boat.rotation.z=THREE.MathUtils.lerp(boat.rotation.z,-steer*.06,.08); boat.rotation.x=THREE.MathUtils.lerp(boat.rotation.x,throttle*.025,.08);
-  boat.userData.speed=Math.abs(speed); if(Math.abs(speed)>.6&&!state.hasBoated){state.hasBoated=true;updateObjectives();showToast('Boat objective complete');beep(620,.11,.04);}
+  boat.userData.speed=Math.abs(speed); const zone=lakeZoneAt(boat.position.x,boat.position.z); if(zone==='DEEP'&&!state.hasBoated){state.hasBoated=true;state.deepWaterTrips++;state.score+=150;updateObjectives();showToast('Deep water reached — boat objective +150 XP');beep(620,.11,.04);save();}
 }
 
 function interact(){
@@ -613,12 +700,9 @@ function canFish(){
 
 function castLine(){
   if(!canFish()){showToast('Get closer to the water');return;}
-  const origin=new THREE.Vector3(); rodTip.getWorldPosition(origin); const dir=new THREE.Vector3(0,0,-1).applyQuaternion(camera.getWorldQuaternion(tmpQ));dir.y=0;dir.normalize();
-  let target;
-  if(state.inBoat){target=boat.position.clone().addScaledVector(dir,rand(7.5,12));}
-  else{target=playerPos.clone().addScaledVector(dir,rand(8,13));}
-  const r=Math.hypot(target.x,target.z); if(r>38.4){const s=38.2/r;target.x*=s;target.z*=s;}
-  target.y=.22; bobber.position.copy(target);bobber.visible=true;line.visible=true;rippleGroup.position.set(target.x,.06,target.z);spawnRipple();state.fishing='WAIT';state.castTimer=rand(2.6,6.7);state.biteWindow=0;state.tension=0;state.reelProgress=0;state.hookedFish=null;showToast('Cast! Watch the bobber…');beep(440,.05,.035);haptic(18);updateActionLabel();
+  const origin=new THREE.Vector3();rodTip.getWorldPosition(origin);const dir=new THREE.Vector3(0,0,-1).applyQuaternion(camera.getWorldQuaternion(tmpQ));dir.y=0;dir.normalize();const distance=state.inBoat?rand(8.5,13.5):rand(8,12.5);let target=origin.clone().addScaledVector(dir,distance);
+  const r=Math.hypot(target.x,target.z);if(r>38.4){const q=38.2/r;target.x*=q;target.z*=q;}target.y=.22;bobber.position.copy(target);bobber.visible=true;line.visible=true;rippleGroup.position.set(target.x,.06,target.z);spawnRipple();state.fishing='WAIT';state.lastZone=lakeZoneAt(target.x,target.z);
+  const lureSpeed={SPOON:.92,SPINNER:.82,WORM:1.08}[state.lure]||1;const zoneSpeed={DEEP:.82,INLET:.9,COVE:.92,SHORE:1}[state.lastZone]||1;state.castTimer=rand(2.3,5.8)*lureSpeed*zoneSpeed;state.biteWindow=0;state.tension=0;state.reelProgress=0;state.hookedFish=null;showToast(`${state.lastZone} cast • ${state.lure}`);beep(440,.05,.035);haptic(18);revealObjectives(1.5);updateActionLabel();
 }
 
 function updateFishing(dt){
@@ -629,19 +713,19 @@ function updateFishing(dt){
     const fish=state.hookedFish; const pulse=.62+.38*Math.sin(state.elapsed*(2.3+fish.power*2.2)+fish.seed); const resistance=fish.power*(.17+.18*pulse);
     if(state.actionHeld){state.tension+=dt*(.31+resistance);state.reelProgress+=dt*(.095+(1-state.tension)*.13);} else {state.tension-=dt*(.24-resistance*.22);state.reelProgress-=dt*.012;}
     state.tension=THREE.MathUtils.clamp(state.tension,0,1.08);state.reelProgress=THREE.MathUtils.clamp(state.reelProgress,0,1);
-    bobber.position.y=.12+Math.sin(state.elapsed*13+fish.seed)*.08; bobber.position.x+=Math.sin(state.elapsed*3.4+fish.seed)*dt*.22; bobber.position.z+=Math.cos(state.elapsed*2.8+fish.seed)*dt*.18;
+    const surge=Math.max(0,Math.sin(state.elapsed*(2.1+fish.power*2.6)+fish.seed));bobber.position.y=.12+Math.sin(state.elapsed*13+fish.seed)*.08+surge*.035; bobber.position.x+=Math.sin(state.elapsed*3.4+fish.seed)*dt*(.22+fish.power*.16); bobber.position.z+=Math.cos(state.elapsed*2.8+fish.seed)*dt*(.18+fish.power*.14);if(hookedFishShadow){hookedFishShadow.position.lerp(tmpV.set(bobber.position.x+Math.sin(state.elapsed*4+fish.seed)*.5,.055,bobber.position.z+Math.cos(state.elapsed*3.6+fish.seed)*.42),.18);hookedFishShadow.rotation.y=Math.atan2(Math.sin(state.elapsed*4+fish.seed),Math.cos(state.elapsed*3.6+fish.seed));}if(Math.random()<dt*.16*fish.power)spawnRipple(true);
     if(state.tension>.98){lineBreak();return;} if(state.reelProgress>=1){landFish();return;} updateMeters();
   }
 }
 
 function hookFish(){
-  state.hookedFish=rollFish();state.fishing='REEL';state.tension=.42;state.reelProgress=.05;state.biteWindow=0;showToast(`${state.hookedFish.name} hooked — hold REEL, release if tension spikes`);beep(880,.08,.05,'triangle');haptic([25,35,25]);updateActionLabel();updateMeters();
+  state.hookedFish=rollFish();state.fishing='REEL';state.tension=.4;state.reelProgress=.04;state.biteWindow=0;makeHookShadow();hookedFishShadow.position.set(bobber.position.x,.055,bobber.position.z);showToast(`${state.hookedFish.name} • ${state.hookedFish.zone} — manage the drag`);beep(880,.08,.05,'triangle');haptic([25,35,25]);updateActionLabel();updateMeters();
 }
 function rollFish(){
-  let t=Math.random(), pick=fishSpecies[0];let acc=0;for(const f of fishSpecies){acc+=f.rarity;if(t<=acc){pick=f;break;}}
-  const weight=+(pick.min+Math.pow(Math.random(),.72)*(pick.max-pick.min)).toFixed(1);return {...pick,weight,seed:Math.random()*6.28};
+  const zone=lakeZoneAt(bobber.position.x,bobber.position.z),weighted=fishSpecies.map(f=>({f,w:speciesWeight(f,zone,state.lure)}));const total=weighted.reduce((a,b)=>a+b.w,0);let t=Math.random()*total,pick=weighted[0].f;for(const q of weighted){t-=q.w;if(t<=0){pick=q.f;break;}}
+  const zoneSize=zone==='DEEP'?1.08:zone==='INLET'?1.04:1;const weight=+Math.min(pick.max,(pick.min+Math.pow(Math.random(),.68)*(pick.max-pick.min))*zoneSize).toFixed(1);return {...pick,weight,seed:Math.random()*6.28,zone,lure:state.lure};
 }
-function lineBreak(){showToast('Line snapped — too much tension');beep(170,.16,.06,'sawtooth');haptic(80);state.fishing='IDLE';state.actionHeld=false;hideBobber();updateActionLabel();}
+function lineBreak(){showToast('Line snapped — too much tension');beep(170,.16,.06,'sawtooth');haptic(80);state.fishing='IDLE';state.actionHeld=false;if(hookedFishShadow){scene.remove(hookedFishShadow);hookedFishShadow=null;}hideBobber();updateActionLabel();}
 function fishColors(name){
   if(name==='Rainbow Trout')return {body:0x9b9c8f,accent:0xd36f87,fin:0x5f7568};
   if(name==='Smallmouth Bass')return {body:0x6f7449,accent:0xb69a57,fin:0x4f5436};
@@ -650,23 +734,17 @@ function fishColors(name){
   return {body:0xd6b84e,accent:0xf1d977,fin:0x9f8536};
 }
 function createCatchFish(f){
-  if(catchFishVisual){scene.remove(catchFishVisual);catchFishVisual=null;}
-  const c=fishColors(f.name),g=new THREE.Group();g.name='landed-fish';
-  const bodyMat=new THREE.MeshStandardMaterial({color:c.body,roughness:.48,metalness:.08});
-  const accentMat=new THREE.MeshStandardMaterial({color:c.accent,roughness:.5,metalness:.04});
-  const finMat=new THREE.MeshStandardMaterial({color:c.fin,roughness:.75,side:THREE.DoubleSide});
-  const body=new THREE.Mesh(new THREE.SphereGeometry(.62,14,10),bodyMat);body.scale.set(1.58,.58,.5);body.castShadow=!state.mobile;g.add(body);
-  const belly=new THREE.Mesh(new THREE.SphereGeometry(.56,12,8),accentMat);belly.scale.set(1.42,.16,.43);belly.position.y=-.26;g.add(belly);
-  const tailGeo=new THREE.BufferGeometry();tailGeo.setAttribute('position',new THREE.Float32BufferAttribute([0,0,0,-.72,.52,0,-.72,-.52,0],3));tailGeo.computeVertexNormals();
-  const tail=new THREE.Mesh(tailGeo,finMat);tail.position.x=-.93;g.add(tail);
-  const dorsalGeo=new THREE.BufferGeometry();dorsalGeo.setAttribute('position',new THREE.Float32BufferAttribute([-.15,0,0,.45,0,0,.08,.52,0],3));dorsalGeo.computeVertexNormals();
-  const dorsal=new THREE.Mesh(dorsalGeo,finMat);dorsal.position.set(-.05,.32,0);dorsal.rotation.x=Math.PI/2;g.add(dorsal);
-  const eyeMat=new THREE.MeshBasicMaterial({color:0x0b0b0b});
-  [-1,1].forEach(side=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.055,8,6),eyeMat);e.position.set(.48,.16,.24*side);g.add(e);});
-  const scale=THREE.MathUtils.clamp(.68+f.weight*.045,.72,1.15);g.scale.setScalar(scale);g.visible=true;scene.add(g);catchFishVisual=g;return g;
+  if(catchFishVisual){scene.remove(catchFishVisual);catchFishVisual=null;}const c=fishColors(f.name),g=new THREE.Group();g.name='landed-fish';
+  const bodyMat=new THREE.MeshStandardMaterial({color:c.body,roughness:.38,metalness:.08});const accentMat=new THREE.MeshStandardMaterial({color:c.accent,roughness:.45,metalness:.035});const finMat=new THREE.MeshStandardMaterial({color:c.fin,roughness:.65,side:THREE.DoubleSide,transparent:true,opacity:.92});
+  const body=new THREE.Mesh(new THREE.SphereGeometry(.62,22,14),bodyMat);body.scale.set(1.62,.58,.5);body.castShadow=!state.mobile;g.add(body);const belly=new THREE.Mesh(new THREE.SphereGeometry(.55,18,10),accentMat);belly.scale.set(1.45,.18,.44);belly.position.y=-.25;g.add(belly);
+  const tailGeo=new THREE.BufferGeometry();tailGeo.setAttribute('position',new THREE.Float32BufferAttribute([0,0,0,-.8,.58,0,-.8,-.58,0],3));tailGeo.computeVertexNormals();const tail=new THREE.Mesh(tailGeo,finMat);tail.position.x=-.98;g.add(tail);
+  for(const side of [-1,1]){const pectoral=new THREE.Mesh(new THREE.ConeGeometry(.13,.48,8),finMat);pectoral.rotation.z=-Math.PI/2;pectoral.rotation.x=side*.55;pectoral.position.set(.1,-.05,.36*side);g.add(pectoral);const eye=new THREE.Mesh(new THREE.SphereGeometry(.06,10,8),new THREE.MeshBasicMaterial({color:0x080909}));eye.position.set(.5,.17,.245*side);g.add(eye);const shine=new THREE.Mesh(new THREE.SphereGeometry(.018,6,4),new THREE.MeshBasicMaterial({color:0xffffff}));shine.position.set(.525,.19,.287*side);g.add(shine);}
+  const dorsal=new THREE.Mesh(new THREE.ConeGeometry(.16,.62,8),finMat);dorsal.rotation.z=-Math.PI/2;dorsal.position.set(-.12,.36,0);g.add(dorsal);const mouth=new THREE.Mesh(new THREE.TorusGeometry(.07,.012,5,12,Math.PI),new THREE.MeshBasicMaterial({color:0x4d3934}));mouth.position.set(.61,-.02,0);mouth.rotation.y=Math.PI/2;g.add(mouth);
+  const spotMat=new THREE.MeshBasicMaterial({color:0x343d34,transparent:true,opacity:.5});for(let i=0;i<8;i++){for(const side of [-1,1]){const sp=new THREE.Mesh(new THREE.SphereGeometry(.025+Math.random()*.018,6,4),spotMat);sp.position.set(rand(-.48,.28),rand(-.04,.24),.27*side);g.add(sp);}}
+  const scale=THREE.MathUtils.clamp(.68+f.weight*.045,.72,1.18);g.scale.setScalar(scale);scene.add(g);catchFishVisual=g;return g;
 }
 function landFish(){
-  const f=state.hookedFish;state.fishing='LANDING';state.actionHeld=false;ui.tensionWrap.classList.add('hidden');bobber.visible=false;line.visible=true;spawnRipple(true);beep(520,.08,.04);haptic([25,30,25]);
+  const f=state.hookedFish;state.fishing='LANDING';state.actionHeld=false;ui.tensionWrap.classList.add('hidden');bobber.visible=false;line.visible=true;if(hookedFishShadow){scene.remove(hookedFishShadow);hookedFishShadow=null;}spawnRipple(true);beep(520,.08,.04);haptic([25,30,25]);
   const fish=createCatchFish(f);fish.position.copy(bobber.position);fish.position.y=.08;fish.rotation.set(0,0,-.18);
   catchAnim={t:0,duration:2.15,start:fish.position.clone(),fish:f,recorded:false};
   showToast(`${f.name} coming out of the water!`,1500);updateActionLabel();
@@ -687,7 +765,7 @@ function updateCatchVisual(dt){
   if(p>=1)finishCatchLanding();
 }
 function finishCatchLanding(){
-  if(!catchAnim)return;const f=catchAnim.fish;state.catches.push({name:f.name,weight:f.weight,time:new Date().toISOString()});if(!state.best||f.weight>state.best.weight)state.best={name:f.name,weight:f.weight};state.fishing='CAUGHT';ui.logCount.textContent=state.catches.length;showToast(`Caught ${f.weight} lb ${f.name}!`,2200);updateObjectives();updateActionLabel();save();line.visible=false;if(catchFishVisual){catchFishVisual.visible=false;scene.remove(catchFishVisual);catchFishVisual=null;}catchAnim=null;
+  if(!catchAnim)return;const f=catchAnim.fish,zone=f.zone||state.lastZone,points=fishPoints(f,zone);state.score+=points;state.rank=rankForScore(state.score);state.catches.push({name:f.name,weight:f.weight,time:new Date().toISOString(),zone,lure:f.lure||state.lure,points});if(!state.best||f.weight>state.best.weight)state.best={name:f.name,weight:f.weight};state.fishing='CAUGHT';ui.logCount.textContent=state.catches.length;showToast(`+${points} XP • ${f.weight} lb ${f.name}`,2300);updateObjectives();revealObjectives(3.4);updateActionLabel();save();line.visible=false;if(catchFishVisual){catchFishVisual.visible=false;scene.remove(catchFishVisual);catchFishVisual=null;}catchAnim=null;
 }
 function hideBobber(){bobber.visible=false;line.visible=false;ui.tensionWrap.classList.add('hidden');}
 function updateMeters(){ui.tensionWrap.classList.remove('hidden');ui.tensionFill.style.width=`${Math.min(100,state.tension*100)}%`;ui.tensionText.textContent=`${Math.round(state.tension*100)}%`;ui.reelFill.style.width=`${state.reelProgress*100}%`;ui.reelText.textContent=`${Math.round(state.reelProgress*100)}%`;}
@@ -707,15 +785,15 @@ function updateParty(dt){
 }
 function patrol(){
   if(!state.partyActive){showToast('The lake is peaceful right now');return;}const p=state.inBoat?boat.position:playerPos;const d=p.distanceTo(partyGroup.position);if(d>19){showToast('Get closer to the party first');return;}
-  state.partyPeace=Math.min(1,state.partyPeace+.28);showToast('Air horn: BWAAAP — “Keep it peaceful, folks!”',900);beep(185,.22,.07,'sawtooth');haptic(30);if(state.partyPeace>=1){state.partyActive=false;state.peaceDone=true;partyGroup.visible=false;ui.patrolBtn.classList.add('hidden');ui.peaceWrap.classList.add('hidden');showToast('Peace restored +100',1800);beep(520,.08,.04);setTimeout(()=>beep(760,.12,.04),80);updateObjectives();save();}
+  state.partyPeace=Math.min(1,state.partyPeace+.28);showToast('Air horn: BWAAAP — “Keep it peaceful, folks!”',900);beep(185,.22,.07,'sawtooth');haptic(30);if(state.partyPeace>=1){state.partyActive=false;state.peaceDone=true;state.score+=200;state.rank=rankForScore(state.score);partyGroup.visible=false;ui.patrolBtn.classList.add('hidden');ui.peaceWrap.classList.add('hidden');showToast('Peace restored +200 XP',1800);beep(520,.08,.04);setTimeout(()=>beep(760,.12,.04),80);updateObjectives();save();}
 }
 
 function updateStatus(){
-  if(state.fishing==='REEL'){ui.statusTitle.textContent='Fish on!';ui.statusSub.textContent='Hold REEL to gain line. Release when tension gets high.';return;}
+  if(state.fishing==='REEL'){ui.statusTitle.textContent=`${state.hookedFish?.name||'Fish'} on!`;ui.statusSub.textContent=`${state.hookedFish?.zone||state.lastZone} water • pulse REEL to manage tension.`;return;}
   if(state.fishing==='LANDING'){ui.statusTitle.textContent='Landing the fish!';ui.statusSub.textContent='Watch it break the surface and come up on the line.';return;}
   if(state.fishing==='WAIT'){ui.statusTitle.textContent=state.biteWindow>0?'BITE — HOOK NOW!':'Line in the water';ui.statusSub.textContent=state.biteWindow>0?'Tap the action button before it gets away.':'Watch the bobber and listen for the bite.';return;}
   if(state.fishing==='CAUGHT'){ui.statusTitle.textContent='Nice catch';ui.statusSub.textContent='Tap DONE, then cast again whenever you want.';return;}
-  if(state.inBoat){ui.statusTitle.textContent='Boat mode';ui.statusSub.textContent='Steer with the left control. CAST to fish from here.';return;}
+  if(state.inBoat){const z=lakeZoneAt(boat.position.x,boat.position.z);ui.statusTitle.textContent=z==='DEEP'?'Deep-water fishing':'Boat mode';ui.statusSub.textContent=z==='DEEP'?'Best Kokanee odds • CAST when ready.':'Head toward the center for deeper water.';return;}
   const d=playerPos.distanceTo(new THREE.Vector3(boat.position.x,1.72,boat.position.z));
   if(d<6){ui.statusTitle.textContent='Boat ready';ui.statusSub.textContent='INTERACT to enter — or CAST from the dock.';return;}
   ui.statusTitle.textContent='Explore the lake';ui.statusSub.textContent=state.catches.length<3?'Get near the water and CAST.':'Free fish, boat, or patrol the shore.';
@@ -725,35 +803,25 @@ function updateActionLabel(){
   let text='CAST';if(state.fishing==='WAIT')text=state.biteWindow>0?'HOOK':'WAIT';else if(state.fishing==='REEL')text='REEL';else if(state.fishing==='LANDING')text='LANDING';else if(state.fishing==='CAUGHT')text='DONE';ui.actionBtn.textContent=text;
 }
 function updateObjectives(){
-  const c=Math.min(3,state.catches.length);ui.fishCount.textContent=`${c}/3`;toggleDone(ui.objectiveFish,state.catches.length>=3,`✓ Catch 3 fish ${c}/3`,`○ Catch 3 fish ${c}/3`);toggleDone(ui.objectiveBoat,state.hasBoated,'✓ Take the boat out','○ Take the boat out');toggleDone(ui.objectivePeace,state.peaceDone,'✓ Restore lake peace','○ Restore lake peace');
+  const c=Math.min(3,state.catches.length);ui.fishCount.textContent=`${c}/3`;revealObjectives(2.8);toggleDone(ui.objectiveFish,state.catches.length>=3,`✓ Catch 3 fish ${c}/3`,`○ Catch 3 fish ${c}/3`);toggleDone(ui.objectiveBoat,state.hasBoated,'✓ Take the boat out','○ Take the boat out');toggleDone(ui.objectivePeace,state.peaceDone,'✓ Restore lake peace','○ Restore lake peace');
   ui.logCount.textContent=state.catches.length;if(state.catches.length>=3&&state.hasBoated&&state.peaceDone&&!state.victoryShown){state.victoryShown=true;setTimeout(()=>{ui.victory.classList.remove('hidden');beep(620,.1,.05);setTimeout(()=>beep(820,.14,.04),110);},500);}
 }
 function toggleDone(el,done,yes,no){el.classList.toggle('done',done);if(el===ui.objectiveFish){el.innerHTML=(done?'✓ Catch 3 fish ':'○ Catch 3 fish ')+`<span id="fish-count">${Math.min(3,state.catches.length)}/3</span>`;ui.fishCount=$('fish-count');}else el.textContent=done?yes:no;}
 
 function updateAvatar(dt){
-  if(!avatar)return;
-  const moving=!state.paused&&(Math.abs(input.x)+Math.abs(input.y)>.08||input.keys.has('KeyW')||input.keys.has('KeyA')||input.keys.has('KeyS')||input.keys.has('KeyD'));
-  const fishing=['WAIT','REEL','LANDING','CAUGHT'].includes(state.fishing);
-  if(state.inBoat){
-    const seatOffset=new THREE.Vector3(-.45,.16,.58).applyAxisAngle(new THREE.Vector3(0,1,0),boatYaw);avatar.position.copy(boat.position).add(seatOffset);avatar.rotation.y=boatYaw;avatarLeftLeg.rotation.x=-1.25;avatarRightLeg.rotation.x=-1.25;
-  }else{
-    avatar.position.set(playerPos.x,0,playerPos.z);avatar.rotation.y=yaw;avatarLeftLeg.rotation.x=moving?Math.sin(state.elapsed*(input.run?11:7.5))*.42:THREE.MathUtils.lerp(avatarLeftLeg.rotation.x,0,.18);avatarRightLeg.rotation.x=moving?-Math.sin(state.elapsed*(input.run?11:7.5))*.42:THREE.MathUtils.lerp(avatarRightLeg.rotation.x,0,.18);
-  }
-  if(fishing){avatarRightArm.rotation.x=THREE.MathUtils.lerp(avatarRightArm.rotation.x,-.9,.18);avatarLeftArm.rotation.x=THREE.MathUtils.lerp(avatarLeftArm.rotation.x,-.62,.18);}
-  else if(moving&&!state.inBoat){const swing=Math.sin(state.elapsed*(input.run?11:7.5))*.34;avatarRightArm.rotation.x=THREE.MathUtils.lerp(avatarRightArm.rotation.x,swing,.2);avatarLeftArm.rotation.x=THREE.MathUtils.lerp(avatarLeftArm.rotation.x,-swing,.2);}
-  else{avatarRightArm.rotation.x=THREE.MathUtils.lerp(avatarRightArm.rotation.x,-.12,.14);avatarLeftArm.rotation.x=THREE.MathUtils.lerp(avatarLeftArm.rotation.x,.08,.14);}
+  if(!avatar)return;const moving=playerVelocity.lengthSq()>.08||Math.abs(input.x)+Math.abs(input.y)>.08;const fishing=['WAIT','REEL','LANDING','CAUGHT'].includes(state.fishing);
+  if(state.inBoat){const seatOffset=new THREE.Vector3(-.45,.16,.58).applyAxisAngle(new THREE.Vector3(0,1,0),boatYaw);avatar.position.copy(boat.position).add(seatOffset);avatarFacing=angleLerp(avatarFacing,boatYaw,.22);avatar.rotation.y=avatarFacing;avatarLeftLeg.rotation.x=THREE.MathUtils.lerp(avatarLeftLeg.rotation.x,-1.18,.2);avatarRightLeg.rotation.x=THREE.MathUtils.lerp(avatarRightLeg.rotation.x,-1.18,.2);}
+  else{const gy=groundHeightAt(playerPos.x,playerPos.z);avatar.position.set(playerPos.x,gy,playerPos.z);let desired=yaw;if(playerVelocity.lengthSq()>.12)desired=Math.atan2(-playerVelocity.x,-playerVelocity.z);avatarFacing=angleLerp(avatarFacing,desired,1-Math.exp(-9*dt));avatar.rotation.y=avatarFacing;const cadence=input.run?11:7.5,amp=input.run?.5:.38;avatarLeftLeg.rotation.x=moving?Math.sin(state.elapsed*cadence)*amp:THREE.MathUtils.lerp(avatarLeftLeg.rotation.x,0,.18);avatarRightLeg.rotation.x=moving?-Math.sin(state.elapsed*cadence)*amp:THREE.MathUtils.lerp(avatarRightLeg.rotation.x,0,.18);}
+  if(fishing){const fight=state.fishing==='REEL'?Math.sin(state.elapsed*5.2)*.08:0;avatarRightArm.rotation.x=THREE.MathUtils.lerp(avatarRightArm.rotation.x,-.88+fight,.2);avatarLeftArm.rotation.x=THREE.MathUtils.lerp(avatarLeftArm.rotation.x,-.62-fight,.2);avatarTorso.rotation.x=THREE.MathUtils.lerp(avatarTorso.rotation.x,state.fishing==='REEL'?.05:0,.16);}
+  else if(moving&&!state.inBoat){const swing=Math.sin(state.elapsed*(input.run?11:7.5))*.34;avatarRightArm.rotation.x=THREE.MathUtils.lerp(avatarRightArm.rotation.x,swing,.2);avatarLeftArm.rotation.x=THREE.MathUtils.lerp(avatarLeftArm.rotation.x,-swing,.2);avatarTorso.rotation.x=THREE.MathUtils.lerp(avatarTorso.rotation.x,0,.12);}
+  else{avatarRightArm.rotation.x=THREE.MathUtils.lerp(avatarRightArm.rotation.x,-.12,.14);avatarLeftArm.rotation.x=THREE.MathUtils.lerp(avatarLeftArm.rotation.x,.08,.14);avatarTorso.rotation.x=THREE.MathUtils.lerp(avatarTorso.rotation.x,0,.12);}
+  if(avatarShadow){avatarShadow.position.set(avatar.position.x,avatar.position.y+.015,avatar.position.z);avatarShadow.material.opacity=state.inBoat?.16:.5;}
 }
 
 function updateCamera(dt){
-  cameraRig.rotation.set(0,yaw,0);
-  const moving=!state.paused&&(Math.abs(input.x)+Math.abs(input.y)>.08||input.keys.has('KeyW')||input.keys.has('KeyA')||input.keys.has('KeyS')||input.keys.has('KeyD'));
-  if(state.inBoat){
-    cameraRig.position.lerp(tmpV.set(boat.position.x,boat.position.y-.35,boat.position.z),1-Math.pow(.0015,dt));
-    camera.position.lerp(tmpV2.set(0,3.15,6.65),1-Math.pow(.0006,dt));camera.rotation.set(pitch-.16,0,Math.sin(state.elapsed*1.25)*.0035);
-  }else{
-    cameraRig.position.lerp(tmpV.set(playerPos.x,0,playerPos.z),1-Math.pow(.00012,dt));
-    const distance=state.fishing==='LANDING'?4.45:5.4;camera.position.lerp(tmpV2.set(0,2.75,distance),1-Math.pow(.00045,dt));camera.rotation.set(pitch-.16,0,moving?Math.sin(state.elapsed*(input.run?11.2:8.1)*.5)*.004:0);
-  }
+  cameraRig.rotation.set(0,yaw,0);const moving=playerVelocity.lengthSq()>.08||Math.abs(input.x)+Math.abs(input.y)>.08;const baseDistance=state.inBoat?6.7:(state.fishing==='LANDING'?4.4:5.45),height=state.inBoat?3.15:2.72;const target=state.inBoat?tmpV.set(boat.position.x,boat.position.y-.35,boat.position.z):tmpV.set(playerPos.x,groundHeightAt(playerPos.x,playerPos.z),playerPos.z);cameraRig.position.lerp(target,1-Math.pow(.0008,dt));
+  cameraCollisionTick+=dt;let safe=baseDistance;if(cameraCollisionTick>.045){cameraCollisionTick=0;const local=tmpV2.set(0,height,baseDistance),world=local.clone().applyAxisAngle(new THREE.Vector3(0,1,0),yaw),origin=cameraRig.position.clone().add(tmpV.set(0,1.35,0)),dir=world.clone().sub(tmpV.set(0,1.35,0)),max=dir.length();dir.normalize();cameraRaycaster.set(origin,dir);cameraRaycaster.far=max;const hits=cameraRaycaster.intersectObjects(cameraObstacles,true);if(hits.length)safe=Math.max(2.25,baseDistance*Math.min(1,(hits[0].distance-.28)/max));cameraDistance=safe;}
+  cameraDistance=THREE.MathUtils.lerp(cameraDistance,safe,1-Math.exp(-10*dt));camera.position.lerp(tmpV2.set(0,height,cameraDistance),1-Math.pow(.0005,dt));camera.rotation.set(pitch-.14,0,moving&&!state.inBoat?Math.sin(state.elapsed*(input.run?11.2:8.1)*.5)*.003:0);
 }
 
 function updateRod(dt){
@@ -775,26 +843,25 @@ function updateWorld(dt){
 }
 
 function updateDiagnostics(dt){
-  fpsAccum+=dt;fpsFrames++;fpsTimer+=dt;if(fpsTimer>=1){state.fps=Math.round(fpsFrames/fpsAccum);state.frameTier=state.fps<30?'low':state.fps<48?'medium':'good';fpsAccum=fpsFrames=fpsTimer=0;if(state.quality==='AUTO'&&state.frameTier==='low')applyQuality();}
+  fpsAccum+=dt;fpsFrames++;fpsTimer+=dt;if(fpsTimer>=1){state.fps=Math.round(fpsFrames/fpsAccum);state.frameTier=state.fps<36?'low':state.fps<52?'medium':'good';fpsAccum=fpsFrames=fpsTimer=0;if(state.quality==='AUTO'&&state.frameTier==='low')applyQuality();}
   if(ui.settings.classList.contains('hidden'))return;
   ui.diagText.textContent=`FPS: ${state.fps} (${state.frameTier})\nInput: ${state.lastInput}\nTouch points: ${navigator.maxTouchPoints||0}\nFishing: ${state.fishing}\nBoat: ${state.inBoat?'IN BOAT':'ON FOOT'}\nAudio: ${audioCtx?.state||'not started'}\nQuality: ${state.quality} @ ${state.qualityScale.toFixed(2)}x`;
 }
 
 function renderCatchLog(){
-  ui.bestCatch.textContent=state.best?`Best catch: ${state.best.weight} lb ${state.best.name}`:'Best catch: —';
-  if(!state.catches.length){ui.catchList.innerHTML='<div class="empty">No fish yet. The lake is waiting.</div>';return;}
-  ui.catchList.innerHTML=state.catches.slice().reverse().map((c,i)=>`<div class="catch-item"><span>${state.catches.length-i}. ${escapeHtml(c.name)}</span><span>${Number(c.weight).toFixed(1)} lb</span></div>`).join('');
+  state.rank=rankForScore(state.score);ui.bestCatch.textContent=state.best?`Best catch: ${state.best.weight} lb ${state.best.name}`:'Best catch: —';if(ui.lakeSummary)ui.lakeSummary.textContent=`Lake rank: ${state.rank} • ${Math.round(state.score)} XP • Tackle: ${state.lure}`;
+  if(!state.catches.length){ui.catchList.innerHTML='<div class="empty">No fish yet. Try different lake zones and tackle.</div>';return;}ui.catchList.innerHTML=state.catches.slice().reverse().map((c,i)=>`<div class="catch-item"><span>${state.catches.length-i}. ${escapeHtml(c.name)}<small style="display:block;color:#9fb3a8;margin-top:3px">${escapeHtml(c.zone||'SHORE')} • ${escapeHtml(c.lure||'SPOON')}</small></span><span>${Number(c.weight).toFixed(1)} lb<br><small>+${Number(c.points||0)} XP</small></span></div>`).join('');
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 
 function save(){
-  try{localStorage.setItem('alan-fishing-escape-v1',JSON.stringify({sound:state.sound,quality:state.quality,sensitivity:state.sensitivity,catches:state.catches.slice(-30),best:state.best,hasBoated:state.hasBoated,peaceDone:state.peaceDone,victoryShown:state.victoryShown}));}catch{}
+  try{localStorage.setItem('alan-fishing-escape-v1',JSON.stringify({sound:state.sound,quality:state.quality,sensitivity:state.sensitivity,catches:state.catches.slice(-40),best:state.best,hasBoated:state.hasBoated,peaceDone:state.peaceDone,victoryShown:state.victoryShown,score:state.score,lure:state.lure,deepWaterTrips:state.deepWaterTrips}));}catch{}
 }
 function restore(){
-  try{const d=JSON.parse(localStorage.getItem('alan-fishing-escape-v1')||'{}');if(typeof d.sound==='boolean')state.sound=d.sound;if(['AUTO','HIGH','LOW'].includes(d.quality))state.quality=d.quality;if(Number.isFinite(d.sensitivity))state.sensitivity=d.sensitivity;if(Array.isArray(d.catches))state.catches=d.catches;if(d.best)state.best=d.best;state.hasBoated=!!d.hasBoated;state.peaceDone=!!d.peaceDone;state.victoryShown=!!d.victoryShown;ui.soundToggle.textContent=state.sound?'ON':'OFF';ui.qualityToggle.textContent=state.quality;ui.sensitivity.value=state.sensitivity;}catch{}
+  try{const d=JSON.parse(localStorage.getItem('alan-fishing-escape-v1')||'{}');if(typeof d.sound==='boolean')state.sound=d.sound;if(['AUTO','HIGH','LOW'].includes(d.quality))state.quality=d.quality;if(Number.isFinite(d.sensitivity))state.sensitivity=d.sensitivity;if(Array.isArray(d.catches))state.catches=d.catches;if(d.best)state.best=d.best;state.hasBoated=!!d.hasBoated;state.peaceDone=!!d.peaceDone;state.victoryShown=!!d.victoryShown;state.score=Number(d.score)||0;state.lure=LURES.includes(d.lure)?d.lure:'SPOON';state.deepWaterTrips=Number(d.deepWaterTrips)||0;state.rank=rankForScore(state.score);ui.soundToggle.textContent=state.sound?'ON':'OFF';ui.qualityToggle.textContent=state.quality;ui.lureToggle.textContent=state.lure;ui.sensitivity.value=state.sensitivity;}catch{}
 }
 function resetGame(confirmFirst=false){
-  if(confirmFirst&&!confirm('Reset Alan’s catches and progress?'))return;state.inBoat=false;state.hasBoated=false;state.catches=[];state.best=null;state.peaceDone=false;state.victoryShown=false;state.partyActive=false;state.partyPeace=0;state.nextPartyAt=35;state.fishing='IDLE';state.actionHeld=false;catchAnim=null;if(catchFishVisual){scene.remove(catchFishVisual);catchFishVisual=null;}playerPos.set(0,1.72,53);yaw=0;pitch=-0.045;boat.position.set(7.5,.45,34);boatYaw=0.22;boat.rotation.set(0,boatYaw,0);partyGroup.visible=false;hideBobber();ui.patrolBtn.classList.add('hidden');ui.peaceWrap.classList.add('hidden');ui.victory.classList.add('hidden');updateObjectives();updateActionLabel();renderCatchLog();save();showToast('Game reset');closeSheet(ui.settings);
+  if(confirmFirst&&!confirm('Reset Alan’s catches and progress?'))return;state.inBoat=false;state.hasBoated=false;state.catches=[];state.best=null;state.peaceDone=false;state.victoryShown=false;state.partyActive=false;state.partyPeace=0;state.nextPartyAt=35;state.fishing='IDLE';state.actionHeld=false;state.score=0;state.rank='Lake Rookie';state.lure='SPOON';state.deepWaterTrips=0;playerVelocity.set(0,0,0);catchAnim=null;if(catchFishVisual){scene.remove(catchFishVisual);catchFishVisual=null;}playerPos.set(0,1.72,53);yaw=0;pitch=-0.045;boat.position.set(7.5,.45,34);boatYaw=0.22;boat.rotation.set(0,boatYaw,0);partyGroup.visible=false;hideBobber();ui.patrolBtn.classList.add('hidden');ui.peaceWrap.classList.add('hidden');ui.victory.classList.add('hidden');updateObjectives();updateActionLabel();renderCatchLog();save();showToast('Game reset');closeSheet(ui.settings);
 }
 
 function showToast(text,ms=1300){ui.toast.textContent=text;ui.toast.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>ui.toast.classList.add('hidden'),ms);}
