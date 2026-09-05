@@ -183,7 +183,7 @@ let renderer, scene, camera, cameraRig, worldClock;
 let sun, water, dock, boat, boatBody, boatWake, partyGroup, skyDome, sunOrb, visualExtras, mistGroup, cloudGroup, shoreGrass;
 let rodGroup, rodTip, bobber, line, rippleGroup;
 let playerPos = new THREE.Vector3(0, 1.72, 53);
-let yaw = Math.PI, pitch = -0.08, boatYaw = 0.22;
+let yaw = 0, pitch = -0.045, boatYaw = 0.22;
 let input = { x: 0, y: 0, run: false, keys: new Set() };
 let joyPointer = null, lookPointer = null, lastLook = new THREE.Vector2();
 let audioCtx = null, ambientGain = null;
@@ -705,7 +705,7 @@ function restore(){
   try{const d=JSON.parse(localStorage.getItem('alan-fishing-escape-v1')||'{}');if(typeof d.sound==='boolean')state.sound=d.sound;if(['AUTO','HIGH','LOW'].includes(d.quality))state.quality=d.quality;if(Number.isFinite(d.sensitivity))state.sensitivity=d.sensitivity;if(Array.isArray(d.catches))state.catches=d.catches;if(d.best)state.best=d.best;state.hasBoated=!!d.hasBoated;state.peaceDone=!!d.peaceDone;state.victoryShown=!!d.victoryShown;ui.soundToggle.textContent=state.sound?'ON':'OFF';ui.qualityToggle.textContent=state.quality;ui.sensitivity.value=state.sensitivity;}catch{}
 }
 function resetGame(confirmFirst=false){
-  if(confirmFirst&&!confirm('Reset Alan’s catches and progress?'))return;state.inBoat=false;state.hasBoated=false;state.catches=[];state.best=null;state.peaceDone=false;state.victoryShown=false;state.partyActive=false;state.partyPeace=0;state.nextPartyAt=35;state.fishing='IDLE';state.actionHeld=false;playerPos.set(0,1.72,53);boat.position.set(7.5,.45,34);boatYaw=0.22;boat.rotation.set(0,boatYaw,0);partyGroup.visible=false;hideBobber();ui.patrolBtn.classList.add('hidden');ui.peaceWrap.classList.add('hidden');ui.victory.classList.add('hidden');updateObjectives();updateActionLabel();renderCatchLog();save();showToast('Game reset');closeSheet(ui.settings);
+  if(confirmFirst&&!confirm('Reset Alan’s catches and progress?'))return;state.inBoat=false;state.hasBoated=false;state.catches=[];state.best=null;state.peaceDone=false;state.victoryShown=false;state.partyActive=false;state.partyPeace=0;state.nextPartyAt=35;state.fishing='IDLE';state.actionHeld=false;playerPos.set(0,1.72,53);yaw=0;pitch=-0.045;boat.position.set(7.5,.45,34);boatYaw=0.22;boat.rotation.set(0,boatYaw,0);partyGroup.visible=false;hideBobber();ui.patrolBtn.classList.add('hidden');ui.peaceWrap.classList.add('hidden');ui.victory.classList.add('hidden');updateObjectives();updateActionLabel();renderCatchLog();save();showToast('Game reset');closeSheet(ui.settings);
 }
 
 function showToast(text,ms=1300){ui.toast.textContent=text;ui.toast.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>ui.toast.classList.add('hidden'),ms);}
