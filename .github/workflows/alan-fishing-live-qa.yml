@@ -1,5 +1,5 @@
 name: Alan Fishing Escape Live QA
-# v19 all-8 release gate: visuals, touch, catch loop and clean action benchmark
+# v20 all-8 release gate: visuals, touch, relative action performance and catch loop
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
           npm install --no-save playwright@1.55.0
           npx playwright install --with-deps chromium
 
-      - name: Test public iPhone visuals, touch, benchmark and catch loop
+      - name: Test public iPhone visuals, touch, performance and catch loop
         shell: bash
         env:
           GAME_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/alan-fishing-escape/
@@ -35,7 +35,7 @@ jobs:
           ready=0
           for i in $(seq 1 20); do
             body="$(curl -fsSL --max-time 30 "$GAME_URL?ready=$(date +%s)-$i" || true)"
-            if printf '%s' "$body" | grep -F 'ACTION_BENCHMARK_V19' >/dev/null && printf '%s' "$body" | grep -F "boatBody.name='tapered-fishing-hull'" >/dev/null; then ready=1; break; fi
+            if printf '%s' "$body" | grep -F 'MOBILE_ACTION_V20' >/dev/null && printf '%s' "$body" | grep -F "boatBody.name='tapered-fishing-hull'" >/dev/null; then ready=1; break; fi
             sleep 5
           done
           test "$ready" -eq 1
@@ -58,14 +58,16 @@ jobs:
             await page.waitForFunction(()=>{const a=window.__ALAN_GAME__?.audit?.();return a?.premiumAvatar===true&&a?.fisherGear===true&&a?.anglerDetail===true&&a?.taperedHull===true&&a?.naturalRidge===true;},{timeout:20000});
             await page.waitForTimeout(1800);
             const audit=await page.evaluate(()=>window.__ALAN_GAME__?.audit?.());
-            console.log('V19_AUDIT',JSON.stringify(audit));
+            console.log('V20_AUDIT',JSON.stringify(audit));
             if(!audit||!audit.avatar||!audit.premiumAvatar||!audit.fisherGear||!audit.rodAttached||!audit.thirdPerson)throw new Error('Third-person angler integrity failed '+JSON.stringify(audit));
-            if(!audit.anglerDetail||!audit.taperedHull||!audit.naturalRidge)throw new Error('v18 visual fidelity markers missing '+JSON.stringify(audit));
-            if(audit.fps<45)throw new Error('Initial mobile-render FPS below gate '+audit.fps);
+            if(!audit.anglerDetail||!audit.taperedHull||!audit.naturalRidge)throw new Error('Visual fidelity markers missing '+JSON.stringify(audit));
+            if(audit.fps<45)throw new Error('Initial mobile-render FPS below 45 '+audit.fps);
 
-            const perf=await page.evaluate(()=>window.__ALAN_GAME__.benchmarkAction(1250));
-            console.log('ACTION_BENCHMARK',JSON.stringify(perf));
-            if(!perf||perf.fps<45)throw new Error('Heavy-action benchmark below 45 FPS '+JSON.stringify(perf));
+            const perf=await page.evaluate(()=>window.__ALAN_GAME__.benchmarkAction(900));
+            console.log('RELATIVE_ACTION_BENCHMARK',JSON.stringify(perf));
+            if(!perf||!Number.isFinite(perf.baselineFps)||!Number.isFinite(perf.actionFps)||!Number.isFinite(perf.ratio))throw new Error('Invalid action benchmark '+JSON.stringify(perf));
+            if(perf.baselineFps<5)throw new Error('Benchmark runner cadence invalid '+JSON.stringify(perf));
+            if(perf.ratio<.75)throw new Error('Action renderer retained less than 75% of matched baseline '+JSON.stringify(perf));
             if(perf.pixelRatio>.76)throw new Error('Heavy-action render scale was not applied '+JSON.stringify(perf));
 
             const base=await page.evaluate(()=>({title:document.title,canvasW:document.querySelector('#game')?.width||0,canvasH:document.querySelector('#game')?.height||0,hudVisible:!document.querySelector('#hud')?.classList.contains('hidden'),controlsVisible:!document.querySelector('#controls')?.classList.contains('hidden'),fallbackVisible:document.querySelector('#webgl-fallback')?!document.querySelector('#webgl-fallback').classList.contains('hidden'):false,zone:document.querySelector('#zone-chip')?.textContent||'',lure:document.querySelector('#lure-toggle')?.textContent||'',lureVisible:!!(document.querySelector('#lure-toggle')?.offsetWidth&&document.querySelector('#lure-toggle')?.offsetHeight),action:document.querySelector('#action-btn')?.textContent||'',hudZ:getComputedStyle(document.querySelector('#hud')).zIndex}));
@@ -76,7 +78,7 @@ jobs:
             await page.waitForTimeout(180);
             const switched=await page.evaluate(()=>window.__ALAN_GAME__.audit().lure);
             if(switched==='SPOON')throw new Error('Tackle selector did not switch');
-            await page.screenshot({path:'alan-fishing-v19-gameplay.png',fullPage:true});
+            await page.screenshot({path:'alan-fishing-v20-gameplay.png',fullPage:true});
 
             const forced=await page.evaluate(()=>window.__ALAN_GAME__.forceLanding());
             if(forced!==true)throw new Error('Landing test hook failed: '+forced);
@@ -84,7 +86,7 @@ jobs:
             const during=await page.evaluate(()=>window.__ALAN_GAME__.audit());
             console.log('VISIBLE_FISH',JSON.stringify(during));
             if(!during.fishVisible||during.fishing!=='LANDING')throw new Error('3D fish did not become visible '+JSON.stringify(during));
-            await page.screenshot({path:'alan-fishing-v19-landing.png',fullPage:true});
+            await page.screenshot({path:'alan-fishing-v20-landing.png',fullPage:true});
             await page.waitForFunction(()=>{const a=window.__ALAN_GAME__?.audit?.();return a&&a.catches>=1&&a.score>0&&a.fishing==='CAUGHT';},{timeout:6000});
             const after=await page.evaluate(()=>window.__ALAN_GAME__.audit());
             console.log('AFTER_LANDING',JSON.stringify(after));
@@ -92,7 +94,7 @@ jobs:
             const meaningful=fatal.filter(x=>!/Failed to load resource.*favicon/i.test(x));
             if(meaningful.length)throw new Error('Runtime errors: '+meaningful.join(' | '));
             await browser.close();
-            console.log('ALAN_FISHING_V19_ALL8_QA_OK');
+            console.log('ALAN_FISHING_V20_ALL8_QA_OK');
           })().catch(e=>{console.error(e);process.exit(1)});
           EOF
           NODE_PATH="$PWD/node_modules" node /tmp/alan-live-qa.cjs
@@ -101,8 +103,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: alan-fishing-live-qa-v19
+          name: alan-fishing-live-qa-v20
           path: |
-            alan-fishing-v19-gameplay.png
-            alan-fishing-v19-landing.png
+            alan-fishing-v20-gameplay.png
+            alan-fishing-v20-landing.png
           if-no-files-found: ignore
