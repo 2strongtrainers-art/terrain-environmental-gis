@@ -1,4 +1,4 @@
-const CACHE='alan-fishing-escape-v10';
+const CACHE='alan-fishing-escape-v11';
 const CORE=['./','./index.html','./manifest.webmanifest'];
 const THREE='https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.min.js';
 self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil((async()=>{const cache=await caches.open(CACHE);await cache.addAll(CORE);try{await cache.add(THREE);}catch{}})())});
