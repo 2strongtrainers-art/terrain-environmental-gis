@@ -29,6 +29,16 @@ old_audit="premiumAvatar:!!premiumAvatar,rodAttached:rodGroup?.parent===avatarRo
 new_audit="premiumAvatar:!!premiumAvatar,fisherGear:!!premiumAvatar?.getObjectByName('fisher-pack'),rodAttached:rodGroup?.parent===avatarRodAnchor"
 once(old_audit,new_audit,'angler gear audit')
 
+# Expose the actual visible fish mesh, not just animation timing, for the final public QA.
+if 'fishVisible:!!catchFishVisual?.visible' not in s:
+    if 'landingT:catchAnim?.t||0})' in s:
+        s=s.replace('landingT:catchAnim?.t||0})','landingT:catchAnim?.t||0,fishVisible:!!catchFishVisual?.visible})',1)
+    elif 'quality:state.quality,fps:state.fps})' in s:
+        s=s.replace('quality:state.quality,fps:state.fps})','quality:state.quality,fps:state.fps,fishVisible:!!catchFishVisual?.visible})',1)
+    else:
+        raise SystemExit('Missing runtime audit signature for fish visibility')
+    print('patched fish visibility audit')
+
 # Hard completion fallback in addition to the wall-clock animation timing.
 old_anim="catchAnim={t:0,duration:1.75,start:fish.position.clone(),fish:f,recorded:false,startedAt:performance.now()};\n  showToast(`${f.name} coming out of the water!`,1500);updateActionLabel();"
 new_anim="catchAnim={t:0,duration:1.75,start:fish.position.clone(),fish:f,recorded:false,startedAt:performance.now()};const landingRef=catchAnim;setTimeout(()=>{if(catchAnim===landingRef&&state.fishing==='LANDING')finishCatchLanding();},2100);\n  showToast(`${f.name} coming out of the water!`,1500);updateActionLabel();"
@@ -42,6 +52,9 @@ once(old_water,new_water,'water tonal lift')
 # Keep HUD buttons above the transparent mobile look layer so real iPhone taps reach them.
 if '/* HUD_TOUCH_PRIORITY_V15 */' not in s:
     s=s.replace('</style>',"\n/* HUD_TOUCH_PRIORITY_V15 */\n#hud{z-index:16!important}\n.icon-btn,.tackle-btn{pointer-events:auto!important}\n</style>",1)
+
+if '/* FISH_VISUAL_GATE_V16 */' not in s:
+    s=s.replace('/* HUD_TOUCH_PRIORITY_V15 */','/* HUD_TOUCH_PRIORITY_V15 */\n/* FISH_VISUAL_GATE_V16 */',1)
 
 if 'FINAL_8PLUS_V12' not in s:
     s=s.replace('/* PREMIUM_RELEASE_V11 */','/* PREMIUM_RELEASE_V11 */\n/* FINAL_8PLUS_V12 */',1)
