@@ -46,6 +46,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
 /* VISUAL_PERF_V17 */
 /* FINAL_ALL8_V18 */
 /* ACTION_BENCHMARK_V19 */
+/* MOBILE_ACTION_V20 */
 #objective-card{transition:opacity .25s ease,transform .25s ease,min-width .25s ease,padding .25s ease}
 #objective-card.compact{min-width:0!important;padding:7px 9px!important;opacity:.78;transform:scale(.96);transform-origin:top left}
 #objective-card.compact .obj{display:none}
@@ -340,21 +341,15 @@ function audioTick(dt){
   if(state.fishing==='REEL'&&state.actionHeld){state.reelSoundTimer-=dt;if(state.reelSoundTimer<=0){state.reelSoundTimer=.12+Math.random()*.08;beep(rand(620,820),.018,.006,'square');}}
 }
 
-async function benchmarkActionRender(ms=1200){
-  if(!renderer||!state.mobile)return {fps:state.fps,pixelRatio:renderer?.getPixelRatio?.()||0,frames:0,elapsed:0};
-  const prevFishing=state.fishing,prevHooked=state.hookedFish,prevAction=state.actionHeld,prevFish=catchFishVisual;
-  const benchFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};
-  state.hookedFish=benchFish;state.fishing='LANDING';state.actionHeld=false;
-  let created=false;
-  if(!catchFishVisual){const f=createCatchFish(benchFish);f.position.set(0,1.15,34);f.rotation.set(.08,.2,.4);created=true;}
-  updateDynamicResolution();
-  const start=performance.now();let frames=0;
-  await new Promise(resolve=>{const tick=t=>{frames++;if(catchFishVisual){catchFishVisual.rotation.y+=.018;catchFishVisual.rotation.z=.35+Math.sin(t*.006)*.18;}if(t-start>=ms)resolve();else requestAnimationFrame(tick);};requestAnimationFrame(tick);});
-  const elapsed=Math.max(1,performance.now()-start),ratio=renderer.getPixelRatio(),fps=frames/(elapsed/1000);
-  if(created&&catchFishVisual){scene.remove(catchFishVisual);catchFishVisual=null;}
-  state.fishing=prevFishing;state.hookedFish=prevHooked;state.actionHeld=prevAction;
-  updateDynamicResolution();
-  return {fps:+fps.toFixed(1),pixelRatio:+ratio.toFixed(2),frames,elapsed:Math.round(elapsed)};
+async function benchmarkActionRender(ms=900){
+  if(!renderer||!state.mobile)return {baselineFps:state.fps,actionFps:state.fps,ratio:1,pixelRatio:renderer?.getPixelRatio?.()||0};
+  const prevFishing=state.fishing,prevHooked=state.hookedFish,prevAction=state.actionHeld;
+  const sample=async animate=>{const start=performance.now();let frames=0;await new Promise(resolve=>{const tick=t=>{frames++;if(animate&&catchFishVisual){catchFishVisual.rotation.y+=.018;catchFishVisual.rotation.z=.35+Math.sin(t*.006)*.18;}if(t-start>=ms)resolve();else requestAnimationFrame(tick);};requestAnimationFrame(tick);});const elapsed=Math.max(1,performance.now()-start);return {fps:frames/(elapsed/1000),frames,elapsed};};
+  state.fishing='IDLE';state.actionHeld=false;updateDynamicResolution();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const normal=await sample(false);
+  const benchFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};state.hookedFish=benchFish;state.fishing='LANDING';
+  let created=false;if(!catchFishVisual){const f=createCatchFish(benchFish);f.position.set(0,1.15,34);f.rotation.set(.08,.2,.4);created=true;}updateDynamicResolution();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const actionPixelRatio=renderer.getPixelRatio(),action=await sample(true);
+  if(created&&catchFishVisual){scene.remove(catchFishVisual);catchFishVisual=null;}state.fishing=prevFishing;state.hookedFish=prevHooked;state.actionHeld=prevAction;updateDynamicResolution();
+  const rel=normal.fps>0?action.fps/normal.fps:0;return {baselineFps:+normal.fps.toFixed(1),actionFps:+action.fps.toFixed(1),ratio:+rel.toFixed(2),pixelRatio:+actionPixelRatio.toFixed(2),baselineFrames:normal.frames,actionFrames:action.frames};
 }
 function canWebGL() {
   try {
@@ -788,7 +783,7 @@ function updateDynamicResolution(){
   const mode=(state.fishing==='REEL'||state.fishing==='LANDING')?'action':'normal';const cap=mode==='action'?.72:1.18;const target=Math.min(devicePixelRatio,cap);
   const changed=mode!==renderScaleMode||Math.abs(renderer.getPixelRatio()-target)>.015;if(!changed)return;renderScaleMode=mode;renderer.setPixelRatio(target);renderer.setSize(innerWidth,innerHeight,false);
   const action=mode==='action';if(mistGroup)mistGroup.visible=!action&&state.quality!=='LOW';if(cloudGroup)cloudGroup.visible=!action;if(shoreGrass)shoreGrass.visible=!action;if(boatWake)boatWake.visible=!action;
-  scene?.children.forEach(o=>{if(o.name==='action-cull-rock'||o.name==='bird')o.visible=!action;});
+  scene?.children.forEach(o=>{if(o.name==='action-cull-rock'||o.name==='shore-rock'||o.name==='bird')o.visible=!action;});
 }
 function updateGame(dt){
   updateDynamicResolution();
@@ -879,11 +874,10 @@ function fishColors(name){
 function createCatchFish(f){
   if(catchFishVisual){scene.remove(catchFishVisual);catchFishVisual=null;}const c=fishColors(f.name),g=new THREE.Group();g.name='landed-fish';
   const bodyMat=new THREE.MeshStandardMaterial({color:c.body,roughness:.38,metalness:.08});const accentMat=new THREE.MeshStandardMaterial({color:c.accent,roughness:.45,metalness:.035});const finMat=new THREE.MeshStandardMaterial({color:c.fin,roughness:.65,side:THREE.DoubleSide,transparent:true,opacity:.92});
-  const body=new THREE.Mesh(new THREE.SphereGeometry(.62,state.mobile?16:22,state.mobile?10:14),bodyMat);body.scale.set(1.62,.58,.5);body.castShadow=!state.mobile;g.add(body);const belly=new THREE.Mesh(new THREE.SphereGeometry(.55,state.mobile?14:18,state.mobile?8:10),accentMat);belly.scale.set(1.45,.18,.44);belly.position.y=-.25;g.add(belly);
+  const body=new THREE.Mesh(new THREE.SphereGeometry(.62,state.mobile?12:22,state.mobile?8:14),bodyMat);body.scale.set(1.62,.58,.5);body.castShadow=!state.mobile;g.add(body);const belly=new THREE.Mesh(new THREE.SphereGeometry(.55,state.mobile?10:18,state.mobile?6:10),accentMat);belly.scale.set(1.45,.18,.44);belly.position.y=-.25;g.add(belly);
   const tailGeo=new THREE.BufferGeometry();tailGeo.setAttribute('position',new THREE.Float32BufferAttribute([0,0,0,-.8,.58,0,-.8,-.58,0],3));tailGeo.computeVertexNormals();const tail=new THREE.Mesh(tailGeo,finMat);tail.position.x=-.98;g.add(tail);
-  for(const side of [-1,1]){const pectoral=new THREE.Mesh(new THREE.ConeGeometry(.13,.48,8),finMat);pectoral.rotation.z=-Math.PI/2;pectoral.rotation.x=side*.55;pectoral.position.set(.1,-.05,.36*side);g.add(pectoral);const eye=new THREE.Mesh(new THREE.SphereGeometry(.06,10,8),new THREE.MeshBasicMaterial({color:0x080909}));eye.position.set(.5,.17,.245*side);g.add(eye);const shine=new THREE.Mesh(new THREE.SphereGeometry(.018,6,4),new THREE.MeshBasicMaterial({color:0xffffff}));shine.position.set(.525,.19,.287*side);g.add(shine);}
-  const dorsal=new THREE.Mesh(new THREE.ConeGeometry(.16,.62,8),finMat);dorsal.rotation.z=-Math.PI/2;dorsal.position.set(-.12,.36,0);g.add(dorsal);const mouth=new THREE.Mesh(new THREE.TorusGeometry(.07,.012,5,12,Math.PI),new THREE.MeshBasicMaterial({color:0x4d3934}));mouth.position.set(.61,-.02,0);mouth.rotation.y=Math.PI/2;g.add(mouth);
-  const spotMat=new THREE.MeshBasicMaterial({color:0x343d34,transparent:true,opacity:.5});for(let i=0;i<(state.mobile?4:8);i++){for(const side of [-1,1]){const sp=new THREE.Mesh(new THREE.SphereGeometry(.025+Math.random()*.018,6,4),spotMat);sp.position.set(rand(-.48,.28),rand(-.04,.24),.27*side);g.add(sp);}}
+  for(const side of [-1,1]){if(!state.mobile){const pectoral=new THREE.Mesh(new THREE.ConeGeometry(.13,.48,8),finMat);pectoral.rotation.z=-Math.PI/2;pectoral.rotation.x=side*.55;pectoral.position.set(.1,-.05,.36*side);g.add(pectoral);}const eye=new THREE.Mesh(new THREE.SphereGeometry(.055,state.mobile?6:10,state.mobile?4:8),new THREE.MeshBasicMaterial({color:0x080909}));eye.position.set(.5,.17,.245*side);g.add(eye);if(!state.mobile){const shine=new THREE.Mesh(new THREE.SphereGeometry(.018,6,4),new THREE.MeshBasicMaterial({color:0xffffff}));shine.position.set(.525,.19,.287*side);g.add(shine);}}
+  if(!state.mobile){const dorsal=new THREE.Mesh(new THREE.ConeGeometry(.16,.62,8),finMat);dorsal.rotation.z=-Math.PI/2;dorsal.position.set(-.12,.36,0);g.add(dorsal);const mouth=new THREE.Mesh(new THREE.TorusGeometry(.07,.012,5,12,Math.PI),new THREE.MeshBasicMaterial({color:0x4d3934}));mouth.position.set(.61,-.02,0);mouth.rotation.y=Math.PI/2;g.add(mouth);const spotMat=new THREE.MeshBasicMaterial({color:0x343d34,transparent:true,opacity:.5});for(let i=0;i<8;i++){for(const side of [-1,1]){const sp=new THREE.Mesh(new THREE.SphereGeometry(.025+Math.random()*.018,6,4),spotMat);sp.position.set(rand(-.48,.28),rand(-.04,.24),.27*side);g.add(sp);}}}
   const scale=THREE.MathUtils.clamp(.68+f.weight*.045,.72,1.18);g.scale.setScalar(scale);scene.add(g);catchFishVisual=g;return g;
 }
 function landFish(){
