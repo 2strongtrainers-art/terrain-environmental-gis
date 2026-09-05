@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"><meta name="theme-color" content="#0f241f"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Fishing Escape"><link rel="manifest" href="manifest.webmanifest"><title>Alan Kaplan’s Fishing Escape</title><style>html,body{margin:0;width:100%;height:100%;background:#071512;color:#f5f5ec;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;display:grid;place-items:center}.load{text-align:center;padding:28px}.load b{display:block;font-size:28px;margin-bottom:8px}.load span{color:#b8c8c0;font-size:13px}.err{max-width:520px;line-height:1.5}a{color:#f0bf69}</style></head><body><div class="load" id="load"><b>Alan Kaplan’s Fishing Escape</b><span>Loading compatibility mode…</span></div><script>
+(async()=>{
+  try{
+    let h=await fetch('./play.html?v=3',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Game core '+r.status);return r.text()});
+    const edits=[['boatYaw=2.9','boatYaw=.22'],['let yaw=0,pitch=-.07','let yaw=Math.PI,pitch=-.07'],['p.set(5.5,1.72,38);toast(\'Back on shore\')','p.set(3.2,1.72,38);toast(\'Back on the dock\')'],['S.bite=1.5','S.bite=2'],['party.position.set(rnd(-19,-12),0,rnd(46,53))','party.position.set(rnd(-16,-11),0,rnd(45,49))'],['Rowdy party spotted — use PATROL nearby','Rowdy party spotted — get close and use the AIR HORN'],['<b>PATROL</b><span>Use an air horn to quiet rowdy partygoers</span>','<b>AIR HORN</b><span>Quiet the rowdy party across the lake</span>'],['>PATROL</button>','>AIR HORN</button>']];
+    for(const [a,b] of edits)h=h.split(a).join(b);
+    h=h.replace('</head>','<link rel="manifest" href="manifest.webmanifest"></head>');
+    h=h.replace('</body>','<script>if(\'serviceWorker\' in navigator){addEventListener(\'load\',()=>navigator.serviceWorker.register(\'./sw.js\').catch(()=>{}));}<\/script></body>');
+    document.open();document.write(h);document.close();
+  }catch(e){document.getElementById('load').innerHTML='<div class="err"><b>Could not load the lake</b><span>'+String(e.message||e)+'</span><p><a href="play.html">Open the original backup</a></p></div>'}
+})();
+</script></body></html>
