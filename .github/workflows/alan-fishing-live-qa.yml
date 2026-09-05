@@ -1,5 +1,5 @@
 name: Alan Fishing Escape Live QA
-# Third-person v9 verification
+# 8-plus v10 gameplay verification
 
 on:
   push:
@@ -26,65 +26,73 @@ jobs:
           npm install --no-save playwright@1.55.0
           npx playwright install --with-deps chromium
 
-      - name: Test public iPhone experience
+      - name: Test public iPhone gameplay
         shell: bash
         env:
           GAME_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/alan-fishing-escape/
         run: |
           set -euo pipefail
-          echo 'HTTP response headers:'
+          ready=0
+          for i in $(seq 1 12); do
+            if curl -fsSL --max-time 30 "$GAME_URL?ready=$(date +%s)-$i" | grep -F '8PLUS_RELEASE_V10' >/dev/null; then ready=1; break; fi
+            sleep 5
+          done
+          test "$ready" -eq 1
           curl -fsSIL --max-time 30 "$GAME_URL?curlqa=$(date +%s)" | sed -n '1,20p'
-          echo 'Public source fingerprint:'
-          curl -fsSL --max-time 30 "$GAME_URL?sourceqa=$(date +%s)" | grep -Eo 'Alan Kaplan[^<]{0,80}|id="play-btn"|catch-log|manifest.webmanifest|alan-avatar|Third-person|avatarRodAnchor' | head -30 || true
           cat > /tmp/alan-live-qa.cjs <<'EOF'
           const { chromium } = require('playwright');
           (async()=>{
-            const browser = await chromium.launch({headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
-            const context = await browser.newContext({viewport:{width:844,height:390},deviceScaleFactor:2,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1'});
-            const page = await context.newPage();
+            const browser=await chromium.launch({headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+            const context=await browser.newContext({viewport:{width:844,height:390},deviceScaleFactor:2,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1'});
+            const page=await context.newPage();
             const fatal=[];
             page.on('pageerror',e=>fatal.push('pageerror: '+e.message));
-            page.on('console',m=>{ if(m.type()==='error' && !/favicon/i.test(m.text())) fatal.push('console: '+m.text()); });
-            const url=process.env.GAME_URL+'?qa='+Date.now();
-            const response=await page.goto(url,{waitUntil:'networkidle',timeout:60000});
-            if(!response || !response.ok()) throw new Error('Game page HTTP failure: '+(response&&response.status()));
-            const before=await page.evaluate(()=>({url:location.href,title:document.title,hasPlay:!!document.querySelector('#play-btn'),hasCanvas:!!document.querySelector('#game'),hasCatchLog:!!document.querySelector('#catch-log')}));
-            console.log('PUBLIC_PAGE_DEBUG',JSON.stringify(before));
+            page.on('console',m=>{if(m.type()==='error'&&!/favicon/i.test(m.text()))fatal.push('console: '+m.text())});
+            const response=await page.goto(process.env.GAME_URL+'?qa='+Date.now(),{waitUntil:'networkidle',timeout:60000});
+            if(!response||!response.ok())throw new Error('HTTP '+(response&&response.status()));
             await page.waitForSelector('#play-btn',{state:'visible',timeout:15000});
             await page.click('#play-btn');
             await page.waitForSelector('#tutorial:not(.hidden)',{timeout:10000});
             await page.click('#tutorial-go');
             await page.waitForSelector('#hud:not(.hidden)',{timeout:10000});
-            await page.waitForTimeout(4000);
-            const result=await page.evaluate(()=>({
-              title:document.title,
-              canvas:!!document.querySelector('#game'),
-              canvasW:document.querySelector('#game')?.width||0,
-              canvasH:document.querySelector('#game')?.height||0,
-              hudVisible:!document.querySelector('#hud')?.classList.contains('hidden'),
-              controlsVisible:!document.querySelector('#controls')?.classList.contains('hidden'),
+            await page.waitForTimeout(3500);
+            const audit=await page.evaluate(()=>window.__ALAN_GAME__?.audit?.());
+            console.log('V10_AUDIT',JSON.stringify(audit));
+            if(!audit)throw new Error('Runtime audit API missing');
+            if(audit.release!=='8PLUS_RELEASE_V10')throw new Error('Wrong release '+audit.release);
+            if(!audit.avatar||!audit.rodAttached||!audit.thirdPerson)throw new Error('Third-person integrity failed: '+JSON.stringify(audit));
+            const base=await page.evaluate(()=>({
+              title:document.title,canvasW:document.querySelector('#game')?.width||0,canvasH:document.querySelector('#game')?.height||0,
+              hudVisible:!document.querySelector('#hud')?.classList.contains('hidden'),controlsVisible:!document.querySelector('#controls')?.classList.contains('hidden'),
               fallbackVisible:document.querySelector('#webgl-fallback')?!document.querySelector('#webgl-fallback').classList.contains('hidden'):false,
-              catchLog:!!document.querySelector('#catch-log')
+              zone:document.querySelector('#zone-chip')?.textContent||'',lure:document.querySelector('#lure-toggle')?.textContent||''
             }));
-            console.log('LIVE_QA_RESULT',JSON.stringify(result));
-            await page.screenshot({path:'alan-fishing-live-qa.png',fullPage:true});
-            if(result.title!=="Alan Kaplan’s Fishing Escape") throw new Error('Unexpected title');
-            if(!result.canvas || result.canvasW<300 || result.canvasH<200) throw new Error('Canvas did not initialize');
-            if(!result.hudVisible || !result.controlsVisible) throw new Error('iPhone controls/HUD did not enter gameplay');
-            if(!result.catchLog) throw new Error('Catch log UI missing');
-            if(result.fallbackVisible) throw new Error('WebGL fallback is visible');
-            const meaningfulFatal=fatal.filter(x=>!/Failed to load resource.*favicon/i.test(x));
-            if(meaningfulFatal.length) throw new Error('Runtime errors: '+meaningfulFatal.join(' | '));
+            console.log('BASE',JSON.stringify(base));
+            if(base.title!=="Alan Kaplan’s Fishing Escape"||base.canvasW<300||base.canvasH<200||!base.hudVisible||!base.controlsVisible||base.fallbackVisible)throw new Error('Base gameplay failed '+JSON.stringify(base));
+            if(!base.zone||!base.lure)throw new Error('Strategy HUD missing');
+            await page.screenshot({path:'alan-fishing-v10-gameplay.png',fullPage:true});
+            const forced=await page.evaluate(()=>window.__ALAN_GAME__.forceLanding());
+            if(!forced)throw new Error('Could not force landing sequence');
+            await page.waitForTimeout(850);
+            await page.screenshot({path:'alan-fishing-v10-landing.png',fullPage:true});
+            await page.waitForTimeout(1800);
+            const after=await page.evaluate(()=>window.__ALAN_GAME__.audit());
+            console.log('AFTER_LANDING',JSON.stringify(after));
+            if(after.catches<1||after.score<=0)throw new Error('Catch/progression did not complete '+JSON.stringify(after));
+            const meaningful=fatal.filter(x=>!/Failed to load resource.*favicon/i.test(x));
+            if(meaningful.length)throw new Error('Runtime errors: '+meaningful.join(' | '));
             await browser.close();
-            console.log('ALAN_FISHING_LIVE_QA_OK');
+            console.log('ALAN_FISHING_V10_QA_OK');
           })().catch(e=>{console.error(e);process.exit(1)});
           EOF
           NODE_PATH="$PWD/node_modules" node /tmp/alan-live-qa.cjs
 
-      - name: Upload QA screenshot
+      - name: Upload QA screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: alan-fishing-live-qa-v9
-          path: alan-fishing-live-qa.png
+          name: alan-fishing-live-qa-v10
+          path: |
+            alan-fishing-v10-gameplay.png
+            alan-fishing-v10-landing.png
           if-no-files-found: ignore
