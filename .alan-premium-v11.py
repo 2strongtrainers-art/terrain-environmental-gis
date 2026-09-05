@@ -11,7 +11,6 @@ def rep(old,new,label):
         raise SystemExit('Missing signature: '+label)
     s=s.replace(old,new,1); print('patched',label)
 
-# Premium animated avatar loader. The procedural Alan remains as an offline/failure fallback.
 rep(
 "import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.min.js';",
 "import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.min.js';\nimport { GLTFLoader } from 'https://esm.sh/three@0.185.1/examples/jsm/loaders/GLTFLoader.js';",
@@ -27,7 +26,7 @@ rep(
 "buildLights(); buildWorld(); buildDock(); buildBoat(); buildAvatar(); buildRod(); loadPremiumAvatar(); buildRipples(); buildParty();",
 'premium avatar load')
 
-old_api="window.__ALAN_GAME__={release:RELEASE_ID,audit:()=>({release:RELEASE_ID,avatar:!!avatar,rodAttached:rodGroup?.parent===avatarRodAnchor,thirdPerson:camera.position.z>2,lure:state.lure,zone:state.lastZone,score:state.score,catches:state.catches.length,quality:state.quality,fps:state.fps}),forceLanding:()=>{if(state.fishing==='LANDING')return;state.hookedFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};bobber.position.set(0,.1,30);landFish();}};"
+old_api="window.__ALAN_GAME__={release:RELEASE_ID,audit:()=>({release:RELEASE_ID,avatar:!!avatar,rodAttached:rodGroup?.parent===avatarRodAnchor,thirdPerson:camera.position.z>2,lure:state.lure,zone:state.lastZone,score:state.score,catches:state.catches.length,quality:state.quality,fps:state.fps}),forceLanding:()=>{if(state.fishing==='LANDING')return false;state.hookedFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};bobber.position.set(0,.1,30);landFish();return true;}};"
 new_api="window.__ALAN_GAME__={release:RELEASE_ID,audit:()=>({release:RELEASE_ID,avatar:!!avatar,premiumAvatar:!!premiumAvatar,rodAttached:rodGroup?.parent===avatarRodAnchor,thirdPerson:camera.position.z>2,lure:state.lure,zone:state.lastZone,score:state.score,catches:state.catches.length,quality:state.quality,fps:state.fps}),forceLanding:()=>{if(state.fishing==='LANDING')return true;state.hookedFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};bobber.position.set(0,.1,30);landFish();return true;}};"
 rep(old_api,new_api,'QA landing contract')
 
@@ -46,7 +45,6 @@ function loadPremiumAvatar(){
       avatar.traverse(o=>{if(o.isMesh&&!isRodMesh(o))o.visible=false;});avatar.add(model);
       premiumMixer=new THREE.AnimationMixer(model);for(const clip of gltf.animations){premiumActions[clip.name]=premiumMixer.clipAction(clip);}setPremiumAction(premiumActions.Idle?'Idle':Object.keys(premiumActions)[0]);
       if(avatarRodAnchor){avatarRodAnchor.position.set(.39,1.26,-.32);avatarRodAnchor.rotation.set(-.22,.08,-.13);}
-      showToast('Alan is ready for the lake',900);
     },undefined,()=>{premiumAvatar=null;});
   }catch{premiumAvatar=null;}
 }
@@ -54,26 +52,21 @@ function loadPremiumAvatar(){
 '''
 rep("function buildRod(){",premium_fn+"function buildRod(){",'premium avatar functions')
 
-# Integrate animation state into the existing avatar update.
 rep(
 "function updateAvatar(dt){\n  if(!avatar)return;const moving=playerVelocity.lengthSq()>.08||Math.abs(input.x)+Math.abs(input.y)>.08;const fishing=['WAIT','REEL','LANDING','CAUGHT'].includes(state.fishing);",
 "function updateAvatar(dt){\n  if(!avatar)return;const moving=playerVelocity.lengthSq()>.08||Math.abs(input.x)+Math.abs(input.y)>.08;const fishing=['WAIT','REEL','LANDING','CAUGHT'].includes(state.fishing);if(premiumMixer){premiumMixer.update(dt);const desired=fishing?'Idle':(moving?(input.run?'Run':'Walk'):'Idle');setPremiumAction(premiumActions[desired]?desired:(premiumActions.Idle?'Idle':Object.keys(premiumActions)[0]));}",
 'premium avatar animation')
 
-# Brighter, more photographic sunrise exposure for mobile.
-rep("renderer.toneMappingExposure = 1.16;","renderer.toneMappingExposure = 1.32;",'tone exposure')
+rep("renderer.toneMappingExposure = 1.27;","renderer.toneMappingExposure = 1.32;",'tone exposure')
 rep("const hemi = new THREE.HemisphereLight(0xd8e4e7, 0x17271f, 1.35);","const hemi = new THREE.HemisphereLight(0xe1edf0, 0x26372c, 1.62);",'hemisphere light')
-rep("const ambient = new THREE.AmbientLight(0x9fb0a8, .32);","const ambient = new THREE.AmbientLight(0xb6c2b7, .52);",'ambient light')
-rep("const fill = new THREE.DirectionalLight(0x8fb9d3,.48);","const fill = new THREE.DirectionalLight(0xa4cbe0,.68);",'fill light')
+rep("const ambient = new THREE.AmbientLight(0xb3c0b6, .46);","const ambient = new THREE.AmbientLight(0xb6c2b7, .52);",'ambient light')
+rep("const fill = new THREE.DirectionalLight(0x9fc5d7,.62);","const fill = new THREE.DirectionalLight(0xa4cbe0,.68);",'fill light')
 rep("scene.fog = new THREE.FogExp2(0xaeb9ad, state.mobile ? 0.0072 : 0.0054);","scene.fog = new THREE.FogExp2(0xb8c1b5, state.mobile ? 0.0065 : 0.0049);",'fog tuning')
-
-# Lift foreground materials and broaden mountain silhouettes.
 rep("const groundTex=makeNoiseTexture('#43503c','#25322a',128,state.mobile?700:1200);","const groundTex=makeNoiseTexture('#536249','#303c32',128,state.mobile?700:1200);",'ground texture')
-rep("const groundMat=new THREE.MeshStandardMaterial({color:0x61705a,roughness:.98,metalness:0,map:groundTex,bumpMap:groundTex,bumpScale:.08});","const groundMat=new THREE.MeshStandardMaterial({color:0x78866d,roughness:.96,metalness:0,map:groundTex,bumpMap:groundTex,bumpScale:.07});",'ground material')
+rep("const groundMat=new THREE.MeshStandardMaterial({color:0x76856c,roughness:.98,metalness:0,map:groundTex,bumpMap:groundTex,bumpScale:.08});","const groundMat=new THREE.MeshStandardMaterial({color:0x78866d,roughness:.96,metalness:0,map:groundTex,bumpMap:groundTex,bumpScale:.07});",'ground material')
 rep("const count=layer?16:13;","const count=layer?12:10;",'mountain count')
 rep("const a=Math.PI*.96+(i/(count-1))*Math.PI*1.03+rand(-.035,.035),r=layer?rand(124,154):rand(92,123),h=layer?rand(34,62):rand(25,51),rad=layer?rand(17,30):rand(13,25);","const a=Math.PI*.96+(i/(count-1))*Math.PI*1.03+rand(-.05,.05),r=layer?rand(132,164):rand(96,128),h=layer?rand(30,49):rand(23,40),rad=layer?rand(30,46):rand(24,38);",'broader mountains')
 
-# Compact mobile HUD and controls further so scenery dominates.
 css=r'''
 /* PREMIUM_RELEASE_V11 */
 @media (max-width:900px){
@@ -88,8 +81,6 @@ css=r'''
 }
 '''
 rep("</style>",css+"\n</style>",'premium mobile CSS')
-
-# Stamp release for production/QA fingerprinting.
 rep("/* 8PLUS_RELEASE_V10 */","/* 8PLUS_RELEASE_V10 */\n/* PREMIUM_RELEASE_V11 */",'v11 marker')
 
 p.write_text(s,encoding='utf-8')
