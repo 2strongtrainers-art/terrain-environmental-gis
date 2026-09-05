@@ -176,7 +176,9 @@ function closeModal(){
  if(wasOpen&&v6LastFocus?.isConnected)v6LastFocus.focus();
 }
 window.browseSource=k=>{state={...state,...V6_DEFAULTS,source:k};showView('library')};
+$('#browseRaw').onclick=()=>{state={...state,...V6_DEFAULTS,verification:'not-live'};showView('library')};
 window.recoverVerified=()=>{state={...state,...V6_DEFAULTS,verification:'Live verified'};v6SyncControls();renderLibrary()};
+window.showView=showView;
 window.addEventListener('popstate',v6RestoreRoute);
 window.addEventListener('hashchange',v6RestoreRoute);
 window.Atlas={navigate:showView,search:v6StartSearch,restoreRoute:v6RestoreRoute};

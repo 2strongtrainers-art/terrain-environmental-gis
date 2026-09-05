@@ -54,6 +54,7 @@ async function goHome(page){
     for(let i=0;i<intents.length;i++){
       const intent=intents[i];
       await goHome(page);
+      await openGuide(page);
       const input=page.locator('#commandInput');
       await input.fill(intent.q);
       await page.locator('#routeBtn').click();

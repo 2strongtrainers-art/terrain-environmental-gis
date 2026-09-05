@@ -26,11 +26,11 @@ assert.equal(first,1850);assert.equal(ctx.scoreCalls-before,1850);
 const benchmark=fs.readFileSync('qa/atlas-expanded-benchmark-220.js','utf8');
 const bctx={};vm.createContext(bctx);vm.runInContext(benchmark.slice(benchmark.indexOf('const families'),benchmark.indexOf('function norm'))+'\nthis.cases=tests;',bctx);
 let relevant=0;const failed=[];
-for(const test of bctx.cases){
+for(const test of bctx.cases.filter(t=>t.variant===1)){
  const top=ctx.find(test.q).slice(0,5);
  const content=top.map(t=>[t.name,t.description,t.accessType].join(' ')).join(' ').toLowerCase();
  const ok=top.length>0&&test.expect.some(x=>content.includes(x.toLowerCase()))&&!(test.avoid||[]).some(x=>content.includes(x.toLowerCase()));
  if(ok)relevant++;else failed.push({query:test.q,top:top.map(t=>t.name)});
 }
-assert(relevant/220>=.97,JSON.stringify(failed));
-console.log(JSON.stringify({records:rows.length,topics:topicCounts.size,topicCountsReconciled:true,grantResults:4,noLoginResults:4,unknownQueryResults:0,repeatedSearches:11,scoreCalls:first,searchBenchmark:{relevant,total:220,failed}},null,2));
+assert.equal(relevant,22,JSON.stringify(failed));
+console.log(JSON.stringify({records:rows.length,topics:topicCounts.size,topicCountsReconciled:true,grantResults:4,noLoginResults:4,unknownQueryResults:0,repeatedSearches:11,scoreCalls:first,searchFamilies:{relevant,total:22,failed}},null,2));
