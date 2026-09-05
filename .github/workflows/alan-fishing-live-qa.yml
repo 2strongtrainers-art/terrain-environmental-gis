@@ -1,5 +1,5 @@
 name: Alan Fishing Escape Live QA
-# Premium v11 final gameplay verification
+# Premium v12 8-plus release gate
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
           npm install --no-save playwright@1.55.0
           npx playwright install --with-deps chromium
 
-      - name: Test public iPhone gameplay
+      - name: Test public iPhone gameplay and catch loop
         shell: bash
         env:
           GAME_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/alan-fishing-escape/
@@ -35,7 +35,7 @@ jobs:
           set -euo pipefail
           ready=0
           for i in $(seq 1 18); do
-            if curl -fsSL --max-time 30 "$GAME_URL?ready=$(date +%s)-$i" | grep -F 'PREMIUM_RELEASE_V11' >/dev/null; then ready=1; break; fi
+            if curl -fsSL --max-time 30 "$GAME_URL?ready=$(date +%s)-$i" | grep -F 'visual-polish-v12' >/dev/null; then ready=1; break; fi
             sleep 5
           done
           test "$ready" -eq 1
@@ -56,28 +56,36 @@ jobs:
             await page.click('#tutorial-go');
             await page.waitForSelector('#hud:not(.hidden)',{timeout:10000});
             await page.waitForFunction(()=>window.__ALAN_GAME__?.audit?.().premiumAvatar===true,{timeout:20000});
-            await page.waitForTimeout(1800);
-            const audit=await page.evaluate(()=>window.__ALAN_GAME__?.audit?.());
-            console.log('V11_AUDIT',JSON.stringify(audit));
+            await page.waitForTimeout(1600);
+            let audit=await page.evaluate(()=>window.__ALAN_GAME__?.audit?.());
+            console.log('V12_AUDIT',JSON.stringify(audit));
             if(!audit||audit.release!=='8PLUS_RELEASE_V10')throw new Error('Wrong runtime release '+JSON.stringify(audit));
             if(!audit.avatar||!audit.premiumAvatar||!audit.rodAttached||!audit.thirdPerson)throw new Error('Premium third-person integrity failed '+JSON.stringify(audit));
-            const base=await page.evaluate(()=>({title:document.title,canvasW:document.querySelector('#game')?.width||0,canvasH:document.querySelector('#game')?.height||0,hudVisible:!document.querySelector('#hud')?.classList.contains('hidden'),controlsVisible:!document.querySelector('#controls')?.classList.contains('hidden'),fallbackVisible:document.querySelector('#webgl-fallback')?!document.querySelector('#webgl-fallback').classList.contains('hidden'):false,zone:document.querySelector('#zone-chip')?.textContent||'',lure:document.querySelector('#lure-toggle')?.textContent||''}));
+            if(audit.fps<28)throw new Error('Initial mobile-render FPS below gate '+audit.fps);
+            const base=await page.evaluate(()=>({title:document.title,canvasW:document.querySelector('#game')?.width||0,canvasH:document.querySelector('#game')?.height||0,hudVisible:!document.querySelector('#hud')?.classList.contains('hidden'),controlsVisible:!document.querySelector('#controls')?.classList.contains('hidden'),fallbackVisible:document.querySelector('#webgl-fallback')?!document.querySelector('#webgl-fallback').classList.contains('hidden'):false,zone:document.querySelector('#zone-chip')?.textContent||'',lure:document.querySelector('#lure-toggle')?.textContent||'',action:document.querySelector('#action-btn')?.textContent||''}));
             console.log('BASE',JSON.stringify(base));
             if(base.title!=="Alan Kaplan’s Fishing Escape"||base.canvasW<300||base.canvasH<200||!base.hudVisible||!base.controlsVisible||base.fallbackVisible)throw new Error('Base gameplay failed '+JSON.stringify(base));
-            if(!base.zone||!base.lure)throw new Error('Strategy HUD missing');
-            await page.screenshot({path:'alan-fishing-v11-gameplay.png',fullPage:true});
+            if(!base.zone||!base.lure||base.action!=='CAST')throw new Error('Strategy/action HUD missing '+JSON.stringify(base));
+            await page.click('#lure-toggle');
+            await page.waitForTimeout(150);
+            const switched=await page.evaluate(()=>window.__ALAN_GAME__.audit().lure);
+            if(switched==='SPOON')throw new Error('Tackle selector did not switch');
+            await page.screenshot({path:'alan-fishing-v12-gameplay.png',fullPage:true});
             const forced=await page.evaluate(()=>window.__ALAN_GAME__.forceLanding());
             if(forced!==true)throw new Error('Landing test hook failed: '+forced);
-            await page.waitForTimeout(850);
-            await page.screenshot({path:'alan-fishing-v11-landing.png',fullPage:true});
-            await page.waitForTimeout(1800);
+            await page.waitForTimeout(700);
+            const during=await page.evaluate(()=>window.__ALAN_GAME__.audit());
+            console.log('DURING_LANDING',JSON.stringify(during));
+            if(during.fishing!=='LANDING'||during.landingT<=.35)throw new Error('Landing animation did not advance '+JSON.stringify(during));
+            await page.screenshot({path:'alan-fishing-v12-landing.png',fullPage:true});
+            await page.waitForFunction(()=>{const a=window.__ALAN_GAME__?.audit?.();return a&&a.catches>=1&&a.score>0&&a.fishing==='CAUGHT';},{timeout:4500});
             const after=await page.evaluate(()=>window.__ALAN_GAME__.audit());
             console.log('AFTER_LANDING',JSON.stringify(after));
-            if(after.catches<1||after.score<=0)throw new Error('Catch/progression did not complete '+JSON.stringify(after));
+            if(after.catches<1||after.score<=0||after.fishing!=='CAUGHT')throw new Error('Catch/progression did not complete '+JSON.stringify(after));
             const meaningful=fatal.filter(x=>!/Failed to load resource.*favicon/i.test(x));
             if(meaningful.length)throw new Error('Runtime errors: '+meaningful.join(' | '));
             await browser.close();
-            console.log('ALAN_FISHING_V11_QA_OK');
+            console.log('ALAN_FISHING_V12_QA_OK');
           })().catch(e=>{console.error(e);process.exit(1)});
           EOF
           NODE_PATH="$PWD/node_modules" node /tmp/alan-live-qa.cjs
@@ -86,8 +94,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: alan-fishing-live-qa-v11
+          name: alan-fishing-live-qa-v12
           path: |
-            alan-fishing-v11-gameplay.png
-            alan-fishing-v11-landing.png
+            alan-fishing-v12-gameplay.png
+            alan-fishing-v12-landing.png
           if-no-files-found: ignore
