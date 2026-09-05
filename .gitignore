@@ -1,0 +1,8 @@
+dist/
+node_modules/
+navigation-qa/
+qa-artifacts/
+intent-qa/
+expanded-qa/
+watch-qa/
+mobile-beginner-qa/

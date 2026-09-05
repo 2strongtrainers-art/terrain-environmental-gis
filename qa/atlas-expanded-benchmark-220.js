@@ -65,7 +65,7 @@ async function runViewport(browser,viewport,label,runQueries){
  page.on('requestfailed',req=>{try{const u=new URL(req.url());if(u.origin===new URL(URL).origin)sameOriginFailures.push({url:req.url(),failure:req.failure()?.errorText||'failed'})}catch(_){}});
  const response=await page.goto(URL,{waitUntil:'networkidle',timeout:60000});
  if(!response||response.status()!==200) throw new Error(`${label} HTTP ${response&&response.status()}`);
- await page.waitForFunction(()=>document.querySelector('#statIndexed')?.textContent?.includes('1,846'),null,{timeout:30000});
+ await page.waitForFunction(()=>document.querySelector('#statIndexed')?.textContent?.includes('1,850'),null,{timeout:30000});
  await page.waitForFunction(()=>document.querySelector('#view-stacks')&&document.querySelector('#view-playbooks'),null,{timeout:15000});
  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth+2);
  const touchIssues=await page.evaluate(()=>[...document.querySelectorAll('button,a.btn,input,select')].filter(el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&(r.width<40||r.height<40)}).slice(0,20).map(el=>({tag:el.tagName,text:(el.textContent||el.getAttribute('aria-label')||'').trim().slice(0,40),w:Math.round(el.getBoundingClientRect().width),h:Math.round(el.getBoundingClientRect().height)})));

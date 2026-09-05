@@ -1,11 +1,6 @@
 name: Atlas 20 Common Intent Test
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/atlas-common-intents-20.yml
-      - qa/atlas-common-intents-20.js
   workflow_dispatch:
 
 jobs:

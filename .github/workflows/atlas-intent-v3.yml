@@ -1,191 +1,137 @@
-name: Atlas Discovery V5.2 Production Gate
+name: Atlas V6 Build, Verify, Publish
 
 on:
   push:
     branches: [main]
     paths:
+      - atlas-src/**
+      - atlas-static/**
       - atlas-upgrade.js
       - atlas-mobile-beginner.js
-      - atlas-bundle.html
-      - analytics/atlas-behavior-ranking-policy.json
-      - scripts/apply_atlas_intent_v32.py
-      - scripts/apply_atlas_multimedia_v4.py
-      - scripts/apply_atlas_multimedia_v41.py
-      - scripts/apply_atlas_discovery_v5_search.py
-      - scripts/apply_atlas_discovery_v51.py
-      - scripts/sync_atlas_qa_counts.py
-      - qa/atlas-common-intents-20.js
-      - qa/atlas-intent-stress-60.js
-      - qa/atlas-expanded-benchmark-220.js
-      - qa/atlas-watch-multimedia.js
-      - qa/atlas-live-qa.js
-      - qa/atlas-mobile-beginner.js
+      - scripts/**
+      - qa/**
       - .github/workflows/atlas-intent-v3.yml
   workflow_dispatch:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
-  group: atlas-production-gate
-  cancel-in-progress: true
+  group: atlas-production-publish
+  cancel-in-progress: false
 
 jobs:
-  deploy-and-test:
+  verify-and-publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 35
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout main
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          ref: main
-          fetch-depth: 0
-
-      - name: Build current Atlas core in working tree
+          node-version: '22'
+      - name: Build candidate and verify reproducibility
         run: |
-          python scripts/apply_atlas_intent_v32.py
-          python scripts/apply_atlas_multimedia_v4.py
-          python scripts/apply_atlas_multimedia_v41.py
-          python scripts/apply_atlas_discovery_v5_search.py
-          python scripts/apply_atlas_discovery_v51.py
-          python scripts/sync_atlas_qa_counts.py
-          test -s atlas-bundle.html
-          grep -q 'ATLAS-INTENT-V32' atlas-bundle.html
-          grep -q 'ATLAS-MULTIMEDIA-V41' atlas-bundle.html
-          grep -q 'ATLAS-DISCOVERY-V5-SEARCH' atlas-bundle.html
-          grep -q 'ATLAS-DISCOVERY-V51' atlas-bundle.html
-          test -s atlas-mobile-beginner.js
+          python scripts/build_atlas.py
+          python scripts/build_atlas.py --out /tmp/atlas-repeat
+          diff -r dist /tmp/atlas-repeat
+      - name: Install browser test driver
+        run: npm install --no-save playwright@1.55.0
+      - name: Serve candidate
+        run: python -m http.server 8765 --directory dist > /tmp/atlas-http.log 2>&1 &
+      - name: Verify new navigation, IDs, search links and four mobile widths
+        env: { ATLAS_URL: 'http://127.0.0.1:8765/atlas/', CHROME_PATH: /usr/bin/google-chrome }
+        run: node qa/atlas-navigation-v6.js
+      - name: Verify 20 core search intents
+        env: { ATLAS_URL: 'http://127.0.0.1:8765/atlas/', CHROME_PATH: /usr/bin/google-chrome }
+        run: node qa/atlas-common-intents-20.js
+      - name: Verify 60 search variations
+        env: { ATLAS_URL: 'http://127.0.0.1:8765/atlas/', CHROME_PATH: /usr/bin/google-chrome }
+        run: node qa/atlas-intent-stress-60.js
+      - name: Verify 220 search variations
+        env: { ATLAS_URL: 'http://127.0.0.1:8765/atlas/', CHROME_PATH: /usr/bin/google-chrome }
+        run: node qa/atlas-expanded-benchmark-220.js
+      - name: Verify Watch and existing functionality
+        env: { ATLAS_URL: 'http://127.0.0.1:8765/atlas/', CHROME_PATH: /usr/bin/google-chrome }
+        run: |
+          mkdir -p watch-qa qa-artifacts
+          node qa/atlas-watch-multimedia.js
+          node qa/atlas-live-qa.js
+      - name: Enforce search and regression gates before publishing
+        run: |
           python - <<'PY'
           import json
-          r=json.load(open('atlas-build-report.json'))
-          assert r['tool_count'] >= 1850, r
-          assert r.get('discovery_v51',{}).get('grant_intent_precedence_repair') is True
-          print('Atlas build',r['tool_count'],'tools')
+          def read(p): return json.load(open(p))
+          n=read('navigation-qa/report.json')
+          assert not n.get('failure') and not n['errors'], n
+          c=read('intent-qa/atlas-common-intents-20.json')['summary']
+          s=read('intent-qa/atlas-intent-stress-60.json')['summary']
+          e=read('expanded-qa/atlas-expanded-benchmark-220.json')['summary']
+          r=read('qa-artifacts/atlas-live-qa-report.json')
+          assert c['structuralPassed']==20 and c['relevancePassed']==20 and not c['jsErrors'], c
+          assert s['structural']==60 and s['relevant']==60 and not s['jsErrors'], s
+          assert e['structural']==220 and e['relevanceRate']>=.97 and not e['jsErrors'] and not e['overflowRuns'], e
+          assert not r['failed'] and not r['page_errors'] and not r['request_failures'], r
+          print('All candidate gates passed; publishing the verified files.')
           PY
-
-      - name: Checkout gh-pages
+      - name: Checkout published site
         uses: actions/checkout@v4
         with:
           ref: gh-pages
           path: public
           fetch-depth: 0
-
-      - name: Publish Atlas plus mobile beginner layer
-        shell: bash
+      - name: Publish verified Atlas files while preserving the GIS site
         run: |
-          mkdir -p public/atlas
-          python - <<'PY'
-          from pathlib import Path
-          core=Path('atlas-bundle.html').read_text()
-          tags=['<script src="../atlas-upgrade.js?v=20260904-v51" defer></script>','<script src="../atlas-mobile-beginner.js?v=20260904-v52" defer></script>']
-          if '</body>' not in core: raise SystemExit('Atlas bundle has no closing body tag')
-          for tag in tags:
-              if tag not in core: core=core.replace('</body>',tag+'</body>',1)
-          Path('public/atlas/index.html').write_text(core)
-          PY
-          cp atlas-upgrade.js public/atlas-upgrade.js
-          cp atlas-mobile-beginner.js public/atlas-mobile-beginner.js
-          cp atlas-build-report.json public/atlas/build-report.json
+          cp -R dist/. public/
           touch public/.nojekyll
           cd public
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add atlas/index.html atlas/build-report.json atlas-upgrade.js atlas-mobile-beginner.js .nojekyll
-          if git diff --cached --quiet; then
-            echo "Published Atlas candidate already current"
-          else
-            git commit -m "Publish Atlas Discovery V5.2 mobile beginner candidate"
-            git fetch origin gh-pages
-            git rebase origin/gh-pages
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add atlas atlas-upgrade.js atlas-mobile-beginner.js .nojekyll
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish verified Atlas V6 search and topic indexes'
             git push origin HEAD:gh-pages
           fi
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
         with:
-          node-version: "22"
-
-      - name: Install browser driver
-        run: npm install --no-save playwright@1.55.0
-
-      - name: Wait for production V5.2
+          path: public
+      - name: Deploy verified Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Verify live production navigation
         env:
-          URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
-          UPGRADE: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas-upgrade.js?v=20260904-v51
-          BEGINNER: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas-mobile-beginner.js?v=20260904-v52
-          REPORT: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/build-report.json
+          ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
+          CHROME_PATH: /usr/bin/google-chrome
+          QA_OUTPUT: navigation-qa/live
         run: |
           python - <<'PY'
-          import json,os,time,urllib.request
-          for i in range(72):
-              try:
-                  def get(u):
-                      req=urllib.request.Request(u,headers={'Cache-Control':'no-cache','User-Agent':'Atlas-V52-QA'})
-                      return urllib.request.urlopen(req,timeout=15).read().decode('utf-8','replace')
-                  page=get(os.environ['URL']); upgrade=get(os.environ['UPGRADE']); beginner=get(os.environ['BEGINNER']); report=json.loads(get(os.environ['REPORT']))
-                  if 'ATLAS-DISCOVERY-V51' in page and '20260904-v52' in page and 'atlasBeginnerStart' in beginner and report.get('tool_count',0)>=1850:
-                      print('Atlas V5.2 live after',i*5,'seconds with',report['tool_count'],'tools');break
-              except Exception as e: print('wait',e)
-              time.sleep(5)
-          else: raise SystemExit('Atlas V5.2 production candidate not found')
+          import json,time,urllib.request
+          expected=json.load(open('dist/atlas/build-report.json'))['sha256']
+          for _ in range(30):
+            try:
+              u='https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/build-report.json'
+              r=json.load(urllib.request.urlopen(u+'?v='+expected,timeout=15))
+              if r.get('sha256')==expected: break
+            except Exception: pass
+            time.sleep(5)
+          else: raise SystemExit('Production has not returned the expected build')
           PY
-
-      - name: Run strict 20 core-intent benchmark
-        env: {ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/, CHROME_PATH: /usr/bin/google-chrome}
-        run: node qa/atlas-common-intents-20.js
-
-      - name: Run legacy 60-query stress benchmark
-        env: {ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/, CHROME_PATH: /usr/bin/google-chrome}
-        run: node qa/atlas-intent-stress-60.js
-
-      - name: Run strict 220-query expanded benchmark and target-mobile smoke
-        env: {ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/, CHROME_PATH: /usr/bin/google-chrome}
-        run: node qa/atlas-expanded-benchmark-220.js
-
-      - name: Run mobile beginner discovery QA
-        env: {ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/, CHROME_PATH: /usr/bin/google-chrome}
-        run: node qa/atlas-mobile-beginner.js
-
-      - name: Run Watch and Multimedia QA
+          node qa/atlas-navigation-v6.js
+      - name: Upload test evidence
         if: always()
-        env: {ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/, CHROME_PATH: /usr/bin/google-chrome}
-        run: node qa/atlas-watch-multimedia.js
-
-      - name: Run full production regression
-        if: always()
-        env: {ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/, CHROME_PATH: /usr/bin/google-chrome}
-        run: node qa/atlas-live-qa.js
-
-      - name: V5.2 certification gate
-        if: always()
-        run: |
-          python - <<'PY'
-          import json,os
-          required=['intent-qa/atlas-common-intents-20.json','intent-qa/atlas-intent-stress-60.json','expanded-qa/atlas-expanded-benchmark-220.json','mobile-beginner-qa/report.json','watch-qa/atlas-watch-report.json','qa-artifacts/atlas-live-qa-report.json']
-          missing=[p for p in required if not os.path.exists(p)]
-          if missing: raise SystemExit(f'Missing certification evidence: {missing}')
-          core=json.load(open(required[0])); stress=json.load(open(required[1])); expanded=json.load(open(required[2])); mobile=json.load(open(required[3])); watch=json.load(open(required[4])); live=json.load(open(required[5]))
-          c=core.get('summary',{}); s=stress.get('summary',{}); e=expanded.get('summary',{}); m=mobile.get('summary',{})
-          if c.get('structuralPassed')!=20 or c.get('relevancePassed')!=20 or c.get('jsErrors'): raise SystemExit(f'Core benchmark not certified: {c}')
-          if s.get('structural')!=60 or s.get('relevant')!=60 or s.get('jsErrors')!=0: raise SystemExit(f'Stress benchmark not certified: {s}')
-          if e.get('total')!=220 or e.get('structural')!=220 or e.get('relevanceRate',0)<0.97: raise SystemExit(f'Expanded relevance gate failed: {e}')
-          if e.get('jsErrors') or e.get('sameOriginFailures') or e.get('overflowRuns'): raise SystemExit(f'Expanded production/mobile gate failed: {e}')
-          if not (m.get('allVisible') and m.get('zeroOverflow') and m.get('interactionPass')) or m.get('jsErrors'): raise SystemExit(f'Mobile beginner QA failed: {m}')
-          if len(watch.get('queries',[]))!=8 or sum(1 for x in watch['queries'] if x.get('ok'))!=8 or watch.get('errors'): raise SystemExit('Watch QA not certified')
-          if live.get('failed')!=0 or live.get('page_errors') or live.get('request_failures'): raise SystemExit('Full regression not certified')
-          print(f"CERTIFIED V5.2: core 20/20; stress 60/60; expanded {e['relevant']}/220 ({e['relevanceRate']*100:.2f}%); beginner discovery 3/3 mobile widths; Watch 8/8; regression green")
-          PY
-
-      - name: Upload V5.2 evidence
         uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: atlas-discovery-v52-evidence
+          name: atlas-v6-evidence
           path: |
+            navigation-qa/
             intent-qa/
             expanded-qa/
-            mobile-beginner-qa/
             watch-qa/
             qa-artifacts/
-            analytics/atlas-behavior-ranking-policy.json
+            dist/atlas/build-report.json
           retention-days: 30

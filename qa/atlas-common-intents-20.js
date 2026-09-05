@@ -1,3 +1,7 @@
+
+async function openGuide(page){const g=page.locator('#atlasGuide');if(await g.count()&&!(await g.evaluate(e=>e.open)))await g.locator(':scope > summary').click();}
+async function openFilters(page){const f=page.locator('#libraryFilters');if(await f.count()&&!(await f.evaluate(e=>e.open)))await f.locator('summary').click();}
+async function navView(page,view){const b=page.locator(`.navlinks button[data-view="${view}"]`);if(await b.isVisible())await b.click();else{await page.locator('#menuBtn').click();await page.locator(`#mobileNav button[data-view="${view}"]`).click();}}
 const { chromium } = require('playwright-core');
 const fs = require('fs');
 const URL = process.env.ATLAS_URL || 'https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/';
@@ -45,7 +49,7 @@ async function goHome(page){
     page.on('pageerror',e=>jsErrors.push(String(e)));
     const r=await page.goto(URL,{waitUntil:'networkidle',timeout:60000});
     if(!r || r.status()!==200) throw new Error('Atlas HTTP status '+(r&&r.status()));
-    await page.waitForFunction(()=>document.querySelector('#statIndexed')?.textContent?.includes('1,846'),null,{timeout:30000});
+    await page.waitForFunction(()=>document.querySelector('#statIndexed')?.textContent?.includes('1,850'),null,{timeout:30000});
 
     for(let i=0;i<intents.length;i++){
       const intent=intents[i];

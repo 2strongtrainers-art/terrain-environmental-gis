@@ -1,7 +1,11 @@
+
+async function openGuide(page){const g=page.locator('#atlasGuide');if(await g.count()&&!(await g.evaluate(e=>e.open)))await g.locator(':scope > summary').click();}
+async function openFilters(page){const f=page.locator('#libraryFilters');if(await f.count()&&!(await f.evaluate(e=>e.open)))await f.locator('summary').click();}
+async function navView(page,view){const b=page.locator(`.navlinks button[data-view="${view}"]`);if(await b.isVisible())await b.click();else{await page.locator('#menuBtn').click();await page.locator(`#mobileNav button[data-view="${view}"]`).click();}}
 const { chromium } = require('playwright-core');
 const fs=require('fs');
 const URL=process.env.ATLAS_URL||'https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/';
-const EXPECTED_TOTAL=1846;
+const EXPECTED_TOTAL=1850;
 const checks=[
  {q:'free movie',expect:['tubi','pluto tv','plex','roku']},
  {q:'free live tv and news',expect:['pluto tv','roku','plex','tubi']},
@@ -24,7 +28,7 @@ function num(t=''){const m=t.match(/[\d,]+/);return m?Number(m[0].replace(/,/g,'
   await p.waitForFunction(n=>Number((document.querySelector('#statIndexed')?.textContent||'').replace(/,/g,''))===n,EXPECTED_TOTAL,{timeout:30000});
   report.tests.push({name:'Atlas initializes at multimedia count',ok:true,detail:await p.locator('#statIndexed').innerText()});
   assert(await p.locator('.navlinks button[data-view="watch"]').count()===1,'Desktop Watch nav missing');
-  await p.locator('.navlinks button[data-view="watch"]').click();
+  await navView(p,"watch");
   assert(await p.locator('#view-watch').evaluate(e=>e.classList.contains('active')),'Watch view did not activate');
   report.tests.push({name:'Watch navigation opens dedicated view',ok:true});
   const services=p.locator('#view-watch [data-watch-link]');
@@ -35,7 +39,7 @@ function num(t=''){const m=t.match(/[\d,]+/);return m?Number(m[0].replace(/,/g,'
   await p.screenshot({path:'watch-qa/atlas-watch-desktop.png',fullPage:true});
 
   for(const c of checks){
-    await p.locator('.navlinks button[data-view="home"]').click();await p.locator('#commandInput').fill(c.q);await p.locator('#routeBtn').click();await p.waitForTimeout(60);
+    await navView(p,"home");await openGuide(p);await p.locator('#commandInput').fill(c.q);await p.locator('#routeBtn').click();await p.waitForTimeout(60);
     const best=p.locator('#routeSuggestions button[data-smart-query]').first();assert(await best.count()===1,`No best-match route for ${c.q}`);await best.click();await p.waitForTimeout(90);
     const n=num(await p.locator('#resultCount').innerText());assert(n>0,`Zero results for ${c.q}`);
     const cards=p.locator('#toolGrid .tool');const top=[];const lim=Math.min(5,await cards.count());for(let i=0;i<lim;i++)top.push((await cards.nth(i).locator('h3').innerText()).trim());

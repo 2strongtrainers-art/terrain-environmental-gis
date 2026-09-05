@@ -1,58 +1,15 @@
-name: Build Nick's Digital Atlas
-
+name: Atlas Build Only (manual)
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - "atlas-src/**"
-      - "atlas-build-trigger.txt"
-      - ".github/workflows/atlas-build.yml"
   workflow_dispatch:
-
 permissions:
-  contents: write
-
+  contents: read
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Assemble and verify Atlas
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import base64, gzip, json, hashlib
-
-          shell = ''.join(Path(f'atlas-src/shell-{i:03d}.txt').read_text() for i in range(3))
-          data = ''.join(Path(f'atlas-src/data-{i:03d}.txt').read_text().strip() for i in range(9))
-          assert '__DATA_B64__' in shell, 'Atlas shell marker missing'
-          decoded = gzip.decompress(base64.b64decode(data))
-          records = json.loads(decoded)
-          assert len(records) == 1834, f'Expected 1834 tools, got {len(records)}'
-          bundle = shell.replace('__DATA_B64__', data)
-          Path('atlas-bundle.html').write_text(bundle)
-          report = {
-              'tool_count': len(records),
-              'bundle_bytes': len(bundle.encode()),
-              'data_b64_bytes': len(data.encode()),
-              'sha256': hashlib.sha256(bundle.encode()).hexdigest(),
-          }
-          Path('atlas-build-report.json').write_text(json.dumps(report, indent=2) + '\n')
-          print(report)
-          PY
-
-      - name: Commit verified bundle
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add atlas-bundle.html atlas-build-report.json
-          if git diff --cached --quiet; then
-            echo "Verified bundle already current"
-          else
-            git commit -m "Build verified Nick's Digital Atlas bundle"
-            git push
-          fi
+      - uses: actions/checkout@v4
+      - run: python scripts/build_atlas.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: atlas-build
+          path: dist/
