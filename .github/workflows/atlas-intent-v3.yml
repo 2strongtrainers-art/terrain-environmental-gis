@@ -15,8 +15,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
   group: atlas-production-publish
@@ -26,9 +24,6 @@ jobs:
   verify-and-publish:
     runs-on: ubuntu-latest
     timeout-minutes: 35
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -96,13 +91,8 @@ jobs:
             git commit -m 'Publish verified Atlas V6 search and topic indexes'
             git push origin HEAD:gh-pages
           fi
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: public
-      - name: Deploy verified Pages artifact
-        id: deployment
-        uses: actions/deploy-pages@v4
+      # GitHub's existing Pages integration deploys gh-pages. It is the
+      # environment-approved release branch; main never deploys directly.
       - name: Verify live production navigation
         env:
           ATLAS_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/
