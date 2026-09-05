@@ -24,22 +24,21 @@ new_add="""avatar.traverse(o=>{if(o.isMesh&&!isRodMesh(o))o.visible=false;});ava
       premiumMixer=new THREE.AnimationMixer(model);"""
 once(old_add,new_add,'angler gear')
 
-# Expose the gear in the runtime QA audit.
+# Expose the angler gear in the runtime QA audit.
 old_audit="premiumAvatar:!!premiumAvatar,rodAttached:rodGroup?.parent===avatarRodAnchor"
 new_audit="premiumAvatar:!!premiumAvatar,fisherGear:!!premiumAvatar?.getObjectByName('fisher-pack'),rodAttached:rodGroup?.parent===avatarRodAnchor"
 once(old_audit,new_audit,'angler gear audit')
 
-# Hard completion fallback: browser screenshot stalls / low-frame moments cannot strand LANDING forever.
-old_anim="catchAnim={t:0,duration:2.15,start:fish.position.clone(),fish:f,recorded:false};\n  showToast(`${f.name} coming out of the water!`,1500);updateActionLabel();"
-new_anim="catchAnim={t:0,duration:2.15,start:fish.position.clone(),fish:f,recorded:false};const landingRef=catchAnim;setTimeout(()=>{if(catchAnim===landingRef&&state.fishing==='LANDING')finishCatchLanding();},2450);\n  showToast(`${f.name} coming out of the water!`,1500);updateActionLabel();"
+# Hard completion fallback in addition to the wall-clock animation timing.
+old_anim="catchAnim={t:0,duration:1.75,start:fish.position.clone(),fish:f,recorded:false,startedAt:performance.now()};\n  showToast(`${f.name} coming out of the water!`,1500);updateActionLabel();"
+new_anim="catchAnim={t:0,duration:1.75,start:fish.position.clone(),fish:f,recorded:false,startedAt:performance.now()};const landingRef=catchAnim;setTimeout(()=>{if(catchAnim===landingRef&&state.fishing==='LANDING')finishCatchLanding();},2100);\n  showToast(`${f.name} coming out of the water!`,1500);updateActionLabel();"
 once(old_anim,new_anim,'landing completion safeguard')
 
-# Slightly increase visual separation in the water/shore without adding expensive effects.
+# Lift lake color separation without adding expensive post-processing.
 old_water="vec3 deep=vec3(.025,.145,.155); vec3 mid=vec3(.055,.235,.235); vec3 sky=vec3(.42,.58,.59);"
 new_water="vec3 deep=vec3(.022,.16,.18); vec3 mid=vec3(.07,.285,.30); vec3 sky=vec3(.48,.66,.68);"
 once(old_water,new_water,'water tonal lift')
 
-# Final release marker for deploy readiness.
 if 'FINAL_8PLUS_V12' not in s:
     s=s.replace('/* PREMIUM_RELEASE_V11 */','/* PREMIUM_RELEASE_V11 */\n/* FINAL_8PLUS_V12 */',1)
 
