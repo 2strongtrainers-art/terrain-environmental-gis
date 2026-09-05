@@ -44,6 +44,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
 /* STABLE_LANDING_V12 */
 /* TACKLE_HUD_V13 */
 /* VISUAL_PERF_V17 */
+/* FINAL_ALL8_V18 */
 #objective-card{transition:opacity .25s ease,transform .25s ease,min-width .25s ease,padding .25s ease}
 #objective-card.compact{min-width:0!important;padding:7px 9px!important;opacity:.78;transform:scale(.96);transform-origin:top left}
 #objective-card.compact .obj{display:none}
@@ -423,9 +424,10 @@ function buildWorld() {
   skyDome=new THREE.Mesh(new THREE.SphereGeometry(220,40,24),skyMat); skyDome.name='sky'; scene.add(skyDome);
 
   const groundTex=makeNoiseTexture('#536249','#303c32',128,state.mobile?700:1200);
-  const groundMat=new THREE.MeshStandardMaterial({color:0x78866d,roughness:.96,metalness:0,map:groundTex,bumpMap:groundTex,bumpScale:.07});
+  const groundMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.96,metalness:0,map:groundTex,bumpMap:groundTex,bumpScale:.055,vertexColors:true});
   const groundGeo=new THREE.PlaneGeometry(210,210,state.mobile?30:44,state.mobile?30:44);groundGeo.rotateX(-Math.PI/2);
-  const gp=groundGeo.attributes.position;for(let i=0;i<gp.count;i++){const x=gp.getX(i),z=gp.getZ(i);gp.setY(i,groundHeightAt(x,z)-.08);}groundGeo.computeVertexNormals();
+  const gp=groundGeo.attributes.position,gc=[];const cShore=new THREE.Color(0x8d805b),cMeadow=new THREE.Color(0x667050),cForest=new THREE.Color(0x46553e);
+  for(let i=0;i<gp.count;i++){const x=gp.getX(i),z=gp.getZ(i),r=Math.hypot(x,z);gp.setY(i,groundHeightAt(x,z)-.08);const n=.5+.5*Math.sin(x*.075+Math.sin(z*.047)*1.8);const c=(r<49?cShore.clone().lerp(cMeadow,THREE.MathUtils.clamp((r-43)/6,0,1)):cMeadow.clone().lerp(cForest,.22+n*.38));gc.push(c.r,c.g,c.b);}groundGeo.setAttribute('color',new THREE.Float32BufferAttribute(gc,3));groundGeo.computeVertexNormals();
   const ground = new THREE.Mesh(groundGeo,groundMat);ground.receiveShadow=true;scene.add(ground);
 
   const waterGeo = new THREE.CircleGeometry(40, 144); waterGeo.rotateX(-Math.PI/2);
@@ -477,7 +479,7 @@ function buildWorld() {
   const rockCount=state.mobile?92:138;
   for(let i=0;i<rockCount;i++){
     const a=i/rockCount*Math.PI*2+rand(-.05,.05), r=rand(40.4,45.1), m=new THREE.Mesh(rockGeo,rockMats[i%rockMats.length]);
-    m.scale.set(rand(.35,1.55),rand(.25,1.08),rand(.38,1.65));m.position.set(Math.cos(a)*r,rand(-.06,.22),Math.sin(a)*r);m.rotation.set(rand(0,2.5),rand(0,6.28),rand(0,2.5));m.castShadow=!state.mobile&&i%3===0;scene.add(m);
+    m.scale.set(rand(.35,1.55),rand(.25,1.08),rand(.38,1.65));m.position.set(Math.cos(a)*r,rand(-.06,.22),Math.sin(a)*r);m.rotation.set(rand(0,2.5),rand(0,6.28),rand(0,2.5));m.castShadow=!state.mobile&&i%3===0;m.name=i%2?'action-cull-rock':'shore-rock';scene.add(m);
   }
 
   const treeCount=state.mobile?108:168;
@@ -499,7 +501,7 @@ function buildWorld() {
 
   function mountain(rad,h,segments,color){
     const seg=state.mobile?14:20,rings=6,verts=[],idx=[];
-    for(let j=0;j<=rings;j++){const t=j/rings,rr=rad*Math.pow(1-t,.72);const cy=-h*.5+t*h;for(let i=0;i<seg;i++){const a=i/seg*Math.PI*2;const wob=1+Math.sin(a*3.1+j*.7)*.11+Math.sin(a*7.3-j*.45)*.055;const drift=Math.sin(t*Math.PI)*rad*.08;verts.push(Math.cos(a)*rr*wob+drift*Math.sin(j*.8),cy,Math.sin(a)*rr*wob+drift*Math.cos(j*.6));}}
+    for(let j=0;j<=rings;j++){const t=j/rings,rr=rad*Math.pow(1-t,.58);const cy=-h*.5+t*h;for(let i=0;i<seg;i++){const a=i/seg*Math.PI*2;const wob=1+Math.sin(a*3.1+j*.7)*.075+Math.sin(a*7.3-j*.45)*.035;const drift=Math.sin(t*Math.PI)*rad*.08;verts.push(Math.cos(a)*rr*wob+drift*Math.sin(j*.8),cy,Math.sin(a)*rr*wob+drift*Math.cos(j*.6));}}
     for(let j=0;j<rings;j++)for(let i=0;i<seg;i++){const n=(i+1)%seg,a=j*seg+i,b=j*seg+n,c=(j+1)*seg+i,d=(j+1)*seg+n;idx.push(a,c,b,b,c,d);}
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));g.setIndex(idx);g.computeVertexNormals();return new THREE.Mesh(g,new THREE.MeshStandardMaterial({color,roughness:1,flatShading:false}));
   }
@@ -634,7 +636,7 @@ function loadPremiumAvatar(){
       for(const x of [-.29,.29]){const pouch=new THREE.Mesh(new THREE.BoxGeometry(.19,.23,.13),gearMat);pouch.position.set(x,1.02,.27);pouch.rotation.z=x<0?.08:-.08;model.add(pouch);}
       const netHandle=new THREE.Mesh(new THREE.CylinderGeometry(.018,.024,.78,7),gearDark);netHandle.position.set(.31,.72,.33);netHandle.rotation.z=-.18;model.add(netHandle);
       const vestPanel=new THREE.Mesh(new THREE.BoxGeometry(.48,.44,.055),new THREE.MeshStandardMaterial({color:0x55664a,roughness:.95}));vestPanel.name='angler-detail';vestPanel.position.set(0,1.34,-.19);model.add(vestPanel);
-      const netRing=new THREE.Mesh(new THREE.TorusGeometry(.18,.022,7,22),gearDark);netRing.position.set(.31,1.05,.35);netRing.rotation.y=.24;model.add(netRing);
+      const netRing=new THREE.Mesh(new THREE.TorusGeometry(.14,.018,7,20),gearDark);netRing.position.set(.31,1.05,.35);netRing.rotation.y=.24;model.add(netRing);
       const capTop=new THREE.Mesh(new THREE.CylinderGeometry(.19,.23,.14,16),gearDark);capTop.position.set(0,1.79,0);model.add(capTop);
       const capBrim=new THREE.Mesh(new THREE.BoxGeometry(.34,.025,.18),gearDark);capBrim.position.set(0,1.75,-.16);model.add(capBrim);
       premiumMixer=new THREE.AnimationMixer(model);for(const clip of gltf.animations){premiumActions[clip.name]=premiumMixer.clipAction(clip);}setPremiumAction(premiumActions.Idle?'Idle':Object.keys(premiumActions)[0]);
@@ -753,7 +755,7 @@ function applyQuality(){
   let ratio;
   if(state.quality==='LOW')ratio=1;
   else if(state.quality==='HIGH')ratio=Math.min(devicePixelRatio,state.mobile?1.65:2.05);
-  else ratio=Math.min(devicePixelRatio,state.frameTier==='low'?1:state.frameTier==='medium'?(state.mobile?1.22:1.55):state.mobile?1.42:1.85);
+  else ratio=Math.min(devicePixelRatio,state.frameTier==='low'?.9:state.frameTier==='medium'?(state.mobile?1.08:1.55):state.mobile?1.18:1.85);
   renderer.setPixelRatio(ratio);
   renderer.shadowMap.enabled=state.quality==='HIGH'&&!state.mobile;
   if(visualExtras)visualExtras.visible=state.quality==='HIGH'||(state.quality==='AUTO'&&state.frameTier!=='low');
@@ -766,8 +768,10 @@ function loop(now){ requestAnimationFrame(loop); if(!renderer||state.webglLost)r
 
 function updateDynamicResolution(){
   if(!renderer||!state.mobile)return;
-  const mode=(state.fishing==='REEL'||state.fishing==='LANDING')?'action':'normal';if(mode===renderScaleMode)return;renderScaleMode=mode;
-  const cap=mode==='action'?.85:1.25;renderer.setPixelRatio(Math.min(devicePixelRatio,cap));renderer.setSize(innerWidth,innerHeight,false);
+  const mode=(state.fishing==='REEL'||state.fishing==='LANDING')?'action':'normal';const cap=mode==='action'?.72:1.18;const target=Math.min(devicePixelRatio,cap);
+  const changed=mode!==renderScaleMode||Math.abs(renderer.getPixelRatio()-target)>.015;if(!changed)return;renderScaleMode=mode;renderer.setPixelRatio(target);renderer.setSize(innerWidth,innerHeight,false);
+  const action=mode==='action';if(mistGroup)mistGroup.visible=!action&&state.quality!=='LOW';if(cloudGroup)cloudGroup.visible=!action;if(shoreGrass)shoreGrass.visible=!action;if(boatWake)boatWake.visible=!action;
+  scene?.children.forEach(o=>{if(o.name==='action-cull-rock'||o.name==='bird')o.visible=!action;});
 }
 function updateGame(dt){
   updateDynamicResolution();
@@ -941,7 +945,7 @@ function updateAvatar(dt){
 }
 
 function updateCamera(dt){
-  cameraRig.rotation.set(0,yaw,0);const moving=playerVelocity.lengthSq()>.08||Math.abs(input.x)+Math.abs(input.y)>.08;const baseDistance=state.inBoat?6.7:(state.fishing==='LANDING'?4.4:5.45),height=state.inBoat?3.15:2.72;const target=state.inBoat?tmpV.set(boat.position.x,boat.position.y-.35,boat.position.z):tmpV.set(playerPos.x,groundHeightAt(playerPos.x,playerPos.z),playerPos.z);cameraRig.position.lerp(target,1-Math.pow(.0008,dt));
+  cameraRig.rotation.set(0,yaw,0);const moving=playerVelocity.lengthSq()>.08||Math.abs(input.x)+Math.abs(input.y)>.08;const baseDistance=state.inBoat?6.45:(state.fishing==='LANDING'?4.05:4.82),height=state.inBoat?3.05:2.66;const target=state.inBoat?tmpV.set(boat.position.x,boat.position.y-.35,boat.position.z):tmpV.set(playerPos.x,groundHeightAt(playerPos.x,playerPos.z),playerPos.z);cameraRig.position.lerp(target,1-Math.pow(.0008,dt));
   cameraCollisionTick+=dt;let safe=baseDistance;if(cameraCollisionTick>.045){cameraCollisionTick=0;const local=tmpV2.set(0,height,baseDistance),world=local.clone().applyAxisAngle(new THREE.Vector3(0,1,0),yaw),origin=cameraRig.position.clone().add(tmpV.set(0,1.35,0)),dir=world.clone().sub(tmpV.set(0,1.35,0)),max=dir.length();dir.normalize();cameraRaycaster.set(origin,dir);cameraRaycaster.far=max;const hits=cameraRaycaster.intersectObjects(cameraObstacles,true);if(hits.length)safe=Math.max(2.25,baseDistance*Math.min(1,(hits[0].distance-.28)/max));cameraDistance=safe;}
   cameraDistance=THREE.MathUtils.lerp(cameraDistance,safe,1-Math.exp(-10*dt));camera.position.lerp(tmpV2.set(0,height,cameraDistance),1-Math.pow(.0005,dt));camera.rotation.set(pitch-.14,0,moving&&!state.inBoat?Math.sin(state.elapsed*(input.run?11.2:8.1)*.5)*.003:0);
 }
@@ -965,7 +969,7 @@ function updateWorld(dt){
 }
 
 function updateDiagnostics(dt){
-  fpsAccum+=dt;fpsFrames++;fpsTimer+=dt;if(fpsTimer>=1){state.fps=Math.round(fpsFrames/fpsAccum);state.frameTier=state.fps<36?'low':state.fps<52?'medium':'good';fpsAccum=fpsFrames=fpsTimer=0;if(state.quality==='AUTO'&&state.frameTier==='low')applyQuality();}
+  fpsAccum+=dt;fpsFrames++;fpsTimer+=dt;if(fpsTimer>=1){state.fps=Math.round(fpsFrames/fpsAccum);state.frameTier=state.fps<36?'low':state.fps<52?'medium':'good';fpsAccum=fpsFrames=fpsTimer=0;if(state.quality==='AUTO'&&state.frameTier==='low'&&state.fishing!=='REEL'&&state.fishing!=='LANDING')applyQuality();}
   if(ui.settings.classList.contains('hidden'))return;
   ui.diagText.textContent=`FPS: ${state.fps} (${state.frameTier})\nInput: ${state.lastInput}\nTouch points: ${navigator.maxTouchPoints||0}\nFishing: ${state.fishing}\nBoat: ${state.inBoat?'IN BOAT':'ON FOOT'}\nAudio: ${audioCtx?.state||'not started'}\nQuality: ${state.quality} @ ${state.qualityScale.toFixed(2)}x`;
 }
