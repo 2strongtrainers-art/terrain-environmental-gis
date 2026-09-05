@@ -19,28 +19,35 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Patch and verify live graphics build
+      - name: Improve and verify opening composition
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
-          p = Path('alan-fishing-escape/index.html')
-          s = p.read_text(encoding='utf-8')
-          bad = "const mistShader=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,fog:true,"
-          good = "const mistShader=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,fog:false,"
-          if bad in s:
-              s = s.replace(bad, good, 1)
-              p.write_text(s, encoding='utf-8')
-          elif good not in s:
-              raise SystemExit('mist shader signature not found')
+          p=Path('alan-fishing-escape/index.html')
+          s=p.read_text(encoding='utf-8')
+          replacements=[
+            ("let yaw = Math.PI, pitch = -0.08, boatYaw = 0.22;","let yaw = 0, pitch = -0.045, boatYaw = 0.22;"),
+            ("playerPos.set(0,1.72,53);boat.position.set(7.5,.45,34);","playerPos.set(0,1.72,53);yaw=0;pitch=-0.045;boat.position.set(7.5,.45,34);")
+          ]
+          changed=0
+          for old,new in replacements:
+              if old in s:
+                  s=s.replace(old,new,1); changed+=1
+              elif new not in s:
+                  raise SystemExit('Expected composition signature missing: '+old[:45])
+          p.write_text(s,encoding='utf-8')
+          module=s.split('<script type="module">',1)[1].rsplit('</script>',1)[0]
+          Path('/tmp/alan-game.mjs').write_text(module,encoding='utf-8')
+          print('composition replacements',changed)
           PY
-          echo 'b74c0d4de90b55f921d4055ac918281a769fccb612eb4fcb86e48146ff0aa6c3  alan-fishing-escape/index.html' | sha256sum -c -
-          sed -i "s/alan-fishing-escape-v5/alan-fishing-escape-v6/g" alan-fishing-escape/sw.js
-          grep -F "fog:false" alan-fishing-escape/index.html >/dev/null
-          grep -F "alan-fishing-escape-v6" alan-fishing-escape/sw.js >/dev/null
+          node --check /tmp/alan-game.mjs
+          grep -F "let yaw = 0, pitch = -0.045" alan-fishing-escape/index.html >/dev/null
+          sed -i "s/alan-fishing-escape-v6/alan-fishing-escape-v7/g" alan-fishing-escape/sw.js
+          grep -F "alan-fishing-escape-v7" alan-fishing-escape/sw.js >/dev/null
 
-      - name: Commit fixed game to main
+      - name: Commit composition upgrade to main
         shell: bash
         run: |
           set -euo pipefail
@@ -48,13 +55,13 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape/index.html alan-fishing-escape/sw.js
           if ! git diff --cached --quiet; then
-            git commit -m 'Fix Alan Fishing Escape mist rendering'
+            git commit -m 'Open Fishing Escape on cinematic lake view'
             git push
           else
-            echo 'Main game already fixed.'
+            echo 'Composition already current.'
           fi
 
-      - name: Deploy fixed game to GitHub Pages branch
+      - name: Deploy composition upgrade to GitHub Pages
         shell: bash
         run: |
           set -euo pipefail
@@ -71,8 +78,8 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape
           if ! git diff --cached --quiet; then
-            git commit -m 'Deploy Alan Fishing Escape mist fix v6'
+            git commit -m 'Deploy Fishing Escape cinematic lake view v7'
             git push origin HEAD:gh-pages
           else
-            echo 'GitHub Pages game already fixed.'
+            echo 'GitHub Pages composition already current.'
           fi
