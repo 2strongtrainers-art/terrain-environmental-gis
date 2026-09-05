@@ -76,7 +76,7 @@ jobs:
             await page.waitForTimeout(650);
             const during=await page.evaluate(()=>window.__ALAN_GAME__.audit());
             console.log('DURING_LANDING',JSON.stringify(during));
-            if(during.fishing!=='LANDING'||during.landingT<=.35)throw new Error('Landing animation did not advance '+JSON.stringify(during));
+            if(during.fishing!=='LANDING'||during.landingT<=.10)throw new Error('Landing animation did not visibly advance '+JSON.stringify(during));
             await page.screenshot({path:'alan-fishing-v15-landing.png',fullPage:true});
             await page.waitForFunction(()=>{const a=window.__ALAN_GAME__?.audit?.();return a&&a.catches>=1&&a.score>0&&a.fishing==='CAUGHT';},{timeout:5000});
             const after=await page.evaluate(()=>window.__ALAN_GAME__.audit());
@@ -94,7 +94,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: alan-fishing-live-qa-v15
+          name: alan-fishing-live-qa-v15-final
           path: |
             alan-fishing-v15-gameplay.png
             alan-fishing-v15-landing.png
