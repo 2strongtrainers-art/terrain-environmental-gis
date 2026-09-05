@@ -53,7 +53,10 @@ function loadPremiumAvatar(){
 }
 
 '''
-rep("function buildRod(){",premium_fn+"function buildRod(){",'premium avatar functions')
+if "function setPremiumAction(name){" in s and "function loadPremiumAvatar(){" in s:
+    print('premium avatar functions already present')
+else:
+    rep("function buildRod(){",premium_fn+"function buildRod(){",'premium avatar functions')
 
 rep(
 "function updateAvatar(dt){\n  if(!avatar)return;const moving=playerVelocity.lengthSq()>.08||Math.abs(input.x)+Math.abs(input.y)>.08;const fishing=['WAIT','REEL','LANDING','CAUGHT'].includes(state.fishing);",
@@ -83,7 +86,10 @@ css=r'''
   .icon-btn{width:38px;height:38px}.log-btn{top:calc(max(10px,env(safe-area-inset-top)) + 44px)}
 }
 '''
-rep("</style>",css+"\n</style>",'premium mobile CSS')
+if css.strip() in s:
+    print('premium mobile CSS already present')
+else:
+    rep("</style>",css+"\n</style>",'premium mobile CSS')
 if "/* PREMIUM_RELEASE_V11 */" not in s:
     rep("/* 8PLUS_RELEASE_V10 */","/* 8PLUS_RELEASE_V10 */\n/* PREMIUM_RELEASE_V11 */",'v11 marker')
 else:
