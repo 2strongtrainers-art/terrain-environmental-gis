@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - '.alan-build/**'
+      - '.alan-build-v5/**'
       - '.github/workflows/alan-fishing-build.yml'
   workflow_dispatch:
 
@@ -24,10 +24,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .alan-build/part*.txt > /tmp/alan-fishing-escape.b64
-          echo '63ce3e8133d3afdc3c2d79fa6d43e00604b607c8fc7124f689fb677beadd5226  /tmp/alan-fishing-escape.b64' | sha256sum -c -
+          cat .alan-build-v5/part*.txt > /tmp/alan-fishing-escape.b64
+          echo 'ce7a4b4f52f372ca935f06bc5781c60b1707c08bb01d560ce2219ae924fac757  /tmp/alan-fishing-escape.b64' | sha256sum -c -
           base64 -d /tmp/alan-fishing-escape.b64 | gzip -d > alan-fishing-escape/index.html
-          echo '5520a02d06606fe7010c9658559d428b52b178a71e4cc6ce03d339fe85e87faf  alan-fishing-escape/index.html' | sha256sum -c -
+          echo '9627ef6f4fa913dd0e80a90d58fbee2bb264bc98c3fd517641a08f314b940e57  alan-fishing-escape/index.html' | sha256sum -c -
 
           cat > alan-fishing-escape/manifest.webmanifest <<'EOF'
           {
@@ -42,7 +42,7 @@ jobs:
           EOF
 
           cat > alan-fishing-escape/sw.js <<'EOF'
-          const CACHE='alan-fishing-escape-v4';
+          const CACHE='alan-fishing-escape-v5';
           const CORE=['./','./index.html','./manifest.webmanifest'];
           const THREE='https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.min.js';
           self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil((async()=>{const cache=await caches.open(CACHE);await cache.addAll(CORE);try{await cache.add(THREE);}catch{}})())});
@@ -54,7 +54,7 @@ jobs:
           <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0;url=./"><title>Alan Kaplan’s Fishing Escape</title></head><body><script>location.replace('./');</script><p><a href="./">Play Alan Kaplan’s Fishing Escape</a></p></body></html>
           EOF
 
-      - name: Commit finished game to main
+      - name: Commit upgraded game to main
         shell: bash
         run: |
           set -euo pipefail
@@ -62,13 +62,13 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape/index.html alan-fishing-escape/play.html alan-fishing-escape/manifest.webmanifest alan-fishing-escape/sw.js
           if ! git diff --cached --quiet; then
-            git commit -m 'Finish Alan Kaplan Fishing Escape'
+            git commit -m 'Upgrade Alan Fishing Escape graphics'
             git push
           else
             echo 'Main build already current.'
           fi
 
-      - name: Deploy finished game to GitHub Pages branch
+      - name: Deploy upgraded game to GitHub Pages branch
         shell: bash
         run: |
           set -euo pipefail
@@ -85,7 +85,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape
           if ! git diff --cached --quiet; then
-            git commit -m 'Deploy Alan Kaplan Fishing Escape'
+            git commit -m 'Deploy Alan Fishing Escape visual overhaul'
             git push origin HEAD:gh-pages
           else
             echo 'GitHub Pages build already current.'
