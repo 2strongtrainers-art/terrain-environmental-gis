@@ -24,7 +24,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply premium 8-plus gameplay, tackle HUD, and final angler polish
+      - name: Apply premium 8-plus gameplay, tackle HUD, angler polish and touch fix
         shell: bash
         run: |
           set -euo pipefail
@@ -88,6 +88,8 @@ jobs:
           grep -F 'STABLE_LANDING_V12' alan-fishing-escape/index.html >/dev/null
           grep -F 'TACKLE_HUD_V13' alan-fishing-escape/index.html >/dev/null
           grep -F 'FINAL_8PLUS_V12' alan-fishing-escape/index.html >/dev/null
+          grep -F 'HUD_TOUCH_PRIORITY_V15' alan-fishing-escape/index.html >/dev/null
+          grep -F '#hud{z-index:16!important}' alan-fishing-escape/index.html >/dev/null
           grep -F 'class="icon-btn tackle-btn"' alan-fishing-escape/index.html >/dev/null
           grep -F "fisherPack.name='fisher-pack'" alan-fishing-escape/index.html >/dev/null
           grep -F 'fisherGear:' alan-fishing-escape/index.html >/dev/null
@@ -95,10 +97,10 @@ jobs:
           test "$(grep -o 'id="lure-toggle"' alan-fishing-escape/index.html | wc -l)" -eq 1
           grep -F 'startedAt:performance.now()' alan-fishing-escape/index.html >/dev/null
           grep -F 'landingT:catchAnim?.t||0' alan-fishing-escape/index.html >/dev/null
-          sed -E -i 's/alan-fishing-escape-v[0-9]+/alan-fishing-escape-v14/g' alan-fishing-escape/sw.js
-          grep -F 'alan-fishing-escape-v14' alan-fishing-escape/sw.js >/dev/null
+          sed -E -i 's/alan-fishing-escape-v[0-9]+/alan-fishing-escape-v15/g' alan-fishing-escape/sw.js
+          grep -F 'alan-fishing-escape-v15' alan-fishing-escape/sw.js >/dev/null
 
-      - name: Commit verified premium v14 build to main
+      - name: Commit verified premium v15 build to main
         shell: bash
         run: |
           set -euo pipefail
@@ -106,10 +108,10 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape/index.html alan-fishing-escape/sw.js
           if ! git diff --cached --quiet; then
-            git commit -m 'Finish Fishing Escape premium angler v14'
+            git commit -m 'Fix Fishing Escape iPhone HUD touch v15'
             git push
           else
-            echo 'Premium v14 source already current.'
+            echo 'Premium v15 source already current.'
           fi
 
       - name: Deploy verified build to GitHub Pages
@@ -129,7 +131,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape
           if ! git diff --cached --quiet; then
-            git commit -m 'Deploy Fishing Escape premium angler v14'
+            git commit -m 'Deploy Fishing Escape iPhone HUD touch v15'
             git push origin HEAD:gh-pages
           else
             echo 'Pages already current.'
