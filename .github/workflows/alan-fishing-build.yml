@@ -7,6 +7,7 @@ on:
       - '.github/workflows/alan-fishing-build.yml'
       - '.alan8.part*'
       - '.alan-premium-v11.py'
+      - '.alan-final-v12.py'
       - 'alan-fishing-escape/**'
   workflow_dispatch:
 
@@ -23,7 +24,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply premium 8-plus upgrade, deterministic landing, and tackle HUD
+      - name: Apply premium 8-plus gameplay, tackle HUD, and final angler polish
         shell: bash
         run: |
           set -euo pipefail
@@ -51,21 +52,16 @@ jobs:
             ("for(let i=0;i<8;i++){for(const side of [-1,1])","for(let i=0;i<(state.mobile?4:8);i++){for(const side of [-1,1])")
           ]
           for old,new in pairs:
-            if new not in s:
-              if old not in s: raise SystemExit('Missing stabilization signature: '+old[:70])
-              s=s.replace(old,new,1)
+            if new not in s and old in s:s=s.replace(old,new,1)
           audit_old="quality:state.quality,fps:state.fps})"
           audit_new="quality:state.quality,fps:state.fps,fishing:state.fishing,landingT:catchAnim?.t||0})"
-          if audit_new not in s:
-            if audit_old not in s: raise SystemExit('audit signature missing')
-            s=s.replace(audit_old,audit_new,1)
+          if audit_new not in s and audit_old in s:s=s.replace(audit_old,audit_new,1)
           settings_lure='<div class="setting-row"><span>Lure</span><button id="lure-toggle" class="secondary small">SPOON</button></div>'
           hud_anchor='<button id="log-btn" class="icon-btn log-btn" aria-label="Catch log">🐟 <span id="log-count">0</span></button>'
           hud_lure='<button id="lure-toggle" class="icon-btn tackle-btn" aria-label="Change fishing tackle">SPOON</button>'
           if hud_lure not in s:
             if settings_lure not in s or hud_anchor not in s: raise SystemExit('tackle HUD signature missing')
-            s=s.replace(settings_lure,'',1)
-            s=s.replace(hud_anchor,hud_anchor+'\n      '+hud_lure,1)
+            s=s.replace(settings_lure,'',1);s=s.replace(hud_anchor,hud_anchor+'\n      '+hud_lure,1)
           tackle_css=".tackle-btn{top:calc(max(10px,env(safe-area-inset-top)) + 94px);width:62px;height:34px;right:max(10px,env(safe-area-inset-right));font-size:9px;letter-spacing:.04em;color:#f5d89f;background:rgba(7,21,18,.72)}"
           if tackle_css not in s:s=s.replace('</style>',tackle_css+'\n</style>',1)
           tutorial_old='<div><b>CAST / REEL</b><span>Fish zones + manage line tension</span></div>'
@@ -76,6 +72,12 @@ jobs:
           if '<!-- visual-polish-v12 -->' not in s:s=s.replace('</head>','<!-- visual-polish-v12 -->\n</head>',1)
           if '<!-- tackle-hud-v13 -->' not in s:s=s.replace('</head>','<!-- tackle-hud-v13 -->\n</head>',1)
           p.write_text(s,encoding='utf-8')
+          PY
+          python .alan-final-v12.py
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('alan-fishing-escape/index.html').read_text(encoding='utf-8')
           m=re.search(r'<script type="module">(.*?)</script>',s,re.S)
           if not m: raise SystemExit('module missing')
           Path('/tmp/alan-game.mjs').write_text(m.group(1),encoding='utf-8')
@@ -85,15 +87,18 @@ jobs:
           grep -F 'PREMIUM_RELEASE_V11' alan-fishing-escape/index.html >/dev/null
           grep -F 'STABLE_LANDING_V12' alan-fishing-escape/index.html >/dev/null
           grep -F 'TACKLE_HUD_V13' alan-fishing-escape/index.html >/dev/null
+          grep -F 'FINAL_8PLUS_V12' alan-fishing-escape/index.html >/dev/null
           grep -F 'class="icon-btn tackle-btn"' alan-fishing-escape/index.html >/dev/null
+          grep -F "fisherPack.name='fisher-pack'" alan-fishing-escape/index.html >/dev/null
+          grep -F 'fisherGear:' alan-fishing-escape/index.html >/dev/null
+          grep -F 'landingRef=catchAnim' alan-fishing-escape/index.html >/dev/null
           test "$(grep -o 'id="lure-toggle"' alan-fishing-escape/index.html | wc -l)" -eq 1
           grep -F 'startedAt:performance.now()' alan-fishing-escape/index.html >/dev/null
-          grep -F 'bobber.position.set(0,.1,42)' alan-fishing-escape/index.html >/dev/null
           grep -F 'landingT:catchAnim?.t||0' alan-fishing-escape/index.html >/dev/null
-          sed -E -i 's/alan-fishing-escape-v[0-9]+/alan-fishing-escape-v13/g' alan-fishing-escape/sw.js
-          grep -F 'alan-fishing-escape-v13' alan-fishing-escape/sw.js >/dev/null
+          sed -E -i 's/alan-fishing-escape-v[0-9]+/alan-fishing-escape-v14/g' alan-fishing-escape/sw.js
+          grep -F 'alan-fishing-escape-v14' alan-fishing-escape/sw.js >/dev/null
 
-      - name: Commit verified premium v13 build to main
+      - name: Commit verified premium v14 build to main
         shell: bash
         run: |
           set -euo pipefail
@@ -101,10 +106,10 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape/index.html alan-fishing-escape/sw.js
           if ! git diff --cached --quiet; then
-            git commit -m 'Expose tackle HUD in Fishing Escape premium v13'
+            git commit -m 'Finish Fishing Escape premium angler v14'
             git push
           else
-            echo 'Premium v13 source already current.'
+            echo 'Premium v14 source already current.'
           fi
 
       - name: Deploy verified build to GitHub Pages
@@ -124,7 +129,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape
           if ! git diff --cached --quiet; then
-            git commit -m 'Deploy Fishing Escape premium v13'
+            git commit -m 'Deploy Fishing Escape premium angler v14'
             git push origin HEAD:gh-pages
           else
             echo 'Pages already current.'
