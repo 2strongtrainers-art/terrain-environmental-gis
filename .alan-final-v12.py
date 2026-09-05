@@ -39,6 +39,10 @@ old_water="vec3 deep=vec3(.025,.145,.155); vec3 mid=vec3(.055,.235,.235); vec3 s
 new_water="vec3 deep=vec3(.022,.16,.18); vec3 mid=vec3(.07,.285,.30); vec3 sky=vec3(.48,.66,.68);"
 once(old_water,new_water,'water tonal lift')
 
+# Keep HUD buttons above the transparent mobile look layer so real iPhone taps reach them.
+if '/* HUD_TOUCH_PRIORITY_V15 */' not in s:
+    s=s.replace('</style>',"\n/* HUD_TOUCH_PRIORITY_V15 */\n#hud{z-index:16!important}\n.icon-btn,.tackle-btn{pointer-events:auto!important}\n</style>",1)
+
 if 'FINAL_8PLUS_V12' not in s:
     s=s.replace('/* PREMIUM_RELEASE_V11 */','/* PREMIUM_RELEASE_V11 */\n/* FINAL_8PLUS_V12 */',1)
 
