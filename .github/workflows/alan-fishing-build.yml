@@ -24,6 +24,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('.alan-third-person.py')
+          s=p.read_text(encoding='utf-8')
+          stale="if(!rodGroup)return; const active=state.fishing==='REEL'; const bend=active?state.tension*.2:0;rodGroup.rotation.x=THREE.MathUtils.lerp(rodGroup.rotation.x,-bend,.12);"
+          current="if(!rodGroup)return; const active=state.fishing==='REEL'||state.fishing==='LANDING'; const bend=active?(state.fishing==='LANDING' ? .12 : state.tension*.2):0;rodGroup.rotation.x=THREE.MathUtils.lerp(rodGroup.rotation.x,-bend,.12);"
+          if stale in s:s=s.replace(stale,current,1)
+          p.write_text(s,encoding='utf-8')
+          PY
           python .alan-third-person.py
           node --check /tmp/alan-game.mjs
           grep -F "alan-avatar" alan-fishing-escape/index.html >/dev/null
