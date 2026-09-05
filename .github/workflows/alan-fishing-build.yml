@@ -1,0 +1,69 @@
+name: Build Alan Fishing Escape
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.alan-build/**'
+      - '.github/workflows/alan-fishing-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Assemble verified game build
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .alan-build/part*.txt > /tmp/alan-fishing-escape.b64
+          echo '63ce3e8133d3afdc3c2d79fa6d43e00604b607c8fc7124f689fb677beadd5226  /tmp/alan-fishing-escape.b64' | sha256sum -c -
+          base64 -d /tmp/alan-fishing-escape.b64 | gzip -d > alan-fishing-escape/index.html
+          echo '5520a02d06606fe7010c9658559d428b52b178a71e4cc6ce03d339fe85e87faf  alan-fishing-escape/index.html' | sha256sum -c -
+
+          cat > alan-fishing-escape/manifest.webmanifest <<'EOF'
+          {
+            "name": "Alan Kaplan’s Fishing Escape",
+            "short_name": "Fishing Escape",
+            "start_url": "./",
+            "display": "fullscreen",
+            "background_color": "#0b1716",
+            "theme_color": "#0f241f",
+            "orientation": "landscape"
+          }
+          EOF
+
+          cat > alan-fishing-escape/sw.js <<'EOF'
+          const CACHE='alan-fishing-escape-v4';
+          const CORE=['./','./index.html','./manifest.webmanifest'];
+          const THREE='https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.min.js';
+          self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil((async()=>{const cache=await caches.open(CACHE);await cache.addAll(CORE);try{await cache.add(THREE);}catch{}})())});
+          self.addEventListener('activate',event=>{event.waitUntil((async()=>{await self.clients.claim();const keys=await caches.keys();await Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))} )())});
+          self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;event.respondWith((async()=>{const cached=await caches.match(event.request);if(cached)return cached;try{const response=await fetch(event.request);if(response&&(response.ok||response.type==='opaque')){const cache=await caches.open(CACHE);cache.put(event.request,response.clone()).catch(()=>{})}return response}catch{if(event.request.mode==='navigate'){const shell=await caches.match('./index.html');if(shell)return shell}return new Response('Offline resource unavailable',{status:503,statusText:'Offline'})}})())});
+          EOF
+
+          cat > alan-fishing-escape/play.html <<'EOF'
+          <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0;url=./"><title>Alan Kaplan’s Fishing Escape</title></head><body><script>location.replace('./');</script><p><a href="./">Play Alan Kaplan’s Fishing Escape</a></p></body></html>
+          EOF
+
+      - name: Commit finished game
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add alan-fishing-escape/index.html alan-fishing-escape/play.html alan-fishing-escape/manifest.webmanifest alan-fishing-escape/sw.js
+          if git diff --cached --quiet; then
+            echo 'No changes to commit.'
+            exit 0
+          fi
+          git commit -m 'Finish Alan Kaplan Fishing Escape'
+          git push
