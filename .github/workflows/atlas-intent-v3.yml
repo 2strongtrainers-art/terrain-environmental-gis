@@ -42,6 +42,12 @@ jobs:
       - name: Verify new navigation, IDs, search links and four mobile widths
         env: { ATLAS_URL: 'http://127.0.0.1:8765/atlas/', CHROME_PATH: /usr/bin/google-chrome }
         run: node qa/atlas-navigation-v6.js
+      - name: Verify Watch and existing functionality
+        env: { ATLAS_URL: 'http://127.0.0.1:8765/atlas/', CHROME_PATH: /usr/bin/google-chrome }
+        run: |
+          mkdir -p watch-qa qa-artifacts
+          node qa/atlas-watch-multimedia.js
+          node qa/atlas-live-qa.js
       - name: Verify 20 core search intents
         env: { ATLAS_URL: 'http://127.0.0.1:8765/atlas/', CHROME_PATH: /usr/bin/google-chrome }
         run: node qa/atlas-common-intents-20.js
@@ -51,12 +57,6 @@ jobs:
       - name: Verify 220 search variations
         env: { ATLAS_URL: 'http://127.0.0.1:8765/atlas/', CHROME_PATH: /usr/bin/google-chrome }
         run: node qa/atlas-expanded-benchmark-220.js
-      - name: Verify Watch and existing functionality
-        env: { ATLAS_URL: 'http://127.0.0.1:8765/atlas/', CHROME_PATH: /usr/bin/google-chrome }
-        run: |
-          mkdir -p watch-qa qa-artifacts
-          node qa/atlas-watch-multimedia.js
-          node qa/atlas-live-qa.js
       - name: Enforce search and regression gates before publishing
         run: |
           python - <<'PY'
