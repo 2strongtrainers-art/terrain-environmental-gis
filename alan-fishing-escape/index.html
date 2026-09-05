@@ -41,6 +41,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
 /* 8PLUS_RELEASE_V10 */
 /* PREMIUM_RELEASE_V11 */
 /* STABLE_LANDING_V12 */
+/* TACKLE_HUD_V13 */
 #objective-card{transition:opacity .25s ease,transform .25s ease,min-width .25s ease,padding .25s ease}
 #objective-card.compact{min-width:0!important;padding:7px 9px!important;opacity:.78;transform:scale(.96);transform-origin:top left}
 #objective-card.compact .obj{display:none}
@@ -66,10 +67,12 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
   .icon-btn{width:38px;height:38px}.log-btn{top:calc(max(10px,env(safe-area-inset-top)) + 44px)}
 }
 
+.tackle-btn{top:calc(max(10px,env(safe-area-inset-top)) + 94px);width:62px;height:34px;right:max(10px,env(safe-area-inset-right));font-size:9px;letter-spacing:.04em;color:#f5d89f;background:rgba(7,21,18,.72)}
 </style>
   <!-- build: 8PLUS_RELEASE_V10 -->
 <!-- visual-polish-v11 -->
 <!-- visual-polish-v12 -->
+<!-- tackle-hud-v13 -->
 </head>
 <body>
   <div id="game-shell">
@@ -101,7 +104,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
           <div><b>Left thumb</b><span>Move / steer boat</span></div>
           <div><b>Right side drag</b><span>Look around</span></div>
           <div><b>RUN</b><span>Sprint on shore</span></div>
-          <div><b>CAST / REEL</b><span>Fish zones + manage line tension</span></div>
+          <div><b>CAST / REEL</b><span>Fish zones + manage line tension • tackle button top-right</span></div>
           <div><b>INTERACT</b><span>Enter / exit boat</span></div>
           <div><b>AIR HORN</b><span>Quiet the rowdy party across the lake</span></div>
         </div>
@@ -137,6 +140,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
 
       <button id="settings-btn" class="icon-btn" aria-label="Settings">☰</button>
       <button id="log-btn" class="icon-btn log-btn" aria-label="Catch log">🐟 <span id="log-count">0</span></button>
+      <button id="lure-toggle" class="icon-btn tackle-btn" aria-label="Change fishing tackle">SPOON</button>
     </div>
 
     <div id="toast" class="toast hidden"></div>
@@ -157,7 +161,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
         <div class="sheet-head"><h2>Pause & Settings</h2><button id="close-settings" class="plain-btn">Close</button></div>
         <div class="setting-row"><span>Sound</span><button id="sound-toggle" class="secondary small">ON</button></div>
         <div class="setting-row"><span>Quality</span><button id="quality-toggle" class="secondary small">AUTO</button></div>
-        <div class="setting-row"><span>Lure</span><button id="lure-toggle" class="secondary small">SPOON</button></div>
+        
         <div class="setting-row"><span>Camera sensitivity</span><input id="sensitivity" type="range" min="0.45" max="1.8" step="0.05" value="1" /></div>
         <div class="diag">
           <div class="hud-label">DIAGNOSTICS</div>
