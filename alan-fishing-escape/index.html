@@ -366,7 +366,7 @@ function buildWorld() {
     }
   }
 
-  const mistShader=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,fog:true,
+  const mistShader=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,fog:false,
     uniforms:{uOpacity:{value:.12}},vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
     fragmentShader:`varying vec2 vUv;uniform float uOpacity;void main(){vec2 p=(vUv-.5)*2.0;float a=smoothstep(1.0,.05,length(vec2(p.x*.72,p.y)));a*=smoothstep(-1.0,.1,p.y);gl_FragColor=vec4(.89,.91,.84,a*uOpacity);}`});
   mistGroup=new THREE.Group();scene.add(mistGroup);
