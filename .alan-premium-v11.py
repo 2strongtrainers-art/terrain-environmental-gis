@@ -28,7 +28,10 @@ rep(
 
 old_api="window.__ALAN_GAME__={release:RELEASE_ID,audit:()=>({release:RELEASE_ID,avatar:!!avatar,rodAttached:rodGroup?.parent===avatarRodAnchor,thirdPerson:camera.position.z>2,lure:state.lure,zone:state.lastZone,score:state.score,catches:state.catches.length,quality:state.quality,fps:state.fps}),forceLanding:()=>{if(state.fishing==='LANDING')return false;state.hookedFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};bobber.position.set(0,.1,30);landFish();return true;}};"
 new_api="window.__ALAN_GAME__={release:RELEASE_ID,audit:()=>({release:RELEASE_ID,avatar:!!avatar,premiumAvatar:!!premiumAvatar,rodAttached:rodGroup?.parent===avatarRodAnchor,thirdPerson:camera.position.z>2,lure:state.lure,zone:state.lastZone,score:state.score,catches:state.catches.length,quality:state.quality,fps:state.fps}),forceLanding:()=>{if(state.fishing==='LANDING')return true;state.hookedFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};bobber.position.set(0,.1,30);landFish();return true;}};"
-rep(old_api,new_api,'QA landing contract')
+if "premiumAvatar:!!premiumAvatar" in s:
+    print('QA landing contract already present')
+else:
+    rep(old_api,new_api,'QA landing contract')
 
 premium_fn=r'''function setPremiumAction(name){
   if(!premiumMixer||premiumAction===name||!premiumActions[name])return;
@@ -81,7 +84,10 @@ css=r'''
 }
 '''
 rep("</style>",css+"\n</style>",'premium mobile CSS')
-rep("/* 8PLUS_RELEASE_V10 */","/* 8PLUS_RELEASE_V10 */\n/* PREMIUM_RELEASE_V11 */",'v11 marker')
+if "/* PREMIUM_RELEASE_V11 */" not in s:
+    rep("/* 8PLUS_RELEASE_V10 */","/* 8PLUS_RELEASE_V10 */\n/* PREMIUM_RELEASE_V11 */",'v11 marker')
+else:
+    print('v11 marker already present')
 
 p.write_text(s,encoding='utf-8')
 module=s.split('<script type="module">',1)[1].split('</script>',1)[0]
