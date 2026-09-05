@@ -1,0 +1,9 @@
+{
+  "name": "Alan Kaplan’s Fishing Escape",
+  "short_name": "Fishing Escape",
+  "start_url": "./",
+  "display": "fullscreen",
+  "background_color": "#0b1716",
+  "theme_color": "#0f241f",
+  "orientation": "landscape"
+}
