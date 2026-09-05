@@ -23,7 +23,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply 8-plus upgrade and premium visual polish
+      - name: Apply premium 8-plus upgrade and deterministic landing
         shell: bash
         run: |
           set -euo pipefail
@@ -37,41 +37,48 @@ jobs:
           python .alan-premium-v11.py
           python - <<'PY'
           from pathlib import Path
+          import re
           p=Path('alan-fishing-escape/index.html')
           s=p.read_text(encoding='utf-8')
           pairs=[
-            ("forceLanding:()=>{if(state.fishing==='LANDING')return;","forceLanding:()=>{if(state.fishing==='LANDING')return false;"),
-            ("bobber.position.set(0,.1,30);landFish();}};","bobber.position.set(0,.1,30);landFish();return true;}};"),
             ("avatar.position.set(playerPos.x,gy,playerPos.z);","avatar.position.set(playerPos.x,gy+.19,playerPos.z);"),
             ("if(avatarShadow){avatarShadow.position.set(avatar.position.x,avatar.position.y+.015,avatar.position.z);avatarShadow.material.opacity=state.inBoat?.16:.5;}","if(avatarShadow){avatarShadow.visible=!state.inBoat;if(!state.inBoat)avatarShadow.position.set(avatar.position.x,groundHeightAt(avatar.position.x,avatar.position.z)+.018,avatar.position.z);avatarShadow.material.opacity=.5;}"),
-            ("renderer.toneMappingExposure = 1.16;","renderer.toneMappingExposure = 1.27;"),
-            ("const ambient = new THREE.AmbientLight(0x9fb0a8, .32);","const ambient = new THREE.AmbientLight(0xb3c0b6, .46);"),
-            ("const fill = new THREE.DirectionalLight(0x8fb9d3,.48);","const fill = new THREE.DirectionalLight(0x9fc5d7,.62);"),
-            ("color:0x61705a,roughness:.98","color:0x76856c,roughness:.98")
+            ("bobber.position.set(0,.1,30);landFish();return true;","bobber.position.set(0,.1,42);landFish();return true;"),
+            ("catchAnim={t:0,duration:2.15,start:fish.position.clone(),fish:f,recorded:false};","catchAnim={t:0,duration:1.75,start:fish.position.clone(),fish:f,recorded:false,startedAt:performance.now()};"),
+            ("catchAnim.t+=dt;const p=THREE.MathUtils.clamp(catchAnim.t/catchAnim.duration,0,1);","catchAnim.t=Math.max(catchAnim.t+dt,(performance.now()-(catchAnim.startedAt||performance.now()))/1000);const p=THREE.MathUtils.clamp(catchAnim.t/catchAnim.duration,0,1);"),
+            ("new THREE.SphereGeometry(.62,22,14)","new THREE.SphereGeometry(.62,state.mobile?16:22,state.mobile?10:14)"),
+            ("new THREE.SphereGeometry(.55,18,10)","new THREE.SphereGeometry(.55,state.mobile?14:18,state.mobile?8:10)"),
+            ("for(let i=0;i<8;i++){for(const side of [-1,1])","for(let i=0;i<(state.mobile?4:8);i++){for(const side of [-1,1])")
           ]
           for old,new in pairs:
-            if new not in s and old in s:s=s.replace(old,new,1)
-          anchor="avatar.add(vest);\n  const collar="
-          if "alan-fishing-pack" not in s and anchor in s:
-            s=s.replace(anchor,"avatar.add(vest);const pack=new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.11),capMat);pack.name='alan-fishing-pack';pack.position.set(0,1.38,.31);pack.rotation.x=-.03;avatar.add(pack);\n  const collar=",1)
-          if '<!-- visual-polish-v11 -->' not in s:s=s.replace('</head>','<!-- visual-polish-v11 -->\n</head>',1)
+            if new not in s:
+              if old not in s: raise SystemExit('Missing stabilization signature: '+old[:70])
+              s=s.replace(old,new,1)
+          audit_old="quality:state.quality,fps:state.fps})"
+          audit_new="quality:state.quality,fps:state.fps,fishing:state.fishing,landingT:catchAnim?.t||0})"
+          if audit_new not in s:
+            if audit_old not in s: raise SystemExit('audit signature missing')
+            s=s.replace(audit_old,audit_new,1)
+          css_old="/* PREMIUM_RELEASE_V11 */"
+          if '/* STABLE_LANDING_V12 */' not in s:s=s.replace(css_old,css_old+'\n/* STABLE_LANDING_V12 */',1)
+          if '<!-- visual-polish-v12 -->' not in s:s=s.replace('</head>','<!-- visual-polish-v12 -->\n</head>',1)
           p.write_text(s,encoding='utf-8')
-          import re
           m=re.search(r'<script type="module">(.*?)</script>',s,re.S)
-          if not m:raise SystemExit('module missing')
+          if not m: raise SystemExit('module missing')
           Path('/tmp/alan-game.mjs').write_text(m.group(1),encoding='utf-8')
           PY
           node --check /tmp/alan-game.mjs
           grep -F '8PLUS_RELEASE_V10' alan-fishing-escape/index.html >/dev/null
           grep -F 'PREMIUM_RELEASE_V11' alan-fishing-escape/index.html >/dev/null
+          grep -F 'STABLE_LANDING_V12' alan-fishing-escape/index.html >/dev/null
           grep -F 'alan-premium-avatar' alan-fishing-escape/index.html >/dev/null
-          grep -F 'GLTFLoader' alan-fishing-escape/index.html >/dev/null
-          grep -F 'visual-polish-v11' alan-fishing-escape/index.html >/dev/null
-          grep -F 'return true;}};' alan-fishing-escape/index.html >/dev/null
-          sed -E -i 's/alan-fishing-escape-v[0-9]+/alan-fishing-escape-v11/g' alan-fishing-escape/sw.js
-          grep -F 'alan-fishing-escape-v11' alan-fishing-escape/sw.js >/dev/null
+          grep -F 'startedAt:performance.now()' alan-fishing-escape/index.html >/dev/null
+          grep -F 'bobber.position.set(0,.1,42)' alan-fishing-escape/index.html >/dev/null
+          grep -F 'landingT:catchAnim?.t||0' alan-fishing-escape/index.html >/dev/null
+          sed -E -i 's/alan-fishing-escape-v[0-9]+/alan-fishing-escape-v12/g' alan-fishing-escape/sw.js
+          grep -F 'alan-fishing-escape-v12' alan-fishing-escape/sw.js >/dev/null
 
-      - name: Commit verified premium build to main
+      - name: Commit verified premium v12 build to main
         shell: bash
         run: |
           set -euo pipefail
@@ -79,10 +86,10 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape/index.html alan-fishing-escape/sw.js
           if ! git diff --cached --quiet; then
-            git commit -m 'Upgrade Fishing Escape premium v11'
+            git commit -m 'Stabilize Fishing Escape premium landing v12'
             git push
           else
-            echo 'Premium source already current.'
+            echo 'Premium v12 source already current.'
           fi
 
       - name: Deploy verified build to GitHub Pages
@@ -102,7 +109,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape
           if ! git diff --cached --quiet; then
-            git commit -m 'Deploy Fishing Escape premium v11'
+            git commit -m 'Deploy Fishing Escape premium v12'
             git push origin HEAD:gh-pages
           else
             echo 'Pages already current.'
