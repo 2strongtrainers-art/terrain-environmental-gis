@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/alan-fishing-build.yml'
-      - '.alan-eight-plus.py.gz.b64'
+      - '.alan8.part*'
       - 'alan-fishing-escape/**'
   workflow_dispatch:
 
@@ -26,7 +26,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          base64 -d .alan-eight-plus.py.gz.b64 | gzip -d > /tmp/alan-eight-plus.py
+          cat .alan8.part00 .alan8.part01 .alan8.part02 .alan8.part03 .alan8.part04 > /tmp/alan8.b64
+          test "$(wc -c < /tmp/alan8.b64)" -eq 18180
+          test "$(sha256sum /tmp/alan8.b64 | cut -d' ' -f1)" = "915118832e66facd32d54530ee477048f9b552907b77e3dafca991b6085ebad0"
+          base64 -d /tmp/alan8.b64 | gzip -d > /tmp/alan-eight-plus.py
+          test "$(sha256sum /tmp/alan-eight-plus.py | cut -d' ' -f1)" = "8cdfb8f07e3adc350491dbdbb97065887a09272764bd4353616da87b3ad7df1c"
+          python -m py_compile /tmp/alan-eight-plus.py
           python /tmp/alan-eight-plus.py
           node --check /tmp/alan-game.mjs
           grep -F '8PLUS_RELEASE_V10' alan-fishing-escape/index.html >/dev/null
