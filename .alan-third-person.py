@@ -1,0 +1,132 @@
+from pathlib import Path
+import re
+
+p=Path('alan-fishing-escape/index.html')
+s=p.read_text(encoding='utf-8')
+
+def once(old,new,label):
+    global s
+    if new in s:
+        print(label,'already present')
+        return
+    if old not in s:
+        raise SystemExit('Missing signature for '+label)
+    s=s.replace(old,new,1)
+    print('patched',label)
+
+once(
+    "let rodGroup, rodTip, bobber, line, rippleGroup;",
+    "let rodGroup, rodTip, bobber, line, rippleGroup;\nlet avatar=null, avatarTorso=null, avatarHead=null, avatarLeftArm=null, avatarRightArm=null, avatarLeftLeg=null, avatarRightLeg=null, avatarRodAnchor=null;",
+    'avatar globals')
+
+once(
+    "buildLights(); buildWorld(); buildDock(); buildBoat(); buildRod(); buildRipples(); buildParty();",
+    "buildLights(); buildWorld(); buildDock(); buildBoat(); buildAvatar(); buildRod(); buildRipples(); buildParty();",
+    'avatar build order')
+
+avatar_js = r'''function buildAvatar(){
+  avatar=new THREE.Group();avatar.name='alan-avatar';
+  const skin=new THREE.MeshStandardMaterial({color:0xc6926f,roughness:.9});
+  const shirt=new THREE.MeshStandardMaterial({color:0x355747,roughness:.92});
+  const pants=new THREE.MeshStandardMaterial({color:0x343b3c,roughness:.96});
+  const shoe=new THREE.MeshStandardMaterial({color:0x202526,roughness:.92});
+  const capMat=new THREE.MeshStandardMaterial({color:0x7a5b38,roughness:.9});
+  avatarTorso=new THREE.Mesh(new THREE.BoxGeometry(.72,.92,.4),shirt);avatarTorso.position.y=1.28;avatar.add(avatarTorso);
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.12,.14,.18,10),skin);neck.position.y=1.78;avatar.add(neck);
+  avatarHead=new THREE.Mesh(new THREE.SphereGeometry(.28,14,10),skin);avatarHead.position.y=2.0;avatar.add(avatarHead);
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(.25,.29,.18,12),capMat);cap.position.y=2.19;avatar.add(cap);
+  const brim=new THREE.Mesh(new THREE.BoxGeometry(.4,.035,.24),capMat);brim.position.set(0,2.13,-.2);avatar.add(brim);
+  function limb(x,y,mat,isArm){
+    const g=new THREE.Group();g.position.set(x,y,0);const mesh=new THREE.Mesh(new THREE.CylinderGeometry(isArm?.085:.12,isArm?.105:.14,isArm?.72:.78,8),mat);mesh.position.y=isArm?-.34:-.38;g.add(mesh);avatar.add(g);return g;
+  }
+  avatarLeftArm=limb(-.47,1.62,shirt,true);avatarRightArm=limb(.47,1.62,shirt,true);
+  avatarLeftLeg=limb(-.2,.85,pants,false);avatarRightLeg=limb(.2,.85,pants,false);
+  for(const x of [-.2,.2]){const foot=new THREE.Mesh(new THREE.BoxGeometry(.25,.14,.42),shoe);foot.position.set(x,.08,-.12);avatar.add(foot);}
+  avatarRodAnchor=new THREE.Group();avatarRodAnchor.position.set(.5,1.23,-.18);avatar.add(avatarRodAnchor);
+  avatar.traverse(o=>{if(o.isMesh){o.castShadow=!state.mobile;o.receiveShadow=true;}});
+  scene.add(avatar);
+}
+
+'''
+if "function buildAvatar(){" not in s:
+    marker="function buildRod(){"
+    if marker not in s: raise SystemExit('Missing buildRod marker')
+    s=s.replace(marker,avatar_js+marker,1)
+
+rod_pattern=r"function buildRod\(\)\{.*?\n\}\n\nfunction buildRipples\(\)\{"
+rod_repl=r'''function buildRod(){
+  rodGroup=new THREE.Group();
+  const rodMat=new THREE.MeshStandardMaterial({color:0x3a3326,roughness:.55});
+  const reelMat=new THREE.MeshStandardMaterial({color:0xb3b5ad,metalness:.55,roughness:.35});
+  const gripMat=new THREE.MeshStandardMaterial({color:0x6c4328,roughness:.8});
+  const rod=new THREE.Mesh(new THREE.CylinderGeometry(.018,.038,2.28,8),rodMat);rod.rotation.x=-Math.PI/2;rod.position.set(0,0,-1.12);rodGroup.add(rod);
+  const grip=new THREE.Mesh(new THREE.CylinderGeometry(.045,.055,.42,8),gripMat);grip.rotation.x=-Math.PI/2;grip.position.set(0,0,-.14);rodGroup.add(grip);
+  const reel=new THREE.Mesh(new THREE.CylinderGeometry(.11,.11,.12,12),reelMat);reel.rotation.z=Math.PI/2;reel.position.set(.1,-.11,-.34);rodGroup.add(reel);
+  rodTip=new THREE.Object3D();rodTip.position.set(0,0,-2.28);rodGroup.add(rodTip);
+  if(avatarRodAnchor)avatarRodAnchor.add(rodGroup);else scene.add(rodGroup);rodGroup.rotation.z=-.11;
+  bobber=new THREE.Mesh(new THREE.SphereGeometry(.11,12,8),new THREE.MeshStandardMaterial({color:0xff5f4e,roughness:.5}));bobber.visible=false;scene.add(bobber);
+  const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);line=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xe9eee7,transparent:true,opacity:.78}));line.frustumCulled=false;line.visible=false;scene.add(line);
+}
+
+function buildRipples(){'''
+if "if(avatarRodAnchor)avatarRodAnchor.add(rodGroup)" not in s:
+    s,n=re.subn(rod_pattern,rod_repl,s,count=1,flags=re.S)
+    if n!=1: raise SystemExit('Could not replace buildRod')
+    print('patched third-person rod')
+
+once(
+    "const speed=run?6.4:3.65; const forward=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw)); const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));",
+    "const speed=run?6.4:3.65; const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)); const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));",
+    'camera-aligned movement')
+
+camera_pattern=r"function updateCamera\(dt\)\{.*?\n\}\n\nfunction updateRod\(dt\)\{"
+camera_repl=r'''function updateAvatar(dt){
+  if(!avatar)return;
+  const moving=!state.paused&&(Math.abs(input.x)+Math.abs(input.y)>.08||input.keys.has('KeyW')||input.keys.has('KeyA')||input.keys.has('KeyS')||input.keys.has('KeyD'));
+  const fishing=['WAIT','REEL','LANDING','CAUGHT'].includes(state.fishing);
+  if(state.inBoat){
+    const seatOffset=new THREE.Vector3(-.45,.16,.58).applyAxisAngle(new THREE.Vector3(0,1,0),boatYaw);avatar.position.copy(boat.position).add(seatOffset);avatar.rotation.y=boatYaw;avatarLeftLeg.rotation.x=-1.25;avatarRightLeg.rotation.x=-1.25;
+  }else{
+    avatar.position.set(playerPos.x,0,playerPos.z);avatar.rotation.y=yaw;avatarLeftLeg.rotation.x=moving?Math.sin(state.elapsed*(input.run?11:7.5))*.42:THREE.MathUtils.lerp(avatarLeftLeg.rotation.x,0,.18);avatarRightLeg.rotation.x=moving?-Math.sin(state.elapsed*(input.run?11:7.5))*.42:THREE.MathUtils.lerp(avatarRightLeg.rotation.x,0,.18);
+  }
+  if(fishing){avatarRightArm.rotation.x=THREE.MathUtils.lerp(avatarRightArm.rotation.x,-.9,.18);avatarLeftArm.rotation.x=THREE.MathUtils.lerp(avatarLeftArm.rotation.x,-.62,.18);}
+  else if(moving&&!state.inBoat){const swing=Math.sin(state.elapsed*(input.run?11:7.5))*.34;avatarRightArm.rotation.x=THREE.MathUtils.lerp(avatarRightArm.rotation.x,swing,.2);avatarLeftArm.rotation.x=THREE.MathUtils.lerp(avatarLeftArm.rotation.x,-swing,.2);}
+  else{avatarRightArm.rotation.x=THREE.MathUtils.lerp(avatarRightArm.rotation.x,-.12,.14);avatarLeftArm.rotation.x=THREE.MathUtils.lerp(avatarLeftArm.rotation.x,.08,.14);}
+}
+
+function updateCamera(dt){
+  cameraRig.rotation.set(0,yaw,0);
+  const moving=!state.paused&&(Math.abs(input.x)+Math.abs(input.y)>.08||input.keys.has('KeyW')||input.keys.has('KeyA')||input.keys.has('KeyS')||input.keys.has('KeyD'));
+  if(state.inBoat){
+    cameraRig.position.lerp(tmpV.set(boat.position.x,boat.position.y-.35,boat.position.z),1-Math.pow(.0015,dt));
+    camera.position.lerp(tmpV2.set(0,3.15,6.65),1-Math.pow(.0006,dt));camera.rotation.set(pitch-.16,0,Math.sin(state.elapsed*1.25)*.0035);
+  }else{
+    cameraRig.position.lerp(tmpV.set(playerPos.x,0,playerPos.z),1-Math.pow(.00012,dt));
+    const distance=state.fishing==='LANDING'?4.45:5.4;camera.position.lerp(tmpV2.set(0,2.75,distance),1-Math.pow(.00045,dt));camera.rotation.set(pitch-.16,0,moving?Math.sin(state.elapsed*(input.run?11.2:8.1)*.5)*.004:0);
+  }
+}
+
+function updateRod(dt){'''
+if "function updateAvatar(dt){" not in s:
+    s,n=re.subn(camera_pattern,camera_repl,s,count=1,flags=re.S)
+    if n!=1: raise SystemExit('Could not replace updateCamera')
+    print('patched chase camera and avatar animation')
+
+once(
+    "if(!rodGroup)return; const active=state.fishing==='REEL'; const bend=active?state.tension*.2:0;rodGroup.rotation.x=THREE.MathUtils.lerp(rodGroup.rotation.x,-bend,.12);",
+    "if(!rodGroup)return; const active=state.fishing==='REEL'||state.fishing==='LANDING'; const bend=state.fishing==='REEL'?state.tension*.2:(state.fishing==='LANDING'?.11:0);const base=-.18;rodGroup.rotation.x=THREE.MathUtils.lerp(rodGroup.rotation.x,base-bend,.12);",
+    'third-person rod pose')
+
+once(
+    "updateRipples(dt);\n  updateCatchVisual(dt);",
+    "updateRipples(dt);\n  updateAvatar(dt);\n  updateCatchVisual(dt);",
+    'avatar animation loop')
+
+old_end="const camPos=new THREE.Vector3(),forward=new THREE.Vector3(),right=new THREE.Vector3();camera.getWorldPosition(camPos);camera.getWorldDirection(forward);right.crossVectors(forward,new THREE.Vector3(0,1,0)).normalize();\n  const end=camPos.clone().addScaledVector(forward,1.48).addScaledVector(right,.38);end.y-=.38;"
+new_end="const end=new THREE.Vector3();\n  if(avatarRodAnchor){avatarRodAnchor.getWorldPosition(end);end.y+=.28;}else{const camPos=new THREE.Vector3(),forward=new THREE.Vector3();camera.getWorldPosition(camPos);camera.getWorldDirection(forward);end.copy(camPos).addScaledVector(forward,1.6);end.y-=.2;}"
+once(old_end,new_end,'fish lands at Alan')
+
+s=s.replace('Best in landscape • iPhone + desktop controls included','Third-person • Best in landscape • iPhone + desktop controls included',1)
+p.write_text(s,encoding='utf-8')
+module=s.split('<script type="module">',1)[1].rsplit('</script>',1)[0]
+Path('/tmp/alan-game.mjs').write_text(module,encoding='utf-8')
