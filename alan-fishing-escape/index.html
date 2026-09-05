@@ -45,13 +45,15 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
 #objective-card.compact .hud-label{margin:0;font-size:8px;white-space:nowrap}
 #zone-chip{margin-top:5px;font-size:8px;letter-spacing:.08em;color:#f2d39b;opacity:.9;white-space:nowrap}
 #lake-summary{margin:10px 0 14px;padding:12px;border-radius:13px;background:rgba(120,183,165,.09);border:1px solid rgba(120,183,165,.2);font-size:12px;line-height:1.55;color:#dce8e1}
-.control-btn{transition:opacity .18s ease,transform .1s ease;background:rgba(7,21,18,.52)}
+.control-btn{transition:opacity .18s ease,transform .1s ease}
+.control-btn.action{background:linear-gradient(180deg,rgba(246,204,126,.96),rgba(215,163,77,.96));color:#142019;border-color:rgba(255,239,200,.55);box-shadow:0 10px 28px rgba(228,176,86,.28)}
 .joystick-base{width:108px!important;height:108px!important;opacity:.72}.joystick-knob{left:31px!important;top:31px!important;width:46px!important;height:46px!important}
 .action{width:72px!important;height:72px!important}.interact,.run{width:54px!important;height:54px!important}.patrol{width:58px!important;height:58px!important}
 .status{width:min(310px,36vw);background:rgba(8,22,19,.64)}
 @media(max-height:500px){.objectives{min-width:145px}.status{width:min(285px,34vw)}.toast{bottom:92px}.action{width:66px!important;height:66px!important}.joystick-base{width:98px!important;height:98px!important}.joystick-knob{left:28px!important;top:28px!important;width:42px!important;height:42px!important}}
 </style>
   <!-- build: 8PLUS_RELEASE_V10 -->
+<!-- visual-polish-v11 -->
 </head>
 <body>
   <div id="game-shell">
@@ -306,7 +308,7 @@ function init() {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.16;
+  renderer.toneMappingExposure = 1.27;
 
   canvas.addEventListener('webglcontextlost', (e)=>{ e.preventDefault(); state.webglLost = true; showToast('Graphics paused — restoring…'); });
   canvas.addEventListener('webglcontextrestored', ()=>{ state.webglLost = false; showToast('Graphics restored'); });
@@ -314,7 +316,7 @@ function init() {
   worldClock = new THREE.Clock();
   buildLights(); buildWorld(); buildDock(); buildBoat(); buildAvatar(); buildRod(); buildRipples(); buildParty();
   bindUI(); bindInputs(); restore(); resize(); updateObjectives(); updateActionLabel();
-  window.__ALAN_GAME__={release:RELEASE_ID,audit:()=>({release:RELEASE_ID,avatar:!!avatar,rodAttached:rodGroup?.parent===avatarRodAnchor,thirdPerson:camera.position.z>2,lure:state.lure,zone:state.lastZone,score:state.score,catches:state.catches.length,quality:state.quality,fps:state.fps}),forceLanding:()=>{if(state.fishing==='LANDING')return;state.hookedFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};bobber.position.set(0,.1,30);landFish();}};
+  window.__ALAN_GAME__={release:RELEASE_ID,audit:()=>({release:RELEASE_ID,avatar:!!avatar,rodAttached:rodGroup?.parent===avatarRodAnchor,thirdPerson:camera.position.z>2,lure:state.lure,zone:state.lastZone,score:state.score,catches:state.catches.length,quality:state.quality,fps:state.fps}),forceLanding:()=>{if(state.fishing==='LANDING')return false;state.hookedFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};bobber.position.set(0,.1,30);landFish();return true;}};
   addEventListener('resize', resize, {passive:true});
   addEventListener('orientationchange', ()=>setTimeout(resize, 120), {passive:true});
   document.addEventListener('visibilitychange', ()=>{ if (document.hidden) clearInputs(); lastFrame = performance.now(); });
@@ -324,7 +326,7 @@ function init() {
 
 function buildLights() {
   const hemi = new THREE.HemisphereLight(0xd8e4e7, 0x17271f, 1.35); scene.add(hemi);
-  const ambient = new THREE.AmbientLight(0x9fb0a8, .32); scene.add(ambient);
+  const ambient = new THREE.AmbientLight(0xb3c0b6, .46); scene.add(ambient);
   sun = new THREE.DirectionalLight(0xffcf8a, 3.85); sun.position.set(-46,52,-58); sun.castShadow = !state.mobile;
   if (sun.castShadow) {
     sun.shadow.mapSize.set(1536,1536);
@@ -332,7 +334,7 @@ function buildLights() {
     sun.shadow.camera.near=8; sun.shadow.camera.far=150; sun.shadow.bias=-.00035;
   }
   scene.add(sun);
-  const fill = new THREE.DirectionalLight(0x8fb9d3,.48); fill.position.set(45,26,25); scene.add(fill);
+  const fill = new THREE.DirectionalLight(0x9fc5d7,.62); fill.position.set(45,26,25); scene.add(fill);
   sunOrb = new THREE.Mesh(new THREE.SphereGeometry(3.7,28,18), new THREE.MeshBasicMaterial({color:0xffc46f,fog:false}));
   sunOrb.position.set(-72,28,-126); scene.add(sunOrb);
 }
@@ -366,7 +368,7 @@ function buildWorld() {
   skyDome=new THREE.Mesh(new THREE.SphereGeometry(220,40,24),skyMat); skyDome.name='sky'; scene.add(skyDome);
 
   const groundTex=makeNoiseTexture('#43503c','#25322a',128,state.mobile?700:1200);
-  const groundMat=new THREE.MeshStandardMaterial({color:0x61705a,roughness:.98,metalness:0,map:groundTex,bumpMap:groundTex,bumpScale:.08});
+  const groundMat=new THREE.MeshStandardMaterial({color:0x76856c,roughness:.98,metalness:0,map:groundTex,bumpMap:groundTex,bumpScale:.08});
   const groundGeo=new THREE.PlaneGeometry(210,210,state.mobile?30:44,state.mobile?30:44);groundGeo.rotateX(-Math.PI/2);
   const gp=groundGeo.attributes.position;for(let i=0;i<gp.count;i++){const x=gp.getX(i),z=gp.getZ(i);gp.setY(i,groundHeightAt(x,z)-.08);}groundGeo.computeVertexNormals();
   const ground = new THREE.Mesh(groundGeo,groundMat);ground.receiveShadow=true;scene.add(ground);
@@ -511,7 +513,7 @@ function buildAvatar(){
   const skin=new THREE.MeshStandardMaterial({color:0xc99775,roughness:.82});const shirt=new THREE.MeshStandardMaterial({color:0x315c49,roughness:.88});const shirt2=new THREE.MeshStandardMaterial({color:0x274b3d,roughness:.92});const pants=new THREE.MeshStandardMaterial({color:0x343d3f,roughness:.93});const shoe=new THREE.MeshStandardMaterial({color:0x202628,roughness:.86});const capMat=new THREE.MeshStandardMaterial({color:0x795a38,roughness:.86});
   const pelvis=new THREE.Mesh(new THREE.CapsuleGeometry(.31,.34,5,10),pants);pelvis.position.y=.9;pelvis.scale.set(1.08,1,.72);avatar.add(pelvis);
   avatarTorso=new THREE.Mesh(new THREE.CapsuleGeometry(.36,.58,6,12),shirt);avatarTorso.position.y=1.38;avatarTorso.scale.set(1.0,1,.68);avatar.add(avatarTorso);
-  const vest=new THREE.Mesh(new THREE.BoxGeometry(.62,.6,.08),shirt2);vest.position.set(0,1.4,-.31);vest.rotation.x=.04;avatar.add(vest);
+  const vest=new THREE.Mesh(new THREE.BoxGeometry(.62,.6,.08),shirt2);vest.position.set(0,1.4,-.31);vest.rotation.x=.04;avatar.add(vest);const pack=new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.11),capMat);pack.name='alan-fishing-pack';pack.position.set(0,1.38,.31);pack.rotation.x=-.03;avatar.add(pack);
   const collar=new THREE.Mesh(new THREE.TorusGeometry(.17,.035,6,18,Math.PI),shirt2);collar.position.set(0,1.72,-.22);collar.rotation.x=Math.PI/2;avatar.add(collar);
   const neck=new THREE.Mesh(new THREE.CylinderGeometry(.13,.145,.2,12),skin);neck.position.y=1.82;avatar.add(neck);
   avatarHead=new THREE.Mesh(new THREE.SphereGeometry(.29,18,13),skin);avatarHead.scale.set(.93,1.05,.9);avatarHead.position.y=2.04;avatar.add(avatarHead);
@@ -811,11 +813,11 @@ function toggleDone(el,done,yes,no){el.classList.toggle('done',done);if(el===ui.
 function updateAvatar(dt){
   if(!avatar)return;const moving=playerVelocity.lengthSq()>.08||Math.abs(input.x)+Math.abs(input.y)>.08;const fishing=['WAIT','REEL','LANDING','CAUGHT'].includes(state.fishing);
   if(state.inBoat){const seatOffset=new THREE.Vector3(-.45,.16,.58).applyAxisAngle(new THREE.Vector3(0,1,0),boatYaw);avatar.position.copy(boat.position).add(seatOffset);avatarFacing=angleLerp(avatarFacing,boatYaw,.22);avatar.rotation.y=avatarFacing;avatarLeftLeg.rotation.x=THREE.MathUtils.lerp(avatarLeftLeg.rotation.x,-1.18,.2);avatarRightLeg.rotation.x=THREE.MathUtils.lerp(avatarRightLeg.rotation.x,-1.18,.2);}
-  else{const gy=groundHeightAt(playerPos.x,playerPos.z);avatar.position.set(playerPos.x,gy,playerPos.z);let desired=yaw;if(playerVelocity.lengthSq()>.12)desired=Math.atan2(-playerVelocity.x,-playerVelocity.z);avatarFacing=angleLerp(avatarFacing,desired,1-Math.exp(-9*dt));avatar.rotation.y=avatarFacing;const cadence=input.run?11:7.5,amp=input.run?.5:.38;avatarLeftLeg.rotation.x=moving?Math.sin(state.elapsed*cadence)*amp:THREE.MathUtils.lerp(avatarLeftLeg.rotation.x,0,.18);avatarRightLeg.rotation.x=moving?-Math.sin(state.elapsed*cadence)*amp:THREE.MathUtils.lerp(avatarRightLeg.rotation.x,0,.18);}
+  else{const gy=groundHeightAt(playerPos.x,playerPos.z);avatar.position.set(playerPos.x,gy+.19,playerPos.z);let desired=yaw;if(playerVelocity.lengthSq()>.12)desired=Math.atan2(-playerVelocity.x,-playerVelocity.z);avatarFacing=angleLerp(avatarFacing,desired,1-Math.exp(-9*dt));avatar.rotation.y=avatarFacing;const cadence=input.run?11:7.5,amp=input.run?.5:.38;avatarLeftLeg.rotation.x=moving?Math.sin(state.elapsed*cadence)*amp:THREE.MathUtils.lerp(avatarLeftLeg.rotation.x,0,.18);avatarRightLeg.rotation.x=moving?-Math.sin(state.elapsed*cadence)*amp:THREE.MathUtils.lerp(avatarRightLeg.rotation.x,0,.18);}
   if(fishing){const fight=state.fishing==='REEL'?Math.sin(state.elapsed*5.2)*.08:0;avatarRightArm.rotation.x=THREE.MathUtils.lerp(avatarRightArm.rotation.x,-.88+fight,.2);avatarLeftArm.rotation.x=THREE.MathUtils.lerp(avatarLeftArm.rotation.x,-.62-fight,.2);avatarTorso.rotation.x=THREE.MathUtils.lerp(avatarTorso.rotation.x,state.fishing==='REEL'?.05:0,.16);}
   else if(moving&&!state.inBoat){const swing=Math.sin(state.elapsed*(input.run?11:7.5))*.34;avatarRightArm.rotation.x=THREE.MathUtils.lerp(avatarRightArm.rotation.x,swing,.2);avatarLeftArm.rotation.x=THREE.MathUtils.lerp(avatarLeftArm.rotation.x,-swing,.2);avatarTorso.rotation.x=THREE.MathUtils.lerp(avatarTorso.rotation.x,0,.12);}
   else{avatarRightArm.rotation.x=THREE.MathUtils.lerp(avatarRightArm.rotation.x,-.12,.14);avatarLeftArm.rotation.x=THREE.MathUtils.lerp(avatarLeftArm.rotation.x,.08,.14);avatarTorso.rotation.x=THREE.MathUtils.lerp(avatarTorso.rotation.x,0,.12);}
-  if(avatarShadow){avatarShadow.position.set(avatar.position.x,avatar.position.y+.015,avatar.position.z);avatarShadow.material.opacity=state.inBoat?.16:.5;}
+  if(avatarShadow){avatarShadow.visible=!state.inBoat;if(!state.inBoat)avatarShadow.position.set(avatar.position.x,groundHeightAt(avatar.position.x,avatar.position.z)+.018,avatar.position.z);avatarShadow.material.opacity=.5;}
 }
 
 function updateCamera(dt){
