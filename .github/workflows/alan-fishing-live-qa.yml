@@ -1,11 +1,12 @@
 name: Alan Fishing Escape Live QA
-# Polished v11 final gameplay verification
+# Premium v11 final gameplay verification
 
 on:
   push:
     branches: [main]
     paths:
       - '.github/workflows/alan-fishing-live-qa.yml'
+      - 'alan-fishing-escape/**'
   workflow_dispatch:
 
 permissions:
@@ -33,8 +34,8 @@ jobs:
         run: |
           set -euo pipefail
           ready=0
-          for i in $(seq 1 12); do
-            if curl -fsSL --max-time 30 "$GAME_URL?ready=$(date +%s)-$i" | grep -F 'visual-polish-v11' >/dev/null; then ready=1; break; fi
+          for i in $(seq 1 18); do
+            if curl -fsSL --max-time 30 "$GAME_URL?ready=$(date +%s)-$i" | grep -F 'PREMIUM_RELEASE_V11' >/dev/null; then ready=1; break; fi
             sleep 5
           done
           test "$ready" -eq 1
@@ -54,12 +55,13 @@ jobs:
             await page.waitForSelector('#tutorial:not(.hidden)',{timeout:10000});
             await page.click('#tutorial-go');
             await page.waitForSelector('#hud:not(.hidden)',{timeout:10000});
-            await page.waitForTimeout(3500);
+            await page.waitForFunction(()=>window.__ALAN_GAME__?.audit?.().premiumAvatar===true,{timeout:20000});
+            await page.waitForTimeout(1800);
             const audit=await page.evaluate(()=>window.__ALAN_GAME__?.audit?.());
             console.log('V11_AUDIT',JSON.stringify(audit));
             if(!audit||audit.release!=='8PLUS_RELEASE_V10')throw new Error('Wrong runtime release '+JSON.stringify(audit));
-            if(!audit.avatar||!audit.rodAttached||!audit.thirdPerson)throw new Error('Third-person integrity failed '+JSON.stringify(audit));
-            const base=await page.evaluate(()=>({title:document.title,canvasW:document.querySelector('#game')?.width||0,canvasH:document.querySelector('#game')?.height||0,hudVisible:!document.querySelector('#hud')?.classList.contains('hidden'),controlsVisible:!document.querySelector('#controls')?.classList.contains('hidden'),fallbackVisible:document.querySelector('#webgl-fallback')?!document.querySelector('#webgl-fallback').classList.contains('hidden'):false,zone:document.querySelector('#zone-chip')?.textContent||'',lure:document.querySelector('#lure-toggle')?.textContent||'',castColor:getComputedStyle(document.querySelector('#action-btn')).color,castBackground:getComputedStyle(document.querySelector('#action-btn')).backgroundColor}));
+            if(!audit.avatar||!audit.premiumAvatar||!audit.rodAttached||!audit.thirdPerson)throw new Error('Premium third-person integrity failed '+JSON.stringify(audit));
+            const base=await page.evaluate(()=>({title:document.title,canvasW:document.querySelector('#game')?.width||0,canvasH:document.querySelector('#game')?.height||0,hudVisible:!document.querySelector('#hud')?.classList.contains('hidden'),controlsVisible:!document.querySelector('#controls')?.classList.contains('hidden'),fallbackVisible:document.querySelector('#webgl-fallback')?!document.querySelector('#webgl-fallback').classList.contains('hidden'):false,zone:document.querySelector('#zone-chip')?.textContent||'',lure:document.querySelector('#lure-toggle')?.textContent||''}));
             console.log('BASE',JSON.stringify(base));
             if(base.title!=="Alan Kaplan’s Fishing Escape"||base.canvasW<300||base.canvasH<200||!base.hudVisible||!base.controlsVisible||base.fallbackVisible)throw new Error('Base gameplay failed '+JSON.stringify(base));
             if(!base.zone||!base.lure)throw new Error('Strategy HUD missing');
