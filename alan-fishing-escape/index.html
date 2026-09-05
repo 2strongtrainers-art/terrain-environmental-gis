@@ -182,6 +182,7 @@ const state = {
 let renderer, scene, camera, cameraRig, worldClock;
 let sun, water, dock, boat, boatBody, boatWake, partyGroup, skyDome, sunOrb, visualExtras, mistGroup, cloudGroup, shoreGrass;
 let rodGroup, rodTip, bobber, line, rippleGroup;
+let catchFishVisual=null, catchAnim=null;
 let playerPos = new THREE.Vector3(0, 1.72, 53);
 let yaw = 0, pitch = -0.045, boatYaw = 0.22;
 let input = { x: 0, y: 0, run: false, keys: new Set() };
@@ -615,8 +616,52 @@ function rollFish(){
   const weight=+(pick.min+Math.pow(Math.random(),.72)*(pick.max-pick.min)).toFixed(1);return {...pick,weight,seed:Math.random()*6.28};
 }
 function lineBreak(){showToast('Line snapped — too much tension');beep(170,.16,.06,'sawtooth');haptic(80);state.fishing='IDLE';state.actionHeld=false;hideBobber();updateActionLabel();}
+function fishColors(name){
+  if(name==='Rainbow Trout')return {body:0x9b9c8f,accent:0xd36f87,fin:0x5f7568};
+  if(name==='Smallmouth Bass')return {body:0x6f7449,accent:0xb69a57,fin:0x4f5436};
+  if(name==='Kokanee Salmon')return {body:0xb7c5ca,accent:0x5f8fa0,fin:0x768c92};
+  if(name==='Brown Trout')return {body:0x9b784f,accent:0xd5ad63,fin:0x6a4e32};
+  return {body:0xd6b84e,accent:0xf1d977,fin:0x9f8536};
+}
+function createCatchFish(f){
+  if(catchFishVisual){scene.remove(catchFishVisual);catchFishVisual=null;}
+  const c=fishColors(f.name),g=new THREE.Group();g.name='landed-fish';
+  const bodyMat=new THREE.MeshStandardMaterial({color:c.body,roughness:.48,metalness:.08});
+  const accentMat=new THREE.MeshStandardMaterial({color:c.accent,roughness:.5,metalness:.04});
+  const finMat=new THREE.MeshStandardMaterial({color:c.fin,roughness:.75,side:THREE.DoubleSide});
+  const body=new THREE.Mesh(new THREE.SphereGeometry(.62,14,10),bodyMat);body.scale.set(1.58,.58,.5);body.castShadow=!state.mobile;g.add(body);
+  const belly=new THREE.Mesh(new THREE.SphereGeometry(.56,12,8),accentMat);belly.scale.set(1.42,.16,.43);belly.position.y=-.26;g.add(belly);
+  const tailGeo=new THREE.BufferGeometry();tailGeo.setAttribute('position',new THREE.Float32BufferAttribute([0,0,0,-.72,.52,0,-.72,-.52,0],3));tailGeo.computeVertexNormals();
+  const tail=new THREE.Mesh(tailGeo,finMat);tail.position.x=-.93;g.add(tail);
+  const dorsalGeo=new THREE.BufferGeometry();dorsalGeo.setAttribute('position',new THREE.Float32BufferAttribute([-.15,0,0,.45,0,0,.08,.52,0],3));dorsalGeo.computeVertexNormals();
+  const dorsal=new THREE.Mesh(dorsalGeo,finMat);dorsal.position.set(-.05,.32,0);dorsal.rotation.x=Math.PI/2;g.add(dorsal);
+  const eyeMat=new THREE.MeshBasicMaterial({color:0x0b0b0b});
+  [-1,1].forEach(side=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.055,8,6),eyeMat);e.position.set(.48,.16,.24*side);g.add(e);});
+  const scale=THREE.MathUtils.clamp(.68+f.weight*.045,.72,1.15);g.scale.setScalar(scale);g.visible=true;scene.add(g);catchFishVisual=g;return g;
+}
 function landFish(){
-  const f=state.hookedFish;state.catches.push({name:f.name,weight:f.weight,time:new Date().toISOString()});if(!state.best||f.weight>state.best.weight)state.best={name:f.name,weight:f.weight};state.fishing='CAUGHT';state.actionHeld=false;ui.logCount.textContent=state.catches.length;showToast(`Caught ${f.weight} lb ${f.name}!`,2200);beep(660,.09,.05);setTimeout(()=>beep(880,.13,.04),90);haptic([35,45,70]);spawnRipple(true);updateObjectives();updateActionLabel();save();
+  const f=state.hookedFish;state.fishing='LANDING';state.actionHeld=false;ui.tensionWrap.classList.add('hidden');bobber.visible=false;line.visible=true;spawnRipple(true);beep(520,.08,.04);haptic([25,30,25]);
+  const fish=createCatchFish(f);fish.position.copy(bobber.position);fish.position.y=.08;fish.rotation.set(0,0,-.18);
+  catchAnim={t:0,duration:2.15,start:fish.position.clone(),fish:f,recorded:false};
+  showToast(`${f.name} coming out of the water!`,1500);updateActionLabel();
+}
+function updateCatchVisual(dt){
+  if(!catchAnim||!catchFishVisual)return;
+  catchAnim.t+=dt;const p=THREE.MathUtils.clamp(catchAnim.t/catchAnim.duration,0,1);
+  const camPos=new THREE.Vector3(),forward=new THREE.Vector3(),right=new THREE.Vector3();camera.getWorldPosition(camPos);camera.getWorldDirection(forward);right.crossVectors(forward,new THREE.Vector3(0,1,0)).normalize();
+  const end=camPos.clone().addScaledVector(forward,1.48).addScaledVector(right,.38);end.y-=.38;
+  if(p<.68){
+    const q=p/.68,one=1-q,mid=catchAnim.start.clone().lerp(end,.52);mid.y+=3.2+Math.min(1.1,catchAnim.fish.weight*.09);
+    catchFishVisual.position.set(one*one*catchAnim.start.x+2*one*q*mid.x+q*q*end.x,one*one*catchAnim.start.y+2*one*q*mid.y+q*q*end.y,one*one*catchAnim.start.z+2*one*q*mid.z+q*q*end.z);
+    catchFishVisual.rotation.z=-.2+q*1.15+Math.sin(state.elapsed*17)*.22;catchFishVisual.rotation.y=Math.sin(state.elapsed*8)*.22;
+  }else{
+    const q=(p-.68)/.32;catchFishVisual.position.lerp(end,.24);catchFishVisual.rotation.z=.92+Math.sin(state.elapsed*15)*(1-q)*.28;catchFishVisual.rotation.y=Math.sin(state.elapsed*11)*(1-q)*.3;
+  }
+  if(p>=.68&&!catchAnim.recorded){catchAnim.recorded=true;beep(660,.09,.05);setTimeout(()=>beep(880,.13,.04),90);haptic([35,45,70]);}
+  if(p>=1)finishCatchLanding();
+}
+function finishCatchLanding(){
+  if(!catchAnim)return;const f=catchAnim.fish;state.catches.push({name:f.name,weight:f.weight,time:new Date().toISOString()});if(!state.best||f.weight>state.best.weight)state.best={name:f.name,weight:f.weight};state.fishing='CAUGHT';ui.logCount.textContent=state.catches.length;showToast(`Caught ${f.weight} lb ${f.name}!`,2200);updateObjectives();updateActionLabel();save();line.visible=false;if(catchFishVisual){catchFishVisual.visible=false;scene.remove(catchFishVisual);catchFishVisual=null;}catchAnim=null;
 }
 function hideBobber(){bobber.visible=false;line.visible=false;ui.tensionWrap.classList.add('hidden');}
 function updateMeters(){ui.tensionWrap.classList.remove('hidden');ui.tensionFill.style.width=`${Math.min(100,state.tension*100)}%`;ui.tensionText.textContent=`${Math.round(state.tension*100)}%`;ui.reelFill.style.width=`${state.reelProgress*100}%`;ui.reelText.textContent=`${Math.round(state.reelProgress*100)}%`;}
@@ -641,6 +686,7 @@ function patrol(){
 
 function updateStatus(){
   if(state.fishing==='REEL'){ui.statusTitle.textContent='Fish on!';ui.statusSub.textContent='Hold REEL to gain line. Release when tension gets high.';return;}
+  if(state.fishing==='LANDING'){ui.statusTitle.textContent='Landing the fish!';ui.statusSub.textContent='Watch it break the surface and come up on the line.';return;}
   if(state.fishing==='WAIT'){ui.statusTitle.textContent=state.biteWindow>0?'BITE — HOOK NOW!':'Line in the water';ui.statusSub.textContent=state.biteWindow>0?'Tap the action button before it gets away.':'Watch the bobber and listen for the bite.';return;}
   if(state.fishing==='CAUGHT'){ui.statusTitle.textContent='Nice catch';ui.statusSub.textContent='Tap DONE, then cast again whenever you want.';return;}
   if(state.inBoat){ui.statusTitle.textContent='Boat mode';ui.statusSub.textContent='Steer with the left control. CAST to fish from here.';return;}
@@ -650,7 +696,7 @@ function updateStatus(){
 }
 
 function updateActionLabel(){
-  let text='CAST';if(state.fishing==='WAIT')text=state.biteWindow>0?'HOOK':'WAIT';else if(state.fishing==='REEL')text='REEL';else if(state.fishing==='CAUGHT')text='DONE';ui.actionBtn.textContent=text;
+  let text='CAST';if(state.fishing==='WAIT')text=state.biteWindow>0?'HOOK':'WAIT';else if(state.fishing==='REEL')text='REEL';else if(state.fishing==='LANDING')text='LANDING';else if(state.fishing==='CAUGHT')text='DONE';ui.actionBtn.textContent=text;
 }
 function updateObjectives(){
   const c=Math.min(3,state.catches.length);ui.fishCount.textContent=`${c}/3`;toggleDone(ui.objectiveFish,state.catches.length>=3,`✓ Catch 3 fish ${c}/3`,`○ Catch 3 fish ${c}/3`);toggleDone(ui.objectiveBoat,state.hasBoated,'✓ Take the boat out','○ Take the boat out');toggleDone(ui.objectivePeace,state.peaceDone,'✓ Restore lake peace','○ Restore lake peace');
@@ -671,8 +717,9 @@ function updateCamera(dt){
 }
 
 function updateRod(dt){
-  if(!rodGroup)return; const active=state.fishing==='REEL'; const bend=active?state.tension*.2:0;rodGroup.rotation.x=THREE.MathUtils.lerp(rodGroup.rotation.x,-bend,.12);
-  if(line.visible&&bobber.visible){const a=new THREE.Vector3();rodTip.getWorldPosition(a);const arr=line.geometry.attributes.position.array;arr[0]=a.x;arr[1]=a.y;arr[2]=a.z;arr[3]=bobber.position.x;arr[4]=bobber.position.y;arr[5]=bobber.position.z;line.geometry.attributes.position.needsUpdate=true;}
+  if(!rodGroup)return; const active=state.fishing==='REEL'||state.fishing==='LANDING'; const bend=active?(state.fishing==='LANDING' ? .12 : state.tension*.2):0;rodGroup.rotation.x=THREE.MathUtils.lerp(rodGroup.rotation.x,-bend,.12);
+  const lineTarget=(catchFishVisual&&catchFishVisual.visible)?catchFishVisual.position:(bobber&&bobber.visible?bobber.position:null);
+  if(line.visible&&lineTarget){const a=new THREE.Vector3();rodTip.getWorldPosition(a);const arr=line.geometry.attributes.position.array;arr[0]=a.x;arr[1]=a.y;arr[2]=a.z;arr[3]=lineTarget.x;arr[4]=lineTarget.y;arr[5]=lineTarget.z;line.geometry.attributes.position.needsUpdate=true;}
 }
 
 function updateWorld(dt){
@@ -682,6 +729,7 @@ function updateWorld(dt){
   if(cloudGroup){cloudGroup.children.forEach(o=>{o.position.x+=o.userData.speed*dt;if(o.position.x>125)o.position.x=-125;});}
   if(scene){scene.children.forEach(o=>{if(o.name==='bird'){o.position.x+=o.userData.speed*dt;if(o.position.x>48)o.position.x=-48;o.position.y+=Math.sin(state.elapsed*3+o.userData.phase)*dt*.1;}});}
   updateRipples(dt);
+  updateCatchVisual(dt);
   if(boatWake){const s=boat?.userData.speed||0;boatWake.children.forEach((r,i)=>{r.material.opacity=THREE.MathUtils.lerp(r.material.opacity,s>.6?.14*(1-i/11):0,.08);r.scale.setScalar(1+Math.sin(state.elapsed*2+i)*.06);});}
 }
 
@@ -705,7 +753,7 @@ function restore(){
   try{const d=JSON.parse(localStorage.getItem('alan-fishing-escape-v1')||'{}');if(typeof d.sound==='boolean')state.sound=d.sound;if(['AUTO','HIGH','LOW'].includes(d.quality))state.quality=d.quality;if(Number.isFinite(d.sensitivity))state.sensitivity=d.sensitivity;if(Array.isArray(d.catches))state.catches=d.catches;if(d.best)state.best=d.best;state.hasBoated=!!d.hasBoated;state.peaceDone=!!d.peaceDone;state.victoryShown=!!d.victoryShown;ui.soundToggle.textContent=state.sound?'ON':'OFF';ui.qualityToggle.textContent=state.quality;ui.sensitivity.value=state.sensitivity;}catch{}
 }
 function resetGame(confirmFirst=false){
-  if(confirmFirst&&!confirm('Reset Alan’s catches and progress?'))return;state.inBoat=false;state.hasBoated=false;state.catches=[];state.best=null;state.peaceDone=false;state.victoryShown=false;state.partyActive=false;state.partyPeace=0;state.nextPartyAt=35;state.fishing='IDLE';state.actionHeld=false;playerPos.set(0,1.72,53);yaw=0;pitch=-0.045;boat.position.set(7.5,.45,34);boatYaw=0.22;boat.rotation.set(0,boatYaw,0);partyGroup.visible=false;hideBobber();ui.patrolBtn.classList.add('hidden');ui.peaceWrap.classList.add('hidden');ui.victory.classList.add('hidden');updateObjectives();updateActionLabel();renderCatchLog();save();showToast('Game reset');closeSheet(ui.settings);
+  if(confirmFirst&&!confirm('Reset Alan’s catches and progress?'))return;state.inBoat=false;state.hasBoated=false;state.catches=[];state.best=null;state.peaceDone=false;state.victoryShown=false;state.partyActive=false;state.partyPeace=0;state.nextPartyAt=35;state.fishing='IDLE';state.actionHeld=false;catchAnim=null;if(catchFishVisual){scene.remove(catchFishVisual);catchFishVisual=null;}playerPos.set(0,1.72,53);yaw=0;pitch=-0.045;boat.position.set(7.5,.45,34);boatYaw=0.22;boat.rotation.set(0,boatYaw,0);partyGroup.visible=false;hideBobber();ui.patrolBtn.classList.add('hidden');ui.peaceWrap.classList.add('hidden');ui.victory.classList.add('hidden');updateObjectives();updateActionLabel();renderCatchLog();save();showToast('Game reset');closeSheet(ui.settings);
 }
 
 function showToast(text,ms=1300){ui.toast.textContent=text;ui.toast.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>ui.toast.classList.add('hidden'),ms);}
