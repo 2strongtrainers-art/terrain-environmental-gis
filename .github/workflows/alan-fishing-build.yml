@@ -19,7 +19,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Improve and verify opening composition
+      - name: Add and verify visible fish landing sequence
         shell: bash
         run: |
           set -euo pipefail
@@ -27,27 +27,116 @@ jobs:
           from pathlib import Path
           p=Path('alan-fishing-escape/index.html')
           s=p.read_text(encoding='utf-8')
-          replacements=[
-            ("let yaw = Math.PI, pitch = -0.08, boatYaw = 0.22;","let yaw = 0, pitch = -0.045, boatYaw = 0.22;"),
-            ("playerPos.set(0,1.72,53);boat.position.set(7.5,.45,34);","playerPos.set(0,1.72,53);yaw=0;pitch=-0.045;boat.position.set(7.5,.45,34);")
-          ]
-          changed=0
-          for old,new in replacements:
-              if old in s:
-                  s=s.replace(old,new,1); changed+=1
-              elif new not in s:
-                  raise SystemExit('Expected composition signature missing: '+old[:45])
+
+          def replace_once(old,new,label):
+              global s
+              if new in s:
+                  print(label,'already present')
+                  return
+              if old not in s:
+                  raise SystemExit('Missing expected signature for '+label)
+              s=s.replace(old,new,1)
+              print('patched',label)
+
+          replace_once(
+            "let rodGroup, rodTip, bobber, line, rippleGroup;",
+            "let rodGroup, rodTip, bobber, line, rippleGroup;\nlet catchFishVisual=null, catchAnim=null;",
+            'catch globals'
+          )
+
+          replace_once(
+            "function updateActionLabel(){\n  let text='CAST';if(state.fishing==='WAIT')text=state.biteWindow>0?'HOOK':'WAIT';else if(state.fishing==='REEL')text='REEL';else if(state.fishing==='CAUGHT')text='DONE';ui.actionBtn.textContent=text;\n}",
+            "function updateActionLabel(){\n  let text='CAST';if(state.fishing==='WAIT')text=state.biteWindow>0?'HOOK':'WAIT';else if(state.fishing==='REEL')text='REEL';else if(state.fishing==='LANDING')text='LANDING';else if(state.fishing==='CAUGHT')text='DONE';ui.actionBtn.textContent=text;\n}",
+            'landing action label'
+          )
+
+          replace_once(
+            "function updateRod(dt){\n  if(!rodGroup)return; const active=state.fishing==='REEL'; const bend=active?state.tension*.2:0;rodGroup.rotation.x=THREE.MathUtils.lerp(rodGroup.rotation.x,-bend,.12);\n  if(line.visible&&bobber.visible){const a=new THREE.Vector3();rodTip.getWorldPosition(a);const arr=line.geometry.attributes.position.array;arr[0]=a.x;arr[1]=a.y;arr[2]=a.z;arr[3]=bobber.position.x;arr[4]=bobber.position.y;arr[5]=bobber.position.z;line.geometry.attributes.position.needsUpdate=true;}\n}",
+            "function updateRod(dt){\n  if(!rodGroup)return; const active=state.fishing==='REEL'||state.fishing==='LANDING'; const bend=active?(state.fishing==='LANDING'?.12:state.tension*.2):0;rodGroup.rotation.x=THREE.MathUtils.lerp(rodGroup.rotation.x,-bend,.12);\n  const lineTarget=(catchFishVisual&&catchFishVisual.visible)?catchFishVisual.position:(bobber&&bobber.visible?bobber.position:null);\n  if(line.visible&&lineTarget){const a=new THREE.Vector3();rodTip.getWorldPosition(a);const arr=line.geometry.attributes.position.array;arr[0]=a.x;arr[1]=a.y;arr[2]=a.z;arr[3]=lineTarget.x;arr[4]=lineTarget.y;arr[5]=lineTarget.z;line.geometry.attributes.position.needsUpdate=true;}\n}",
+            'line follows landed fish'
+          )
+
+          replace_once(
+            "  updateRipples(dt);\n  if(boatWake)",
+            "  updateRipples(dt);\n  updateCatchVisual(dt);\n  if(boatWake)",
+            'landing animation update'
+          )
+
+          old_land="function landFish(){\n  const f=state.hookedFish;state.catches.push({name:f.name,weight:f.weight,time:new Date().toISOString()});if(!state.best||f.weight>state.best.weight)state.best={name:f.name,weight:f.weight};state.fishing='CAUGHT';state.actionHeld=false;ui.logCount.textContent=state.catches.length;showToast(`Caught ${f.weight} lb ${f.name}!`,2200);beep(660,.09,.05);setTimeout(()=>beep(880,.13,.04),90);haptic([35,45,70]);spawnRipple(true);updateObjectives();updateActionLabel();save();\n}\n"
+          new_land=r'''function fishColors(name){
+  if(name==='Rainbow Trout')return {body:0x9b9c8f,accent:0xd36f87,fin:0x5f7568};
+  if(name==='Smallmouth Bass')return {body:0x6f7449,accent:0xb69a57,fin:0x4f5436};
+  if(name==='Kokanee Salmon')return {body:0xb7c5ca,accent:0x5f8fa0,fin:0x768c92};
+  if(name==='Brown Trout')return {body:0x9b784f,accent:0xd5ad63,fin:0x6a4e32};
+  return {body:0xd6b84e,accent:0xf1d977,fin:0x9f8536};
+}
+function createCatchFish(f){
+  if(catchFishVisual){scene.remove(catchFishVisual);catchFishVisual=null;}
+  const c=fishColors(f.name),g=new THREE.Group();g.name='landed-fish';
+  const bodyMat=new THREE.MeshStandardMaterial({color:c.body,roughness:.48,metalness:.08});
+  const accentMat=new THREE.MeshStandardMaterial({color:c.accent,roughness:.5,metalness:.04});
+  const finMat=new THREE.MeshStandardMaterial({color:c.fin,roughness:.75,side:THREE.DoubleSide});
+  const body=new THREE.Mesh(new THREE.SphereGeometry(.62,14,10),bodyMat);body.scale.set(1.58,.58,.5);body.castShadow=!state.mobile;g.add(body);
+  const belly=new THREE.Mesh(new THREE.SphereGeometry(.56,12,8),accentMat);belly.scale.set(1.42,.16,.43);belly.position.y=-.26;g.add(belly);
+  const tailGeo=new THREE.BufferGeometry();tailGeo.setAttribute('position',new THREE.Float32BufferAttribute([0,0,0,-.72,.52,0,-.72,-.52,0],3));tailGeo.computeVertexNormals();
+  const tail=new THREE.Mesh(tailGeo,finMat);tail.position.x=-.93;g.add(tail);
+  const dorsalGeo=new THREE.BufferGeometry();dorsalGeo.setAttribute('position',new THREE.Float32BufferAttribute([-.15,0,0,.45,.0,0,.08,.52,0],3));dorsalGeo.computeVertexNormals();
+  const dorsal=new THREE.Mesh(dorsalGeo,finMat);dorsal.position.set(-.05,.32,0);dorsal.rotation.x=Math.PI/2;g.add(dorsal);
+  const eyeMat=new THREE.MeshBasicMaterial({color:0x0b0b0b});
+  [-1,1].forEach(side=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.055,8,6),eyeMat);e.position.set(.48,.16,.24*side);g.add(e);});
+  const scale=THREE.MathUtils.clamp(.68+f.weight*.045,.72,1.15);g.scale.setScalar(scale);g.visible=true;scene.add(g);catchFishVisual=g;return g;
+}
+function landFish(){
+  const f=state.hookedFish;state.fishing='LANDING';state.actionHeld=false;ui.tensionWrap.classList.add('hidden');bobber.visible=false;line.visible=true;spawnRipple(true);beep(520,.08,.04);haptic([25,30,25]);
+  const fish=createCatchFish(f);fish.position.copy(bobber.position);fish.position.y=.08;fish.rotation.set(0,0,-.18);
+  catchAnim={t:0,duration:2.15,start:fish.position.clone(),fish:f,recorded:false};
+  showToast(`${f.name} coming out of the water!`,1500);updateActionLabel();
+}
+function updateCatchVisual(dt){
+  if(!catchAnim||!catchFishVisual)return;
+  catchAnim.t+=dt;const p=THREE.MathUtils.clamp(catchAnim.t/catchAnim.duration,0,1);
+  const camPos=new THREE.Vector3(),forward=new THREE.Vector3(),right=new THREE.Vector3();camera.getWorldPosition(camPos);camera.getWorldDirection(forward);right.crossVectors(forward,new THREE.Vector3(0,1,0)).normalize();
+  const end=camPos.clone().addScaledVector(forward,1.48).addScaledVector(right,.38);end.y-=.38;
+  if(p<.68){
+    const q=p/.68,one=1-q,mid=catchAnim.start.clone().lerp(end,.52);mid.y+=3.2+Math.min(1.1,catchAnim.fish.weight*.09);
+    catchFishVisual.position.set(one*one*catchAnim.start.x+2*one*q*mid.x+q*q*end.x,one*one*catchAnim.start.y+2*one*q*mid.y+q*q*end.y,one*one*catchAnim.start.z+2*one*q*mid.z+q*q*end.z);
+    catchFishVisual.rotation.z=-.2+q*1.15+Math.sin(state.elapsed*17)*.22;catchFishVisual.rotation.y=Math.sin(state.elapsed*8)*.22;
+  }else{
+    const q=(p-.68)/.32;catchFishVisual.position.lerp(end,.24);catchFishVisual.rotation.z=.92+Math.sin(state.elapsed*15)*(1-q)*.28;catchFishVisual.rotation.y=Math.sin(state.elapsed*11)*(1-q)*.3;
+  }
+  if(p>=.68&&!catchAnim.recorded){catchAnim.recorded=true;beep(660,.09,.05);setTimeout(()=>beep(880,.13,.04),90);haptic([35,45,70]);}
+  if(p>=1)finishCatchLanding();
+}
+function finishCatchLanding(){
+  if(!catchAnim)return;const f=catchAnim.fish;state.catches.push({name:f.name,weight:f.weight,time:new Date().toISOString()});if(!state.best||f.weight>state.best.weight)state.best={name:f.name,weight:f.weight};state.fishing='CAUGHT';ui.logCount.textContent=state.catches.length;showToast(`Caught ${f.weight} lb ${f.name}!`,2200);updateObjectives();updateActionLabel();save();line.visible=false;if(catchFishVisual){catchFishVisual.visible=false;scene.remove(catchFishVisual);catchFishVisual=null;}catchAnim=null;
+}
+'''
+          replace_once(old_land,new_land,'visible fish landing')
+
+          replace_once(
+            "  if(state.fishing==='REEL'){ui.statusTitle.textContent='Fish on!';ui.statusSub.textContent='Hold REEL to gain line. Release when tension gets high.';return;}",
+            "  if(state.fishing==='REEL'){ui.statusTitle.textContent='Fish on!';ui.statusSub.textContent='Hold REEL to gain line. Release when tension gets high.';return;}\n  if(state.fishing==='LANDING'){ui.statusTitle.textContent='Landing the fish!';ui.statusSub.textContent='Watch it break the surface and come up on the line.';return;}",
+            'landing status'
+          )
+
+          replace_once(
+            "state.fishing='IDLE';state.actionHeld=false;playerPos.set(0,1.72,53);yaw=0;pitch=-0.045;boat.position.set(7.5,.45,34);",
+            "state.fishing='IDLE';state.actionHeld=false;catchAnim=null;if(catchFishVisual){scene.remove(catchFishVisual);catchFishVisual=null;}playerPos.set(0,1.72,53);yaw=0;pitch=-0.045;boat.position.set(7.5,.45,34);",
+            'reset landing visual'
+          )
+
           p.write_text(s,encoding='utf-8')
           module=s.split('<script type="module">',1)[1].rsplit('</script>',1)[0]
           Path('/tmp/alan-game.mjs').write_text(module,encoding='utf-8')
-          print('composition replacements',changed)
           PY
           node --check /tmp/alan-game.mjs
-          grep -F "let yaw = 0, pitch = -0.045" alan-fishing-escape/index.html >/dev/null
-          sed -i "s/alan-fishing-escape-v6/alan-fishing-escape-v7/g" alan-fishing-escape/sw.js
-          grep -F "alan-fishing-escape-v7" alan-fishing-escape/sw.js >/dev/null
+          grep -F "function createCatchFish" alan-fishing-escape/index.html >/dev/null
+          grep -F "state.fishing='LANDING'" alan-fishing-escape/index.html >/dev/null
+          grep -F "finishCatchLanding" alan-fishing-escape/index.html >/dev/null
+          sed -i "s/alan-fishing-escape-v7/alan-fishing-escape-v8/g" alan-fishing-escape/sw.js
+          grep -F "alan-fishing-escape-v8" alan-fishing-escape/sw.js >/dev/null
 
-      - name: Commit composition upgrade to main
+      - name: Commit fish landing upgrade to main
         shell: bash
         run: |
           set -euo pipefail
@@ -55,13 +144,13 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape/index.html alan-fishing-escape/sw.js
           if ! git diff --cached --quiet; then
-            git commit -m 'Open Fishing Escape on cinematic lake view'
+            git commit -m 'Show fish landing out of the water'
             git push
           else
-            echo 'Composition already current.'
+            echo 'Fish landing animation already current.'
           fi
 
-      - name: Deploy composition upgrade to GitHub Pages
+      - name: Deploy fish landing upgrade to GitHub Pages
         shell: bash
         run: |
           set -euo pipefail
@@ -78,8 +167,8 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape
           if ! git diff --cached --quiet; then
-            git commit -m 'Deploy Fishing Escape cinematic lake view v7'
+            git commit -m 'Deploy Fishing Escape visible fish landing v8'
             git push origin HEAD:gh-pages
           else
-            echo 'GitHub Pages composition already current.'
+            echo 'GitHub Pages fish landing build already current.'
           fi
