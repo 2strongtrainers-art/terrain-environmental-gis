@@ -1,5 +1,5 @@
 name: Alan Fishing Escape Live QA
-# Visual overhaul v5 verification
+# Visual overhaul v6 verification
 
 on:
   push:
@@ -35,7 +35,7 @@ jobs:
           echo 'HTTP response headers:'
           curl -fsSIL --max-time 30 "$GAME_URL?curlqa=$(date +%s)" | sed -n '1,20p'
           echo 'Public source fingerprint:'
-          curl -fsSL --max-time 30 "$GAME_URL?sourceqa=$(date +%s)" | grep -Eo 'Alan Kaplan[^<]{0,80}|id="play-btn"|catch-log|manifest.webmanifest' | head -20 || true
+          curl -fsSL --max-time 30 "$GAME_URL?sourceqa=$(date +%s)" | grep -Eo 'Alan Kaplan[^<]{0,80}|id="play-btn"|catch-log|manifest.webmanifest|fog:false' | head -20 || true
           cat > /tmp/alan-live-qa.cjs <<'EOF'
           const { chromium } = require('playwright');
           (async()=>{
@@ -55,7 +55,7 @@ jobs:
             await page.waitForSelector('#tutorial:not(.hidden)',{timeout:10000});
             await page.click('#tutorial-go');
             await page.waitForSelector('#hud:not(.hidden)',{timeout:10000});
-            await page.waitForTimeout(2500);
+            await page.waitForTimeout(4000);
             const result=await page.evaluate(()=>({
               title:document.title,
               canvas:!!document.querySelector('#game'),
@@ -67,6 +67,7 @@ jobs:
               catchLog:!!document.querySelector('#catch-log')
             }));
             console.log('LIVE_QA_RESULT',JSON.stringify(result));
+            await page.screenshot({path:'alan-fishing-live-qa.png',fullPage:true});
             if(result.title!=="Alan Kaplan’s Fishing Escape") throw new Error('Unexpected title');
             if(!result.canvas || result.canvasW<300 || result.canvasH<200) throw new Error('Canvas did not initialize');
             if(!result.hudVisible || !result.controlsVisible) throw new Error('iPhone controls/HUD did not enter gameplay');
@@ -74,7 +75,6 @@ jobs:
             if(result.fallbackVisible) throw new Error('WebGL fallback is visible');
             const meaningfulFatal=fatal.filter(x=>!/Failed to load resource.*favicon/i.test(x));
             if(meaningfulFatal.length) throw new Error('Runtime errors: '+meaningfulFatal.join(' | '));
-            await page.screenshot({path:'alan-fishing-live-qa.png',fullPage:true});
             await browser.close();
             console.log('ALAN_FISHING_LIVE_QA_OK');
           })().catch(e=>{console.error(e);process.exit(1)});
@@ -85,6 +85,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: alan-fishing-live-qa
+          name: alan-fishing-live-qa-v6
           path: alan-fishing-live-qa.png
           if-no-files-found: ignore
