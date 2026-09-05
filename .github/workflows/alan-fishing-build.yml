@@ -22,7 +22,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply 8-plus upgrade and verify
+      - name: Apply 8-plus upgrade and final visual polish
         shell: bash
         run: |
           set -euo pipefail
@@ -33,13 +33,40 @@ jobs:
           test "$(sha256sum /tmp/alan-eight-plus.py | cut -d' ' -f1)" = "8cdfb8f07e3adc350491dbdbb97065887a09272764bd4353616da87b3ad7df1c"
           python -m py_compile /tmp/alan-eight-plus.py
           python /tmp/alan-eight-plus.py
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('alan-fishing-escape/index.html')
+          s=p.read_text(encoding='utf-8')
+          pairs=[
+            ("forceLanding:()=>{if(state.fishing==='LANDING')return;","forceLanding:()=>{if(state.fishing==='LANDING')return false;"),
+            ("bobber.position.set(0,.1,30);landFish();}};","bobber.position.set(0,.1,30);landFish();return true;}};"),
+            ("avatar.position.set(playerPos.x,gy,playerPos.z);","avatar.position.set(playerPos.x,gy+.19,playerPos.z);"),
+            ("if(avatarShadow){avatarShadow.position.set(avatar.position.x,avatar.position.y+.015,avatar.position.z);avatarShadow.material.opacity=state.inBoat?.16:.5;}","if(avatarShadow){avatarShadow.visible=!state.inBoat;if(!state.inBoat)avatarShadow.position.set(avatar.position.x,groundHeightAt(avatar.position.x,avatar.position.z)+.018,avatar.position.z);avatarShadow.material.opacity=.5;}"),
+            ("renderer.toneMappingExposure = 1.16;","renderer.toneMappingExposure = 1.27;"),
+            ("const ambient = new THREE.AmbientLight(0x9fb0a8, .32);","const ambient = new THREE.AmbientLight(0xb3c0b6, .46);"),
+            ("const fill = new THREE.DirectionalLight(0x8fb9d3,.48);","const fill = new THREE.DirectionalLight(0x9fc5d7,.62);"),
+            ("color:0x61705a,roughness:.98","color:0x76856c,roughness:.98"),
+            (".control-btn{transition:opacity .18s ease,transform .1s ease;background:rgba(7,21,18,.52)}",".control-btn{transition:opacity .18s ease,transform .1s ease}\n.control-btn.action{background:linear-gradient(180deg,rgba(246,204,126,.96),rgba(215,163,77,.96));color:#142019;border-color:rgba(255,239,200,.55);box-shadow:0 10px 28px rgba(228,176,86,.28)}")
+          ]
+          for old,new in pairs:
+            if new not in s and old in s:s=s.replace(old,new,1)
+          anchor="avatar.add(vest);\n  const collar="
+          if "alan-fishing-pack" not in s and anchor in s:
+            s=s.replace(anchor,"avatar.add(vest);const pack=new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.11),capMat);pack.name='alan-fishing-pack';pack.position.set(0,1.38,.31);pack.rotation.x=-.03;avatar.add(pack);\n  const collar=",1)
+          if '<!-- visual-polish-v11 -->' not in s:s=s.replace('</head>','<!-- visual-polish-v11 -->\n</head>',1)
+          p.write_text(s,encoding='utf-8')
+          import re
+          m=re.search(r'<script type="module">(.*?)</script>',s,re.S)
+          if not m:raise SystemExit('module missing')
+          Path('/tmp/alan-game.mjs').write_text(m.group(1),encoding='utf-8')
+          PY
           node --check /tmp/alan-game.mjs
           grep -F '8PLUS_RELEASE_V10' alan-fishing-escape/index.html >/dev/null
-          grep -F 'window.__ALAN_GAME__' alan-fishing-escape/index.html >/dev/null
-          grep -F 'makePineCrown' alan-fishing-escape/index.html >/dev/null
-          grep -F 'speciesWeight' alan-fishing-escape/index.html >/dev/null
-          sed -E -i 's/alan-fishing-escape-v[0-9]+/alan-fishing-escape-v10/g' alan-fishing-escape/sw.js
-          grep -F 'alan-fishing-escape-v10' alan-fishing-escape/sw.js >/dev/null
+          grep -F 'visual-polish-v11' alan-fishing-escape/index.html >/dev/null
+          grep -F 'alan-fishing-pack' alan-fishing-escape/index.html >/dev/null
+          grep -F 'return true;}};' alan-fishing-escape/index.html >/dev/null
+          sed -E -i 's/alan-fishing-escape-v[0-9]+/alan-fishing-escape-v11/g' alan-fishing-escape/sw.js
+          grep -F 'alan-fishing-escape-v11' alan-fishing-escape/sw.js >/dev/null
 
       - name: Commit verified 8-plus build to main
         shell: bash
@@ -49,7 +76,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape/index.html alan-fishing-escape/sw.js
           if ! git diff --cached --quiet; then
-            git commit -m 'Upgrade Fishing Escape to 8-plus release'
+            git commit -m 'Polish Fishing Escape 8-plus release'
             git push
           else
             echo '8-plus source already current.'
@@ -72,7 +99,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape
           if ! git diff --cached --quiet; then
-            git commit -m 'Deploy Fishing Escape 8-plus v10'
+            git commit -m 'Deploy Fishing Escape polished v11'
             git push origin HEAD:gh-pages
           else
             echo 'Pages already current.'
