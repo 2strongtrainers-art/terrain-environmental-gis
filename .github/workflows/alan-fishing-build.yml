@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/alan-fishing-build.yml'
       - '.alan8.part*'
+      - '.alan-premium-v11.py'
       - 'alan-fishing-escape/**'
   workflow_dispatch:
 
@@ -22,7 +23,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply 8-plus upgrade and final visual polish
+      - name: Apply 8-plus upgrade and premium visual polish
         shell: bash
         run: |
           set -euo pipefail
@@ -33,6 +34,7 @@ jobs:
           test "$(sha256sum /tmp/alan-eight-plus.py | cut -d' ' -f1)" = "8cdfb8f07e3adc350491dbdbb97065887a09272764bd4353616da87b3ad7df1c"
           python -m py_compile /tmp/alan-eight-plus.py
           python /tmp/alan-eight-plus.py
+          python .alan-premium-v11.py
           python - <<'PY'
           from pathlib import Path
           p=Path('alan-fishing-escape/index.html')
@@ -45,8 +47,7 @@ jobs:
             ("renderer.toneMappingExposure = 1.16;","renderer.toneMappingExposure = 1.27;"),
             ("const ambient = new THREE.AmbientLight(0x9fb0a8, .32);","const ambient = new THREE.AmbientLight(0xb3c0b6, .46);"),
             ("const fill = new THREE.DirectionalLight(0x8fb9d3,.48);","const fill = new THREE.DirectionalLight(0x9fc5d7,.62);"),
-            ("color:0x61705a,roughness:.98","color:0x76856c,roughness:.98"),
-            (".control-btn{transition:opacity .18s ease,transform .1s ease;background:rgba(7,21,18,.52)}",".control-btn{transition:opacity .18s ease,transform .1s ease}\n.control-btn.action{background:linear-gradient(180deg,rgba(246,204,126,.96),rgba(215,163,77,.96));color:#142019;border-color:rgba(255,239,200,.55);box-shadow:0 10px 28px rgba(228,176,86,.28)}")
+            ("color:0x61705a,roughness:.98","color:0x76856c,roughness:.98")
           ]
           for old,new in pairs:
             if new not in s and old in s:s=s.replace(old,new,1)
@@ -62,13 +63,15 @@ jobs:
           PY
           node --check /tmp/alan-game.mjs
           grep -F '8PLUS_RELEASE_V10' alan-fishing-escape/index.html >/dev/null
+          grep -F 'PREMIUM_RELEASE_V11' alan-fishing-escape/index.html >/dev/null
+          grep -F 'alan-premium-avatar' alan-fishing-escape/index.html >/dev/null
+          grep -F 'GLTFLoader' alan-fishing-escape/index.html >/dev/null
           grep -F 'visual-polish-v11' alan-fishing-escape/index.html >/dev/null
-          grep -F 'alan-fishing-pack' alan-fishing-escape/index.html >/dev/null
           grep -F 'return true;}};' alan-fishing-escape/index.html >/dev/null
           sed -E -i 's/alan-fishing-escape-v[0-9]+/alan-fishing-escape-v11/g' alan-fishing-escape/sw.js
           grep -F 'alan-fishing-escape-v11' alan-fishing-escape/sw.js >/dev/null
 
-      - name: Commit verified 8-plus build to main
+      - name: Commit verified premium build to main
         shell: bash
         run: |
           set -euo pipefail
@@ -76,10 +79,10 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape/index.html alan-fishing-escape/sw.js
           if ! git diff --cached --quiet; then
-            git commit -m 'Polish Fishing Escape 8-plus release'
+            git commit -m 'Upgrade Fishing Escape premium v11'
             git push
           else
-            echo '8-plus source already current.'
+            echo 'Premium source already current.'
           fi
 
       - name: Deploy verified build to GitHub Pages
@@ -99,7 +102,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape
           if ! git diff --cached --quiet; then
-            git commit -m 'Deploy Fishing Escape polished v11'
+            git commit -m 'Deploy Fishing Escape premium v11'
             git push origin HEAD:gh-pages
           else
             echo 'Pages already current.'
