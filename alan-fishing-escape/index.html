@@ -45,6 +45,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
 /* TACKLE_HUD_V13 */
 /* VISUAL_PERF_V17 */
 /* FINAL_ALL8_V18 */
+/* ACTION_BENCHMARK_V19 */
 #objective-card{transition:opacity .25s ease,transform .25s ease,min-width .25s ease,padding .25s ease}
 #objective-card.compact{min-width:0!important;padding:7px 9px!important;opacity:.78;transform:scale(.96);transform-origin:top left}
 #objective-card.compact .obj{display:none}
@@ -339,6 +340,22 @@ function audioTick(dt){
   if(state.fishing==='REEL'&&state.actionHeld){state.reelSoundTimer-=dt;if(state.reelSoundTimer<=0){state.reelSoundTimer=.12+Math.random()*.08;beep(rand(620,820),.018,.006,'square');}}
 }
 
+async function benchmarkActionRender(ms=1200){
+  if(!renderer||!state.mobile)return {fps:state.fps,pixelRatio:renderer?.getPixelRatio?.()||0,frames:0,elapsed:0};
+  const prevFishing=state.fishing,prevHooked=state.hookedFish,prevAction=state.actionHeld,prevFish=catchFishVisual;
+  const benchFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};
+  state.hookedFish=benchFish;state.fishing='LANDING';state.actionHeld=false;
+  let created=false;
+  if(!catchFishVisual){const f=createCatchFish(benchFish);f.position.set(0,1.15,34);f.rotation.set(.08,.2,.4);created=true;}
+  updateDynamicResolution();
+  const start=performance.now();let frames=0;
+  await new Promise(resolve=>{const tick=t=>{frames++;if(catchFishVisual){catchFishVisual.rotation.y+=.018;catchFishVisual.rotation.z=.35+Math.sin(t*.006)*.18;}if(t-start>=ms)resolve();else requestAnimationFrame(tick);};requestAnimationFrame(tick);});
+  const elapsed=Math.max(1,performance.now()-start),ratio=renderer.getPixelRatio(),fps=frames/(elapsed/1000);
+  if(created&&catchFishVisual){scene.remove(catchFishVisual);catchFishVisual=null;}
+  state.fishing=prevFishing;state.hookedFish=prevHooked;state.actionHeld=prevAction;
+  updateDynamicResolution();
+  return {fps:+fps.toFixed(1),pixelRatio:+ratio.toFixed(2),frames,elapsed:Math.round(elapsed)};
+}
 function canWebGL() {
   try {
     const c = document.createElement('canvas');
@@ -372,7 +389,7 @@ function init() {
   worldClock = new THREE.Clock();
   buildLights(); buildWorld(); buildDock(); buildBoat(); buildAvatar(); buildRod(); loadPremiumAvatar(); buildRipples(); buildParty();
   bindUI(); bindInputs(); restore(); resize(); updateObjectives(); updateActionLabel();
-  window.__ALAN_GAME__={release:RELEASE_ID,audit:()=>({release:RELEASE_ID,avatar:!!avatar,premiumAvatar:!!premiumAvatar,fisherGear:!!premiumAvatar?.getObjectByName('fisher-pack'),rodAttached:rodGroup?.parent===avatarRodAnchor,thirdPerson:camera.position.z>2,lure:state.lure,zone:state.lastZone,score:state.score,catches:state.catches.length,quality:state.quality,fps:state.fps,fishing:state.fishing,landingT:catchAnim?.t||0,fishVisible:!!catchFishVisual?.visible,pixelRatio:renderer?.getPixelRatio?.()||0,anglerDetail:!!premiumAvatar?.getObjectByName('angler-detail'),taperedHull:!!boat?.getObjectByName('tapered-fishing-hull'),naturalRidge:!!visualExtras?.getObjectByName('natural-ridgeline')}),forceLanding:()=>{if(state.fishing==='LANDING')return true;state.hookedFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};bobber.position.set(0,.1,42);landFish();return true;}};
+  window.__ALAN_GAME__={release:RELEASE_ID,audit:()=>({release:RELEASE_ID,avatar:!!avatar,premiumAvatar:!!premiumAvatar,fisherGear:!!premiumAvatar?.getObjectByName('fisher-pack'),rodAttached:rodGroup?.parent===avatarRodAnchor,thirdPerson:camera.position.z>2,lure:state.lure,zone:state.lastZone,score:state.score,catches:state.catches.length,quality:state.quality,fps:state.fps,fishing:state.fishing,landingT:catchAnim?.t||0,fishVisible:!!catchFishVisual?.visible,pixelRatio:renderer?.getPixelRatio?.()||0,anglerDetail:!!premiumAvatar?.getObjectByName('angler-detail'),taperedHull:!!boat?.getObjectByName('tapered-fishing-hull'),naturalRidge:!!visualExtras?.getObjectByName('natural-ridgeline')}),benchmarkAction:benchmarkActionRender,forceLanding:()=>{if(state.fishing==='LANDING')return true;state.hookedFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};bobber.position.set(0,.1,42);landFish();return true;}};
   addEventListener('resize', resize, {passive:true});
   addEventListener('orientationchange', ()=>setTimeout(resize, 120), {passive:true});
   document.addEventListener('visibilitychange', ()=>{ if (document.hidden) clearInputs(); lastFrame = performance.now(); });
