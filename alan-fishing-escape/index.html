@@ -84,6 +84,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
 
 
 /* HUD_TOUCH_PRIORITY_V15 */
+/* FISH_VISUAL_GATE_V16 */
 #hud{z-index:16!important}
 .icon-btn,.tackle-btn{pointer-events:auto!important}
 </style>
@@ -356,7 +357,7 @@ function init() {
   worldClock = new THREE.Clock();
   buildLights(); buildWorld(); buildDock(); buildBoat(); buildAvatar(); buildRod(); loadPremiumAvatar(); buildRipples(); buildParty();
   bindUI(); bindInputs(); restore(); resize(); updateObjectives(); updateActionLabel();
-  window.__ALAN_GAME__={release:RELEASE_ID,audit:()=>({release:RELEASE_ID,avatar:!!avatar,premiumAvatar:!!premiumAvatar,fisherGear:!!premiumAvatar?.getObjectByName('fisher-pack'),rodAttached:rodGroup?.parent===avatarRodAnchor,thirdPerson:camera.position.z>2,lure:state.lure,zone:state.lastZone,score:state.score,catches:state.catches.length,quality:state.quality,fps:state.fps,fishing:state.fishing,landingT:catchAnim?.t||0}),forceLanding:()=>{if(state.fishing==='LANDING')return true;state.hookedFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};bobber.position.set(0,.1,42);landFish();return true;}};
+  window.__ALAN_GAME__={release:RELEASE_ID,audit:()=>({release:RELEASE_ID,avatar:!!avatar,premiumAvatar:!!premiumAvatar,fisherGear:!!premiumAvatar?.getObjectByName('fisher-pack'),rodAttached:rodGroup?.parent===avatarRodAnchor,thirdPerson:camera.position.z>2,lure:state.lure,zone:state.lastZone,score:state.score,catches:state.catches.length,quality:state.quality,fps:state.fps,fishing:state.fishing,landingT:catchAnim?.t||0,fishVisible:!!catchFishVisual?.visible}),forceLanding:()=>{if(state.fishing==='LANDING')return true;state.hookedFish={...fishSpecies[0],name:'Rainbow Trout',weight:3.2,power:.62,seed:1.1,zone:'SHORE',lure:state.lure};bobber.position.set(0,.1,42);landFish();return true;}};
   addEventListener('resize', resize, {passive:true});
   addEventListener('orientationchange', ()=>setTimeout(resize, 120), {passive:true});
   document.addEventListener('visibilitychange', ()=>{ if (document.hidden) clearInputs(); lastFrame = performance.now(); });
