@@ -31,6 +31,10 @@ jobs:
           GAME_URL: https://2strongtrainers-art.github.io/terrain-environmental-gis/alan-fishing-escape/
         run: |
           set -euo pipefail
+          echo 'HTTP response headers:'
+          curl -fsSIL --max-time 30 "$GAME_URL?curlqa=$(date +%s)" | sed -n '1,20p'
+          echo 'Public source fingerprint:'
+          curl -fsSL --max-time 30 "$GAME_URL?sourceqa=$(date +%s)" | grep -Eo 'Alan Kaplan[^<]{0,80}|id="play"|id="load"|catch-log|manifest.webmanifest' | head -20 || true
           cat > /tmp/alan-live-qa.cjs <<'EOF'
           const { chromium } = require('playwright');
           (async()=>{
@@ -43,6 +47,9 @@ jobs:
             const url=process.env.GAME_URL+'?qa='+Date.now();
             const response=await page.goto(url,{waitUntil:'networkidle',timeout:60000});
             if(!response || !response.ok()) throw new Error('Game page HTTP failure: '+(response&&response.status()));
+            const before=await page.evaluate(()=>({url:location.href,title:document.title,ids:[...document.querySelectorAll('[id]')].slice(0,40).map(x=>x.id),text:document.body.innerText.slice(0,500),hasPlay:!!document.querySelector('#play'),hasLoad:!!document.querySelector('#load')}));
+            console.log('PUBLIC_PAGE_DEBUG',JSON.stringify(before));
+            await page.screenshot({path:'alan-fishing-live-before.png',fullPage:true});
             await page.waitForSelector('#play',{state:'visible',timeout:15000});
             await page.click('#play');
             await page.waitForSelector('#tutorial:not(.hidden)',{timeout:10000});
@@ -56,8 +63,7 @@ jobs:
               canvasH:document.querySelector('#game')?.height||0,
               hudVisible:!document.querySelector('#hud')?.classList.contains('hidden'),
               controlsVisible:!document.querySelector('#controls')?.classList.contains('hidden'),
-              fallbackVisible:!document.querySelector('#fallback')?.classList.contains('hidden'),
-              playVisible:!document.querySelector('#play')?.offsetParent===null
+              fallbackVisible:document.querySelector('#fallback')?!document.querySelector('#fallback').classList.contains('hidden'):false
             }));
             console.log('LIVE_QA_RESULT',JSON.stringify(result));
             if(result.title!=="Alan Kaplan’s Fishing Escape") throw new Error('Unexpected title');
@@ -73,10 +79,12 @@ jobs:
           EOF
           NODE_PATH="$PWD/node_modules" node /tmp/alan-live-qa.cjs
 
-      - name: Upload QA screenshot
+      - name: Upload QA screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: alan-fishing-live-qa
-          path: alan-fishing-live-qa.png
+          path: |
+            alan-fishing-live-before.png
+            alan-fishing-live-qa.png
           if-no-files-found: ignore
