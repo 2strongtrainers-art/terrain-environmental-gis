@@ -53,8 +53,8 @@ async function search(p,q){await p.locator('#searchInput').fill(q);await p.locat
   assert.equal(await p.locator('#topicIndexGrid button').count(),37);
   const topicCounts=await p.locator('#topicIndexGrid button>span').allTextContents();
   assert.equal(topicCounts.reduce((n,t)=>n+Number(t.match(/[\d,]+/)[0].replace(/,/g,'')),0),1850);
-  await p.locator('#topicIndexSearch').fill('science');assert.equal(await p.locator('#topicIndexGrid button').count(),1);
-  await p.locator('#topicIndexGrid button').click();assert.equal(await p.locator('#topicFilter').inputValue(),'Science');
+  await p.locator('#topicIndexSearch').fill('science');assert.equal(await p.locator('#topicIndexGrid button').count(),2);
+  await p.locator('#topicIndexGrid [data-topic="Science"]').click();assert.equal(await p.locator('#topicFilter').inputValue(),'Science');
   assert.equal(await p.locator('#sourceFilter').inputValue(),'');
   check('All 37 topic counts reconcile to all 1,850 records; topic search and launch work');
   await p.locator('#clearFilters').click();await search(p,'zqxvnonexistent987654321');

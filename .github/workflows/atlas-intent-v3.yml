@@ -34,6 +34,7 @@ jobs:
           python scripts/build_atlas.py
           python scripts/build_atlas.py --out /tmp/atlas-repeat
           diff -r dist /tmp/atlas-repeat
+          node qa/atlas-index-unit.js
       - name: Install browser test driver
         run: npm install --no-save playwright@1.55.0
       - name: Serve candidate
