@@ -58,7 +58,7 @@ button{touch-action:none;user-select:none;-webkit-user-select:none}
         <h1>Fishing Escape</h1>
         <p class="lede">Sunrise. Quiet water. Three fish to catch. One boat to take out. And a lake worth keeping peaceful.</p>
         <button id="play-btn" class="primary big">PLAY</button>
-        <div class="micro">Best in landscape • iPhone + desktop controls included</div>
+        <div class="micro">Third-person • Best in landscape • iPhone + desktop controls included</div>
       </div>
     </div>
 
@@ -182,6 +182,7 @@ const state = {
 let renderer, scene, camera, cameraRig, worldClock;
 let sun, water, dock, boat, boatBody, boatWake, partyGroup, skyDome, sunOrb, visualExtras, mistGroup, cloudGroup, shoreGrass;
 let rodGroup, rodTip, bobber, line, rippleGroup;
+let avatar=null, avatarTorso=null, avatarHead=null, avatarLeftArm=null, avatarRightArm=null, avatarLeftLeg=null, avatarRightLeg=null, avatarRodAnchor=null;
 let catchFishVisual=null, catchAnim=null;
 let playerPos = new THREE.Vector3(0, 1.72, 53);
 let yaw = 0, pitch = -0.045, boatYaw = 0.22;
@@ -230,7 +231,7 @@ function init() {
   canvas.addEventListener('webglcontextrestored', ()=>{ state.webglLost = false; showToast('Graphics restored'); });
 
   worldClock = new THREE.Clock();
-  buildLights(); buildWorld(); buildDock(); buildBoat(); buildRod(); buildRipples(); buildParty();
+  buildLights(); buildWorld(); buildDock(); buildBoat(); buildAvatar(); buildRod(); buildRipples(); buildParty();
   bindUI(); bindInputs(); restore(); resize(); updateObjectives(); updateActionLabel();
   addEventListener('resize', resize, {passive:true});
   addEventListener('orientationchange', ()=>setTimeout(resize, 120), {passive:true});
@@ -419,16 +420,41 @@ function buildBoat(){
   boat.traverse(o=>{if(o.isMesh){o.castShadow=!state.mobile;o.receiveShadow=true;}});scene.add(boat);
 }
 
+function buildAvatar(){
+  avatar=new THREE.Group();avatar.name='alan-avatar';
+  const skin=new THREE.MeshStandardMaterial({color:0xc6926f,roughness:.9});
+  const shirt=new THREE.MeshStandardMaterial({color:0x355747,roughness:.92});
+  const pants=new THREE.MeshStandardMaterial({color:0x343b3c,roughness:.96});
+  const shoe=new THREE.MeshStandardMaterial({color:0x202526,roughness:.92});
+  const capMat=new THREE.MeshStandardMaterial({color:0x7a5b38,roughness:.9});
+  avatarTorso=new THREE.Mesh(new THREE.BoxGeometry(.72,.92,.4),shirt);avatarTorso.position.y=1.28;avatar.add(avatarTorso);
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.12,.14,.18,10),skin);neck.position.y=1.78;avatar.add(neck);
+  avatarHead=new THREE.Mesh(new THREE.SphereGeometry(.28,14,10),skin);avatarHead.position.y=2.0;avatar.add(avatarHead);
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(.25,.29,.18,12),capMat);cap.position.y=2.19;avatar.add(cap);
+  const brim=new THREE.Mesh(new THREE.BoxGeometry(.4,.035,.24),capMat);brim.position.set(0,2.13,-.2);avatar.add(brim);
+  function limb(x,y,mat,isArm){
+    const g=new THREE.Group();g.position.set(x,y,0);const mesh=new THREE.Mesh(new THREE.CylinderGeometry(isArm?.085:.12,isArm?.105:.14,isArm?.72:.78,8),mat);mesh.position.y=isArm?-.34:-.38;g.add(mesh);avatar.add(g);return g;
+  }
+  avatarLeftArm=limb(-.47,1.62,shirt,true);avatarRightArm=limb(.47,1.62,shirt,true);
+  avatarLeftLeg=limb(-.2,.85,pants,false);avatarRightLeg=limb(.2,.85,pants,false);
+  for(const x of [-.2,.2]){const foot=new THREE.Mesh(new THREE.BoxGeometry(.25,.14,.42),shoe);foot.position.set(x,.08,-.12);avatar.add(foot);}
+  avatarRodAnchor=new THREE.Group();avatarRodAnchor.position.set(.5,1.23,-.18);avatar.add(avatarRodAnchor);
+  avatar.traverse(o=>{if(o.isMesh){o.castShadow=!state.mobile;o.receiveShadow=true;}});
+  scene.add(avatar);
+}
+
 function buildRod(){
   rodGroup=new THREE.Group();
   const rodMat=new THREE.MeshStandardMaterial({color:0x3a3326,roughness:.55});
   const reelMat=new THREE.MeshStandardMaterial({color:0xb3b5ad,metalness:.55,roughness:.35});
-  const rod=new THREE.Mesh(new THREE.CylinderGeometry(.018,.045,2.15,8),rodMat); rod.rotation.z=-.28; rod.position.set(.48,-.43,-1.1); rodGroup.add(rod);
-  const reel=new THREE.Mesh(new THREE.CylinderGeometry(.11,.11,.12,12),reelMat); reel.rotation.z=Math.PI/2; reel.position.set(.34,-.63,-.46); rodGroup.add(reel);
-  rodTip=new THREE.Object3D(); rodTip.position.set(.78,-.16,-2.05); rodGroup.add(rodTip);
-  camera.add(rodGroup); rodGroup.position.set(0,0,0); rodGroup.rotation.y=-.06;
-  bobber=new THREE.Mesh(new THREE.SphereGeometry(.11,12,8),new THREE.MeshStandardMaterial({color:0xff5f4e,roughness:.5})); bobber.visible=false; scene.add(bobber);
-  const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]); line=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xe9eee7,transparent:true,opacity:.78})); line.frustumCulled=false; line.visible=false; scene.add(line);
+  const gripMat=new THREE.MeshStandardMaterial({color:0x6c4328,roughness:.8});
+  const rod=new THREE.Mesh(new THREE.CylinderGeometry(.018,.038,2.28,8),rodMat);rod.rotation.x=-Math.PI/2;rod.position.set(0,0,-1.12);rodGroup.add(rod);
+  const grip=new THREE.Mesh(new THREE.CylinderGeometry(.045,.055,.42,8),gripMat);grip.rotation.x=-Math.PI/2;grip.position.set(0,0,-.14);rodGroup.add(grip);
+  const reel=new THREE.Mesh(new THREE.CylinderGeometry(.11,.11,.12,12),reelMat);reel.rotation.z=Math.PI/2;reel.position.set(.1,-.11,-.34);rodGroup.add(reel);
+  rodTip=new THREE.Object3D();rodTip.position.set(0,0,-2.28);rodGroup.add(rodTip);
+  if(avatarRodAnchor)avatarRodAnchor.add(rodGroup);else scene.add(rodGroup);rodGroup.rotation.z=-.11;
+  bobber=new THREE.Mesh(new THREE.SphereGeometry(.11,12,8),new THREE.MeshStandardMaterial({color:0xff5f4e,roughness:.5}));bobber.visible=false;scene.add(bobber);
+  const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);line=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xe9eee7,transparent:true,opacity:.78}));line.frustumCulled=false;line.visible=false;scene.add(line);
 }
 
 function buildRipples(){
@@ -546,7 +572,7 @@ function updateGame(dt){
 
 function updatePlayer(dt,ix,iy,run){
   const v=new THREE.Vector2(ix,iy); if(v.lengthSq()>1)v.normalize(); if(v.lengthSq()<.002)return;
-  const speed=run?6.4:3.65; const forward=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw)); const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+  const speed=run?6.4:3.65; const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)); const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
   const move=forward.multiplyScalar(v.y).add(right.multiplyScalar(v.x)).multiplyScalar(speed*dt); const prev=playerPos.clone();playerPos.add(move);
   const r=Math.hypot(playerPos.x,playerPos.z); const onDock=Math.abs(playerPos.x)<3.85&&playerPos.z>18&&playerPos.z<50.5;
   if(r<40.1&&!onDock)playerPos.copy(prev); if(r>86)playerPos.copy(prev);playerPos.y=1.72;
@@ -648,8 +674,8 @@ function landFish(){
 function updateCatchVisual(dt){
   if(!catchAnim||!catchFishVisual)return;
   catchAnim.t+=dt;const p=THREE.MathUtils.clamp(catchAnim.t/catchAnim.duration,0,1);
-  const camPos=new THREE.Vector3(),forward=new THREE.Vector3(),right=new THREE.Vector3();camera.getWorldPosition(camPos);camera.getWorldDirection(forward);right.crossVectors(forward,new THREE.Vector3(0,1,0)).normalize();
-  const end=camPos.clone().addScaledVector(forward,1.48).addScaledVector(right,.38);end.y-=.38;
+  const end=new THREE.Vector3();
+  if(avatarRodAnchor){avatarRodAnchor.getWorldPosition(end);end.y+=.28;}else{const camPos=new THREE.Vector3(),forward=new THREE.Vector3();camera.getWorldPosition(camPos);camera.getWorldDirection(forward);end.copy(camPos).addScaledVector(forward,1.6);end.y-=.2;}
   if(p<.68){
     const q=p/.68,one=1-q,mid=catchAnim.start.clone().lerp(end,.52);mid.y+=3.2+Math.min(1.1,catchAnim.fish.weight*.09);
     catchFishVisual.position.set(one*one*catchAnim.start.x+2*one*q*mid.x+q*q*end.x,one*one*catchAnim.start.y+2*one*q*mid.y+q*q*end.y,one*one*catchAnim.start.z+2*one*q*mid.z+q*q*end.z);
@@ -704,20 +730,34 @@ function updateObjectives(){
 }
 function toggleDone(el,done,yes,no){el.classList.toggle('done',done);if(el===ui.objectiveFish){el.innerHTML=(done?'✓ Catch 3 fish ':'○ Catch 3 fish ')+`<span id="fish-count">${Math.min(3,state.catches.length)}/3</span>`;ui.fishCount=$('fish-count');}else el.textContent=done?yes:no;}
 
+function updateAvatar(dt){
+  if(!avatar)return;
+  const moving=!state.paused&&(Math.abs(input.x)+Math.abs(input.y)>.08||input.keys.has('KeyW')||input.keys.has('KeyA')||input.keys.has('KeyS')||input.keys.has('KeyD'));
+  const fishing=['WAIT','REEL','LANDING','CAUGHT'].includes(state.fishing);
+  if(state.inBoat){
+    const seatOffset=new THREE.Vector3(-.45,.16,.58).applyAxisAngle(new THREE.Vector3(0,1,0),boatYaw);avatar.position.copy(boat.position).add(seatOffset);avatar.rotation.y=boatYaw;avatarLeftLeg.rotation.x=-1.25;avatarRightLeg.rotation.x=-1.25;
+  }else{
+    avatar.position.set(playerPos.x,0,playerPos.z);avatar.rotation.y=yaw;avatarLeftLeg.rotation.x=moving?Math.sin(state.elapsed*(input.run?11:7.5))*.42:THREE.MathUtils.lerp(avatarLeftLeg.rotation.x,0,.18);avatarRightLeg.rotation.x=moving?-Math.sin(state.elapsed*(input.run?11:7.5))*.42:THREE.MathUtils.lerp(avatarRightLeg.rotation.x,0,.18);
+  }
+  if(fishing){avatarRightArm.rotation.x=THREE.MathUtils.lerp(avatarRightArm.rotation.x,-.9,.18);avatarLeftArm.rotation.x=THREE.MathUtils.lerp(avatarLeftArm.rotation.x,-.62,.18);}
+  else if(moving&&!state.inBoat){const swing=Math.sin(state.elapsed*(input.run?11:7.5))*.34;avatarRightArm.rotation.x=THREE.MathUtils.lerp(avatarRightArm.rotation.x,swing,.2);avatarLeftArm.rotation.x=THREE.MathUtils.lerp(avatarLeftArm.rotation.x,-swing,.2);}
+  else{avatarRightArm.rotation.x=THREE.MathUtils.lerp(avatarRightArm.rotation.x,-.12,.14);avatarLeftArm.rotation.x=THREE.MathUtils.lerp(avatarLeftArm.rotation.x,.08,.14);}
+}
+
 function updateCamera(dt){
   cameraRig.rotation.set(0,yaw,0);
   const moving=!state.paused&&(Math.abs(input.x)+Math.abs(input.y)>.08||input.keys.has('KeyW')||input.keys.has('KeyA')||input.keys.has('KeyS')||input.keys.has('KeyD'));
   if(state.inBoat){
-    const offset=new THREE.Vector3(0,1.52,-.35).applyAxisAngle(new THREE.Vector3(0,1,0),boatYaw);cameraRig.position.lerp(boat.position.clone().add(offset),1-Math.pow(.001,dt));
-    camera.position.x=Math.sin(state.elapsed*1.35)*.008;camera.position.y=Math.sin(state.elapsed*1.7)*.012;camera.rotation.set(pitch,0,Math.sin(state.elapsed*1.25)*.0035);
+    cameraRig.position.lerp(tmpV.set(boat.position.x,boat.position.y-.35,boat.position.z),1-Math.pow(.0015,dt));
+    camera.position.lerp(tmpV2.set(0,3.15,6.65),1-Math.pow(.0006,dt));camera.rotation.set(pitch-.16,0,Math.sin(state.elapsed*1.25)*.0035);
   }else{
-    cameraRig.position.lerp(playerPos,1-Math.pow(.0001,dt));
-    const pace=input.run?11.2:8.1,amp=moving?(input.run?.035:.022):.004;camera.position.x=moving?Math.cos(state.elapsed*pace*.5)*amp*.42:0;camera.position.y=moving?Math.abs(Math.sin(state.elapsed*pace))*amp:0;camera.rotation.set(pitch,0,moving?Math.sin(state.elapsed*pace*.5)*amp*.14:0);
+    cameraRig.position.lerp(tmpV.set(playerPos.x,0,playerPos.z),1-Math.pow(.00012,dt));
+    const distance=state.fishing==='LANDING'?4.45:5.4;camera.position.lerp(tmpV2.set(0,2.75,distance),1-Math.pow(.00045,dt));camera.rotation.set(pitch-.16,0,moving?Math.sin(state.elapsed*(input.run?11.2:8.1)*.5)*.004:0);
   }
 }
 
 function updateRod(dt){
-  if(!rodGroup)return; const active=state.fishing==='REEL'||state.fishing==='LANDING'; const bend=active?(state.fishing==='LANDING' ? .12 : state.tension*.2):0;rodGroup.rotation.x=THREE.MathUtils.lerp(rodGroup.rotation.x,-bend,.12);
+  if(!rodGroup)return; const active=state.fishing==='REEL'||state.fishing==='LANDING'; const bend=state.fishing==='REEL'?state.tension*.2:(state.fishing==='LANDING'?.11:0);const base=-.18;rodGroup.rotation.x=THREE.MathUtils.lerp(rodGroup.rotation.x,base-bend,.12);
   const lineTarget=(catchFishVisual&&catchFishVisual.visible)?catchFishVisual.position:(bobber&&bobber.visible?bobber.position:null);
   if(line.visible&&lineTarget){const a=new THREE.Vector3();rodTip.getWorldPosition(a);const arr=line.geometry.attributes.position.array;arr[0]=a.x;arr[1]=a.y;arr[2]=a.z;arr[3]=lineTarget.x;arr[4]=lineTarget.y;arr[5]=lineTarget.z;line.geometry.attributes.position.needsUpdate=true;}
 }
@@ -729,6 +769,7 @@ function updateWorld(dt){
   if(cloudGroup){cloudGroup.children.forEach(o=>{o.position.x+=o.userData.speed*dt;if(o.position.x>125)o.position.x=-125;});}
   if(scene){scene.children.forEach(o=>{if(o.name==='bird'){o.position.x+=o.userData.speed*dt;if(o.position.x>48)o.position.x=-48;o.position.y+=Math.sin(state.elapsed*3+o.userData.phase)*dt*.1;}});}
   updateRipples(dt);
+  updateAvatar(dt);
   updateCatchVisual(dt);
   if(boatWake){const s=boat?.userData.speed||0;boatWake.children.forEach((r,i)=>{r.material.opacity=THREE.MathUtils.lerp(r.material.opacity,s>.6?.14*(1-i/11):0,.08);r.scale.setScalar(1+Math.sin(state.elapsed*2+i)*.06);});}
 }
