@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const capture=(event,props={})=>{try{if(localStorage.getItem('atlasAnalyticsOptOut')==='1')return;window.posthog?.capture?.(event,{atlas_discovery_version:'5.2-mobile-beginner',...props})}catch(_){}};
+const capture=(event,props={})=>{try{if(window.atlasStorage.getItem('atlasAnalyticsOptOut')==='1')return;window.posthog?.capture?.(event,{atlas_discovery_version:'5.2-mobile-beginner',...props})}catch(_){}};
 function clickNav(label){const target=$$('.navbtn,button').find(b=>(b.textContent||'').trim().toLowerCase()===label.toLowerCase());if(target){target.click();return true}return false}
-function quickSearch(q,label){const library=$('[data-view="library"]');if(library)library.click();setTimeout(()=>{const i=$('#searchInput');if(!i)return;i.value=q;i.dispatchEvent(new Event('input',{bubbles:true}));capture('atlas_beginner_choice',{choice:label,query:q});window.scrollTo({top:0,behavior:'instant'});},70)}
+function quickSearch(q,label){window.Atlas.search(q);capture('atlas_beginner_choice',{choice:label,query:q})}
 function mount(){
  if($('#atlasBeginnerStart')||!$('#view-home'))return;
  const host=document.createElement('section');host.id='atlasBeginnerStart';host.className='atlas-beginner';host.setAttribute('aria-label','Start here');
@@ -20,7 +20,7 @@ function mount(){
   <button data-q="short social video editor AI voice">Make a Reel</button><button data-q="website builder analytics payment">Build a Website</button><button data-q="free no login tool">Actually Free</button><button data-q="live nature animal cams">Live Cams</button><button data-q="learn Python coding course">Learn Python</button><button data-q="grant funding research GIS mapping">Research a Grant</button>
  </div></div>`;
  const home=$('#view-home');const anchor=home.querySelector('.hero,section,.card');if(anchor)anchor.insertAdjacentElement('afterend',host);else home.prepend(host);
- host.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.q)return quickSearch(b.dataset.q,b.textContent.trim());const c=b.dataset.beginner;capture('atlas_beginner_choice',{choice:c});if(c==='watch'){clickNav('Watch');return}if(c==='learn'){if(!clickNav('Learn'))quickSearch('tutorial course reference education','Learn something');return}if(c==='create'){if(!clickNav('Do'))quickSearch('video image website creator tools','Make something');return}if(c==='useful'){if(!clickNav('Do'))quickSearch('useful productivity business utility tools','Do something useful');return}if(c==='bored'){if(!clickNav('Explore'))quickSearch('interesting weird fun useful sites',"I'm bored");return}if(c==='surprise'){const s=$$('button').find(x=>/surprise me/i.test(x.textContent||'')&&x!==b);if(s)s.click();else quickSearch(['live nature animal cams','NASA space science streams','interactive map earth','browser games free','visual interactive experiment'][Math.floor(Math.random()*5)],'Surprise me')}});
+ host.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.q){e.stopPropagation();return quickSearch(b.dataset.q,b.textContent.trim())}const c=b.dataset.beginner;capture('atlas_beginner_choice',{choice:c});if(c==='watch'){clickNav('Watch');return}if(c==='learn'){if(!clickNav('Learn'))quickSearch('tutorial course reference education','Learn something');return}if(c==='create'){if(!clickNav('Do'))quickSearch('video image website creator tools','Make something');return}if(c==='useful'){if(!clickNav('Do'))quickSearch('useful productivity business utility tools','Do something useful');return}if(c==='bored'){if(!clickNav('Explore'))quickSearch('interesting weird fun useful sites',"I'm bored");return}if(c==='surprise'){const s=$$('button').find(x=>/surprise me/i.test(x.textContent||'')&&x!==b);if(s)s.click();else quickSearch(['live nature animal cams','NASA space science streams','interactive map earth','browser games free','visual interactive experiment'][Math.floor(Math.random()*5)],'Surprise me')}});
  capture('atlas_beginner_impression',{viewport:innerWidth});
 }
 function styles(){if($('#atlasBeginnerStyles'))return;const s=document.createElement('style');s.id='atlasBeginnerStyles';s.textContent=`
@@ -28,5 +28,5 @@ function styles(){if($('#atlasBeginnerStyles'))return;const s=document.createEle
 @media(max-width:680px){.atlas-beginner{margin:12px -2px 22px;padding:16px;border-radius:18px}.beginner-kicker{font-size:10px}.atlas-beginner h2{font-size:27px;line-height:1.05}.beginner-sub{font-size:14px}.beginner-grid{grid-template-columns:1fr 1fr;gap:8px}.beginner-card{min-height:132px;padding:13px;touch-action:manipulation}.beginner-card b{font-size:14px}.beginner-card small{font-size:12px}.beginner-chips{display:grid;grid-template-columns:1fr 1fr}.beginner-chips button{min-height:46px;border-radius:12px;padding:10px}.atlas-beginner button:focus-visible{outline:3px solid #84adff;outline-offset:2px}}
 @media(max-width:370px){.beginner-grid{grid-template-columns:1fr}.beginner-card{min-height:106px}}
 `;document.head.appendChild(s)}
-styles();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(mount,120));else setTimeout(mount,120);
+styles();if(window.Atlas)mount();else document.addEventListener('atlas:ready',mount,{once:true});
 })();

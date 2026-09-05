@@ -2,9 +2,9 @@
   "tool_count": 1850,
   "live_verified": 1529,
   "source_entries": 1802,
-  "bundle_bytes": 215543,
+  "bundle_bytes": 232036,
   "data_b64_bytes": 122712,
-  "sha256": "0f1abd2be7a2318d87ef03f423eaa1d554adc423fb356e36d7823e1ecb8e10fa",
+  "sha256": "418109fd279c76f9ac673e3b669415b9db66e0eafbd9c6d5dc5c0ca2869b6ee9",
   "visual_theme": "Atlas Brand V2 + CRO V2.1",
   "cro_v2": {
     "clarity": true,
@@ -98,5 +98,15 @@
     "non_live_total": 321,
     "quality_snapshot_count_repair": true,
     "preserves_free_vs_no_login": true
+  },
+  "release": "atlas-v6",
+  "topic_count": 37,
+  "data_sha256": "375cb7774c2d349b4aca166a86ec9f735365ab59f6c2a8074eb85d0692c4073e",
+  "navigation_v6": {
+    "shareable_search": true,
+    "topic_index": true,
+    "cached_scoring": true,
+    "string_ids": true,
+    "safe_favorites": true
   }
 }
