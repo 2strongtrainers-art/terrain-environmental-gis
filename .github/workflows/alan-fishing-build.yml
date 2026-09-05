@@ -25,9 +25,9 @@ jobs:
         run: |
           set -euo pipefail
           cat .alan-build-v5/part*.txt > /tmp/alan-fishing-escape.b64
-          echo 'ce7a4b4f52f372ca935f06bc5781c60b1707c08bb01d560ce2219ae924fac757  /tmp/alan-fishing-escape.b64' | sha256sum -c -
+          echo 'ee9d47e863ce273f5e836ac26a18d2f096ee540a15f9573629baa2cb07b5dd82  /tmp/alan-fishing-escape.b64' | sha256sum -c -
           base64 -d /tmp/alan-fishing-escape.b64 | gzip -d > alan-fishing-escape/index.html
-          echo '9627ef6f4fa913dd0e80a90d58fbee2bb264bc98c3fd517641a08f314b940e57  alan-fishing-escape/index.html' | sha256sum -c -
+          echo 'b74c0d4de90b55f921d4055ac918281a769fccb612eb4fcb86e48146ff0aa6c3  alan-fishing-escape/index.html' | sha256sum -c -
 
           cat > alan-fishing-escape/manifest.webmanifest <<'EOF'
           {
@@ -62,7 +62,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape/index.html alan-fishing-escape/play.html alan-fishing-escape/manifest.webmanifest alan-fishing-escape/sw.js
           if ! git diff --cached --quiet; then
-            git commit -m 'Upgrade Alan Fishing Escape graphics'
+            git commit -m 'Fix Alan Fishing Escape mist rendering'
             git push
           else
             echo 'Main build already current.'
@@ -85,7 +85,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape
           if ! git diff --cached --quiet; then
-            git commit -m 'Deploy Alan Fishing Escape visual overhaul'
+            git commit -m 'Deploy Alan Fishing Escape mist rendering fix'
             git push origin HEAD:gh-pages
           else
             echo 'GitHub Pages build already current.'
