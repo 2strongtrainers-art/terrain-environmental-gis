@@ -28,7 +28,7 @@ html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#
  // Older Safari does not provide the browser-native gzip DecompressionStream API.
  // In that case, load Atlas's local compatibility decoder before the application scripts run.
  if(!("DecompressionStream" in window)){
-   const legacyTag='<script src="../atlas-legacy-gunzip.js?v=20260906" defer=false><'+'/script>';
+   const legacyTag='<script src="../atlas-legacy-gunzip.js?v=20260906"><'+'/script>';
    finished=finished.replace('</head>',legacyTag+'</head>');
    const nativeGuard='if(!("DecompressionStream" in window))throw new Error("This browser needs gzip DecompressionStream support.");';
    const compatGuard='if(!("DecompressionStream" in window)){if(window.__atlasLegacyGunzip)return window.__atlasLegacyGunzip(bytes);throw new Error("Older-browser compatibility decoder could not load. Reload the page to retry.");}';
