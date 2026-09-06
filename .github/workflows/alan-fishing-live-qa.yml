@@ -57,12 +57,12 @@ jobs:
             await page.waitForSelector('#tutorial:not(.hidden)',{timeout:10000});
             await page.click('#tutorial-go');
             await page.waitForSelector('#hud:not(.hidden)',{timeout:10000});
-            await page.waitForFunction(()=>{const a=window.__ALAN_GAME__?.audit?.();return a?.release==='REALISM_V22'&&a?.visualModule==='REALISTIC_VISUALS_V22'&&a?.premiumAvatar===true&&a?.fisherGear===true&&a?.anglerDetail===true&&a?.taperedHull===true&&a?.environmentReady===true&&a?.subdividedWater===true&&a?.branchPines===true&&a?.batchedRockDraws>0;},{timeout:30000});
+            await page.waitForFunction(()=>{const a=window.__ALAN_GAME__?.audit?.();return a?.release==='REALISM_V22'&&a?.visualModule==='REALISTIC_VISUALS_V22'&&a?.premiumAvatar===true&&a?.fisherGear===true&&a?.anglerDetail===true&&a?.taperedHull===true&&a?.environmentReady===true&&a?.panoramaBackground===true&&a?.skyDomeVisible===false&&a?.sunOrbVisible===false&&a?.fallbackMountainsVisible===false&&a?.subdividedWater===true&&a?.branchPines===true&&a?.batchedRockDraws>0;},{timeout:30000});
             await page.waitForTimeout(1800);
             const audit=await page.evaluate(()=>window.__ALAN_GAME__?.audit?.());
             console.log('V22_AUDIT',JSON.stringify(audit));
             if(!audit||!audit.avatar||!audit.premiumAvatar||!audit.fisherGear||!audit.rodAttached||!audit.thirdPerson)throw new Error('Third-person angler integrity failed '+JSON.stringify(audit));
-            if(audit.release!=='REALISM_V22'||audit.visualModule!=='REALISTIC_VISUALS_V22'||!audit.anglerDetail||!audit.taperedHull||!audit.environmentReady||!audit.subdividedWater||!audit.branchPines)throw new Error('V22 visual fidelity markers missing '+JSON.stringify(audit));
+            if(audit.release!=='REALISM_V22'||audit.visualModule!=='REALISTIC_VISUALS_V22'||!audit.anglerDetail||!audit.taperedHull||!audit.environmentReady||!audit.panoramaBackground||audit.skyDomeVisible||audit.sunOrbVisible||audit.fallbackMountainsVisible||!audit.subdividedWater||!audit.branchPines)throw new Error('V22 visual fidelity markers missing '+JSON.stringify(audit));
             if(audit.textureSize<256||audit.waterTriangles<4000||audit.batchedRockDraws>4)throw new Error('V22 rendering safeguards missing '+JSON.stringify(audit));
             if(audit.fps<45)throw new Error('Initial mobile-render FPS below 45 '+audit.fps);
 
