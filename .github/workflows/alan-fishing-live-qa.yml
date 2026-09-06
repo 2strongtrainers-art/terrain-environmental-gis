@@ -1,11 +1,13 @@
 name: Alan Fishing Escape Live QA
-# v21 all-8 release gate: visual fidelity, touch, deterministic render cost and catch loop
+# v22 release gate: realistic visuals, touch, render cost and catch progression
 
 on:
   push:
     branches: [main]
     paths:
       - '.github/workflows/alan-fishing-live-qa.yml'
+      - '.github/workflows/alan-fishing-build.yml'
+      - 'alan-fishing-escape/**'
   workflow_dispatch:
 
 permissions:
@@ -35,7 +37,7 @@ jobs:
           ready=0
           for i in $(seq 1 20); do
             body="$(curl -fsSL --max-time 30 "$GAME_URL?ready=$(date +%s)-$i" || true)"
-            if printf '%s' "$body" | grep -F 'RENDER_COST_V21' >/dev/null && printf '%s' "$body" | grep -F "boatBody.name='tapered-fishing-hull'" >/dev/null; then ready=1; break; fi
+            if printf '%s' "$body" | grep -F 'REALISM_V22' >/dev/null && printf '%s' "$body" | grep -F "from './visuals-v22.js?v=22.2'" >/dev/null; then ready=1; break; fi
             sleep 5
           done
           test "$ready" -eq 1
@@ -55,12 +57,13 @@ jobs:
             await page.waitForSelector('#tutorial:not(.hidden)',{timeout:10000});
             await page.click('#tutorial-go');
             await page.waitForSelector('#hud:not(.hidden)',{timeout:10000});
-            await page.waitForFunction(()=>{const a=window.__ALAN_GAME__?.audit?.();return a?.premiumAvatar===true&&a?.fisherGear===true&&a?.anglerDetail===true&&a?.taperedHull===true&&a?.naturalRidge===true;},{timeout:20000});
+            await page.waitForFunction(()=>{const a=window.__ALAN_GAME__?.audit?.();return a?.release==='REALISM_V22'&&a?.visualModule==='REALISTIC_VISUALS_V22'&&a?.premiumAvatar===true&&a?.fisherGear===true&&a?.anglerDetail===true&&a?.taperedHull===true&&a?.environmentReady===true&&a?.subdividedWater===true&&a?.branchPines===true&&a?.batchedRockDraws>0;},{timeout:30000});
             await page.waitForTimeout(1800);
             const audit=await page.evaluate(()=>window.__ALAN_GAME__?.audit?.());
-            console.log('V21_AUDIT',JSON.stringify(audit));
+            console.log('V22_AUDIT',JSON.stringify(audit));
             if(!audit||!audit.avatar||!audit.premiumAvatar||!audit.fisherGear||!audit.rodAttached||!audit.thirdPerson)throw new Error('Third-person angler integrity failed '+JSON.stringify(audit));
-            if(!audit.anglerDetail||!audit.taperedHull||!audit.naturalRidge)throw new Error('Visual fidelity markers missing '+JSON.stringify(audit));
+            if(audit.release!=='REALISM_V22'||audit.visualModule!=='REALISTIC_VISUALS_V22'||!audit.anglerDetail||!audit.taperedHull||!audit.environmentReady||!audit.subdividedWater||!audit.branchPines)throw new Error('V22 visual fidelity markers missing '+JSON.stringify(audit));
+            if(audit.textureSize<256||audit.waterTriangles<4000||audit.batchedRockDraws>4)throw new Error('V22 rendering safeguards missing '+JSON.stringify(audit));
             if(audit.fps<45)throw new Error('Initial mobile-render FPS below 45 '+audit.fps);
 
             const perf=await page.evaluate(()=>window.__ALAN_GAME__.benchmarkAction(10));
@@ -78,7 +81,7 @@ jobs:
             await page.waitForTimeout(180);
             const switched=await page.evaluate(()=>window.__ALAN_GAME__.audit().lure);
             if(switched==='SPOON')throw new Error('Tackle selector did not switch');
-            await page.screenshot({path:'alan-fishing-v21-gameplay.png',fullPage:true});
+            await page.screenshot({path:'alan-fishing-v22-gameplay.png',fullPage:true});
 
             const forced=await page.evaluate(()=>window.__ALAN_GAME__.forceLanding());
             if(forced!==true)throw new Error('Landing test hook failed: '+forced);
@@ -86,7 +89,7 @@ jobs:
             const during=await page.evaluate(()=>window.__ALAN_GAME__.audit());
             console.log('VISIBLE_FISH',JSON.stringify(during));
             if(!during.fishVisible||during.fishing!=='LANDING')throw new Error('3D fish did not become visible '+JSON.stringify(during));
-            await page.screenshot({path:'alan-fishing-v21-landing.png',fullPage:true});
+            await page.screenshot({path:'alan-fishing-v22-landing.png',fullPage:true});
             await page.waitForFunction(()=>{const a=window.__ALAN_GAME__?.audit?.();return a&&a.catches>=1&&a.score>0&&a.fishing==='CAUGHT';},{timeout:6000});
             const after=await page.evaluate(()=>window.__ALAN_GAME__.audit());
             console.log('AFTER_LANDING',JSON.stringify(after));
@@ -94,7 +97,7 @@ jobs:
             const meaningful=fatal.filter(x=>!/Failed to load resource.*favicon/i.test(x));
             if(meaningful.length)throw new Error('Runtime errors: '+meaningful.join(' | '));
             await browser.close();
-            console.log('ALAN_FISHING_V21_ALL8_QA_OK');
+            console.log('ALAN_FISHING_V22_QA_OK');
           })().catch(e=>{console.error(e);process.exit(1)});
           EOF
           NODE_PATH="$PWD/node_modules" node /tmp/alan-live-qa.cjs
@@ -103,8 +106,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: alan-fishing-live-qa-v21
+          name: alan-fishing-live-qa-v22
           path: |
-            alan-fishing-v21-gameplay.png
-            alan-fishing-v21-landing.png
+            alan-fishing-v22-gameplay.png
+            alan-fishing-v22-landing.png
           if-no-files-found: ignore

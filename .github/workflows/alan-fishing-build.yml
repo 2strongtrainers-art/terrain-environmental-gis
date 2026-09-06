@@ -5,7 +5,6 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/alan-fishing-build.yml'
-      - '.alan-render-cost-v21.py'
       - 'alan-fishing-escape/**'
   workflow_dispatch:
 
@@ -22,46 +21,33 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply deterministic render-cost benchmark and verify v21
+      - name: Verify realistic visuals v22
         shell: bash
         run: |
           set -euo pipefail
-          python .alan-render-cost-v21.py
           python - <<'PY'
           from pathlib import Path
           import re
-          s=Path('alan-fishing-escape/index.html').read_text(encoding='utf-8')
-          m=re.search(r'<script type="module">(.*?)</script>',s,re.S)
-          if not m: raise SystemExit('module missing')
-          Path('/tmp/alan-game.mjs').write_text(m.group(1),encoding='utf-8')
+          source = Path('alan-fishing-escape/index.html').read_text(encoding='utf-8')
+          module = re.search(r'<script type="module">(.*?)</script>', source, re.S)
+          if not module:
+              raise SystemExit('inline game module missing')
+          Path('/tmp/alan-game.mjs').write_text(module.group(1), encoding='utf-8')
           PY
           node --check /tmp/alan-game.mjs
-          grep -F 'FINAL_ALL8_V18' alan-fishing-escape/index.html >/dev/null
-          grep -F 'MOBILE_ACTION_V20' alan-fishing-escape/index.html >/dev/null
-          grep -F 'RENDER_COST_V21' alan-fishing-escape/index.html >/dev/null
+          node --check alan-fishing-escape/visuals-v22.js
+          test -s alan-fishing-escape/assets/cascade-dawn-panorama-v22b.png
+          grep -F "const RELEASE_ID='REALISM_V22'" alan-fishing-escape/index.html >/dev/null
+          grep -F "from './visuals-v22.js?v=22.2'" alan-fishing-escape/index.html >/dev/null
           grep -F 'benchmarkAction:benchmarkActionRender' alan-fishing-escape/index.html >/dev/null
-          grep -F 'baselineMs:' alan-fishing-escape/index.html >/dev/null
-          grep -F "o.name==='shore-rock'" alan-fishing-escape/index.html >/dev/null
           grep -F "boatBody.name='tapered-fishing-hull'" alan-fishing-escape/index.html >/dev/null
           grep -F "vestPanel.name='angler-detail'" alan-fishing-escape/index.html >/dev/null
-          sed -E -i 's/alan-fishing-escape-v[0-9]+/alan-fishing-escape-v21/g' alan-fishing-escape/sw.js
-          grep -F 'alan-fishing-escape-v21' alan-fishing-escape/sw.js >/dev/null
+          grep -F 'mountainGroup.visible=false' alan-fishing-escape/index.html >/dev/null
+          grep -F 'alan-fishing-escape-v22' alan-fishing-escape/sw.js >/dev/null
+          grep -F "'./visuals-v22.js'" alan-fishing-escape/sw.js >/dev/null
+          grep -F "'./assets/cascade-dawn-panorama-v22b.png'" alan-fishing-escape/sw.js >/dev/null
 
-      - name: Commit verified v21 source to main
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add alan-fishing-escape/index.html alan-fishing-escape/sw.js
-          if ! git diff --cached --quiet; then
-            git commit -m 'Add deterministic Fishing Escape render-cost benchmark v21'
-            git push
-          else
-            echo 'Fishing Escape v21 source already current.'
-          fi
-
-      - name: Deploy verified v21 build to GitHub Pages
+      - name: Deploy verified v22 build to GitHub Pages
         shell: bash
         run: |
           set -euo pipefail
@@ -69,16 +55,13 @@ jobs:
           rm -rf /tmp/alan-gh-pages
           git worktree add --detach /tmp/alan-gh-pages origin/gh-pages
           mkdir -p /tmp/alan-gh-pages/alan-fishing-escape
-          cp alan-fishing-escape/index.html /tmp/alan-gh-pages/alan-fishing-escape/index.html
-          cp alan-fishing-escape/play.html /tmp/alan-gh-pages/alan-fishing-escape/play.html
-          cp alan-fishing-escape/manifest.webmanifest /tmp/alan-gh-pages/alan-fishing-escape/manifest.webmanifest
-          cp alan-fishing-escape/sw.js /tmp/alan-gh-pages/alan-fishing-escape/sw.js
+          cp -R alan-fishing-escape/. /tmp/alan-gh-pages/alan-fishing-escape/
           cd /tmp/alan-gh-pages
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add alan-fishing-escape
           if ! git diff --cached --quiet; then
-            git commit -m 'Deploy Fishing Escape render-cost v21'
+            git commit -m 'Deploy Fishing Escape realistic visuals v22'
             git push origin HEAD:gh-pages
           else
             echo 'Pages already current.'
