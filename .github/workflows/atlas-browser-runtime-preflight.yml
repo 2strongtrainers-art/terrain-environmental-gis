@@ -1,0 +1,44 @@
+name: Atlas Playwright Ubuntu 24.04 compatibility preflight
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/atlas-link-audit.yml"
+      - ".github/workflows/alan-fishing-live-qa.yml"
+      - ".github/workflows/atlas-browser-redteam.yml"
+      - ".github/workflows/atlas-commercial-audit.yml"
+      - ".github/workflows/atlas-live-qa.yml"
+      - ".github/workflows/atlas-browser-runtime-preflight.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chromium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Install pinned browser tool on pinned OS
+        run: |
+          npm init -y > /dev/null
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Smoke Chromium without opening third-party websites
+        run: |
+          node - <<'NODE'
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser = await chromium.launch({headless:true});
+            const page = await browser.newPage();
+            await page.goto('data:text/html,<title>ATLAS_BROWSER_READY</title>');
+            const title = await page.title();
+            await browser.close();
+            if (title !== 'ATLAS_BROWSER_READY') throw new Error('Chromium smoke failed');
+            console.log('ATLAS_BROWSER_RUNTIME=PASS');
+          })().catch(err => { console.error(err); process.exit(1) });
+          NODE
