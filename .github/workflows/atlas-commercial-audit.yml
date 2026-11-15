@@ -80,7 +80,10 @@ jobs:
               report[name].smallTargets=tiny;
               const axe=await new AxeBuilder({page}).analyze();
               report[name].axe={violations:axe.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.length,help:v.help}))};
-              await page.locator('[data-view="library"]').first().click();
+              // Use the visible hero CTA on both desktop and mobile.
+              // The first [data-view=library] button lives in a hidden desktop nav on mobile.
+              await page.locator('#heroBrowse').click();
+              await page.locator('#searchInput').waitFor({state:'visible',timeout:10000});
               await page.waitForTimeout(150);
               await page.locator('#searchInput').fill('zzzz-no-match-987654');
               await page.waitForTimeout(150);

@@ -20,7 +20,14 @@ async function collectAtlasRecords(browser) {
   const page = await context.newPage();
   const response = await page.goto(ATLAS_URL, { waitUntil: 'networkidle', timeout: 60000 });
   if (!response || response.status() !== 200) throw new Error(`Atlas page HTTP ${response ? response.status() : 'no response'}`);
-  await page.waitForFunction(() => document.querySelector('#statIndexed')?.textContent?.includes('1,834'), null, { timeout: 30000 });
+  await page.waitForFunction(() => {
+    const raw = document.querySelector('#statIndexed')?.textContent || '';
+    const count = Number(raw.replace(/[^0-9]/g, ''));
+    return Number.isInteger(count) && count >= 1800;
+  }, null, { timeout: 30000 });
+  const publishedCount = Number((await page.locator('#statIndexed').innerText()).replace(/[^0-9]/g, ''));
+  // Data completeness is checked against the live Atlas UI, not a stale 2026 snapshot.
+  if (!Number.isInteger(publishedCount) || publishedCount < 1800) throw new Error('Published Atlas tool count is invalid');
   await page.locator('.navlinks button[data-view="library"]').click();
   await page.locator('#clearFilters').click();
   await page.waitForTimeout(120);
@@ -62,7 +69,7 @@ async function collectAtlasRecords(browser) {
 
   await context.close();
   const out = [...records.values()];
-  if (out.length !== 1834) throw new Error(`Expected exactly 1,834 Atlas URLs, collected ${out.length}`);
+  if (out.length !== publishedCount) throw new Error(`Atlas UI claims ${publishedCount} unique tools, but ${out.length} unique URLs were collected`);
   return out;
 }
 
