@@ -8,8 +8,8 @@ on:
       - atlas-static/**
       - atlas-upgrade.js
       - atlas-mobile-beginner.js
-      - scripts/**
-      - qa/**
+      - scripts/*atlas*.py
+      - qa/atlas-*.js
       - .github/workflows/atlas-intent-v3.yml
   workflow_dispatch:
 
