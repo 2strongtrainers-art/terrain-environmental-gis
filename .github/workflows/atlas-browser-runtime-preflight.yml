@@ -9,6 +9,7 @@ on:
       - ".github/workflows/atlas-commercial-audit.yml"
       - ".github/workflows/atlas-live-qa.yml"
       - ".github/workflows/atlas-browser-runtime-preflight.yml"
+      - "qa/atlas-link-audit.js"
   workflow_dispatch:
 
 permissions:
@@ -28,6 +29,8 @@ jobs:
           npm init -y > /dev/null
           npm install --no-save playwright@1.55.0
           npx playwright install --with-deps chromium
+      - name: Verify Atlas link-audit JavaScript syntax
+        run: node --check qa/atlas-link-audit.js
       - name: Smoke Chromium without opening third-party websites
         run: |
           node - <<'NODE'
