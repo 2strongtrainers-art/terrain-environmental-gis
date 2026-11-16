@@ -1,0 +1,101 @@
+name: Terrain GIS Release Readiness
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Verify the local candidate or the published Pages site
+        type: choice
+        options: [candidate, published]
+        default: candidate
+  pull_request:
+    branches: [main]
+    paths:
+      - index.html
+      - app.js
+      - styles.css
+      - demo.*
+      - viewer.*
+      - manifest.webmanifest
+      - sw.js
+      - share-fix.js
+      - report-plus.js
+      - scripts/build_terrain_release.py
+      - qa/terrain-*.js
+      - qa/test_terrain_release.py
+      - .github/workflows/terrain-release-readiness.yml
+
+# Verification only. Publishing is a separate reviewed gh-pages update.
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: published
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify local-project migration, cache isolation and publication boundary
+        run: |
+          node --test qa/terrain-release-unit.js
+          python -m unittest discover -s qa -p test_terrain_release.py
+          for file in app.js sw.js share-fix.js report-plus.js viewer.js demo.js; do node --check "$file"; done
+      - name: Stage GIS root while proving Atlas and fishing bytes are unchanged
+        run: |
+          python scripts/build_terrain_release.py --published published --out terrain-release --report terrain-qa/preservation.json
+          python scripts/build_atlas.py
+          node qa/atlas-index-unit.js
+          cmp dist/atlas/index.html terrain-release/atlas/index.html
+      - name: Install isolated browser runtime
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+          node -e "console.log('CHROME_PATH='+require('playwright').chromium.executablePath())" >> "$GITHUB_ENV"
+      - name: Serve the combined published candidate
+        run: python -m http.server 8766 --bind 127.0.0.1 --directory terrain-release > /tmp/terrain-http.log 2>&1 &
+      - name: Require published asset bytes to match the reviewed candidate
+        if: inputs.target == 'published'
+        run: |
+          python - <<'PY'
+          import hashlib, json, pathlib, urllib.request
+          base='https://2strongtrainers-art.github.io/terrain-environmental-gis/'
+          report=json.load(open('terrain-qa/preservation.json'))
+          paths=list(report['gis_files'])+['atlas/index.html','atlas-upgrade.js','atlas-mobile-beginner.js','alan-fishing-escape/index.html','alan-fishing-escape/visuals-v22.js','alan-fishing-escape/sw.js']
+          observed={}
+          for path in paths:
+              expected=hashlib.sha256(pathlib.Path('terrain-release',path).read_bytes()).hexdigest()
+              with urllib.request.urlopen(base+path+'?release='+expected,timeout=30) as response:
+                  actual=hashlib.sha256(response.read()).hexdigest()
+              assert actual==expected, f'Published asset mismatch: {path}'
+              observed[path]=actual
+          pathlib.Path('terrain-qa/published-asset-hashes.json').write_text(json.dumps(observed,indent=2)+'\n')
+          print(f'Published bytes match for {len(observed)} GIS, Atlas and fishing assets')
+          PY
+      - name: Verify GIS import, migration, screening, export, sharing and mobile controls
+        env:
+          TERRAIN_URL: ${{ inputs.target == 'published' && 'https://2strongtrainers-art.github.io/terrain-environmental-gis/' || 'http://127.0.0.1:8766/' }}
+        run: node qa/terrain-gis-qa.js
+      - name: Verify preserved Atlas navigation and all four mobile widths
+        env:
+          ATLAS_URL: ${{ inputs.target == 'published' && 'https://2strongtrainers-art.github.io/terrain-environmental-gis/atlas/' || 'http://127.0.0.1:8766/atlas/' }}
+          QA_OUTPUT: terrain-qa/atlas
+        run: node qa/atlas-navigation-v6.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: terrain-gis-readiness
+          path: terrain-qa/
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: terrain-gis-verified-candidate
+          path: terrain-release/
+          include-hidden-files: true
+          retention-days: 14

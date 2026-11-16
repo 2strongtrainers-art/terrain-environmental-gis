@@ -44,8 +44,12 @@ def build(out):
     rows = json.loads(gzip.decompress(base64.b64decode(encoded)))
     assert len({str(r[0]) for r in rows}) == len(rows), 'Duplicate tool IDs'
     assert all(len(r) == 13 and r[2].startswith(('https://', 'http://')) for r in rows)
-    packed = base64.b64encode(gzip.compress(json.dumps(rows, ensure_ascii=False,
-                 separators=(',', ':')).encode(), mtime=0)).decode()
+    compressed = bytearray(gzip.compress(json.dumps(rows, ensure_ascii=False,
+                 separators=(',', ':')).encode(), compresslevel=9, mtime=0))
+    # Python 3.11/3.12 can inherit zlib's host OS byte; 3.13+ writes 255.
+    # Use the portable header on every runner, with an explicit compression level.
+    compressed[9] = 255
+    packed = base64.b64encode(compressed).decode()
     html = html.replace(encoded, packed, 1)
     counts = collections.Counter(r[10] for r in rows)
     topics = len({r[6] or 'General tools' for r in rows})

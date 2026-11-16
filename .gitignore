@@ -6,3 +6,7 @@ intent-qa/
 expanded-qa/
 watch-qa/
 mobile-beginner-qa/
+terrain-release/
+terrain-qa/
+published/
+__pycache__/
