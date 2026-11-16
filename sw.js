@@ -23,13 +23,25 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET' || url.origin !== self.location.origin ||
       !ROOT_FILES.has(url.pathname)) return;
   event.respondWith((async () => {
-    const cache = await caches.open(CACHE);
+    let response;
     try {
-      const response = await fetch(event.request);
-      if (response.ok) await cache.put(event.request, response.clone());
-      return response;
+      response = await fetch(event.request);
     } catch {
-      return await cache.match(event.request, {ignoreSearch: true}) || Response.error();
+      try {
+        const cache = await caches.open(CACHE);
+        return await cache.match(event.request, {ignoreSearch: true}) || Response.error();
+      } catch {
+        return Response.error();
+      }
     }
+    // Storage can fail independently of the network (quota, disabled storage).
+    // A usable response must still reach the app when refreshing the cache fails.
+    if (response.ok) {
+      try {
+        const cache = await caches.open(CACHE);
+        await cache.put(event.request, response.clone());
+      } catch {}
+    }
+    return response;
   })());
 });

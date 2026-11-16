@@ -85,7 +85,7 @@ function workerHarness() {
       delete:async key=>deleted.push(key)},
     fetch:async()=>new Response('current shell')};
   vm.runInNewContext(fs.readFileSync('sw.js','utf8'),context);
-  return {context,handlers,deleted,added,written};
+  return {context,handlers,cache,deleted,added,written};
 }
 
 test('GIS shell activation preserves fishing, Atlas and unrelated caches',async()=>{
@@ -116,4 +116,24 @@ test('GIS shell uses the network, retains a good cache on server error, and has 
   assert.equal((await get()).status,503);assert.equal(h.written.length,1);
   h.context.fetch=async()=>{throw Error('offline')};
   assert.equal(await (await get()).text(),'cached shell');
+});
+
+test('a rejected cache write never discards a successful network response',async()=>{
+  const h=workerHarness();let pending;
+  h.cache.put=async()=>{throw Error('QuotaExceededError')};
+  h.handlers.fetch({request:new Request('https://example.test/terrain-environmental-gis/app.js'),
+    respondWith:p=>pending=p});
+  const response=await pending;
+  assert.equal(response.status,200);
+  assert.equal(await response.text(),'current shell');
+});
+
+test('unavailable cache storage leaves online responses usable and offline errors explicit',async()=>{
+  const h=workerHarness();let pending;
+  h.context.caches.open=async()=>{throw Error('Storage unavailable')};
+  const request=new Request('https://example.test/terrain-environmental-gis/app.js');
+  const get=async()=>{h.handlers.fetch({request,respondWith:p=>pending=p});return await pending};
+  assert.equal(await (await get()).text(),'current shell');
+  h.context.fetch=async()=>{throw Error('offline')};
+  assert.equal((await get()).type,'error');
 });

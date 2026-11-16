@@ -82,7 +82,11 @@ async function boot(page){
     viewer.on('pageerror',error=>report.pageErrors.push(String(error)));
     await viewer.goto(shared,{waitUntil:'domcontentloaded'});
     await viewer.waitForFunction(()=>document.querySelector('#name')?.textContent==='Synthetic release QA');
-    assert((await viewer.locator('#findings').innerText()).includes('Project area'));
+    const sharedFindings=await viewer.locator('#findings').innerText();
+    // The viewer displays metric labels in uppercase through CSS.
+    assert(/project area/i.test(sharedFindings),`Shared findings: ${sharedFindings}`);
+    assert(sharedFindings.includes(snapshot.analysis.areaAcres.toFixed(1)+' acres'),
+      'The shared viewer must display the actual screening acreage');
     await viewer.close();
     pass('Printable report and compact read-only share viewer load the screening snapshot');
 
